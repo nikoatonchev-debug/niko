@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop &ndash; Siebdruck-Schülerfirma</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2722%27 fill=%27%23e0632c%27/%3E%3Ccircle cx=%2724%27 cy=%2719%27 r=%276%27 fill=%27%23faf5ea%27/%3E%3Crect x=%2714%27 y=%2726%27 width=%2720%27 height=%2714%27 rx=%274%27 fill=%27%23faf5ea%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="shop">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section style="padding-bottom:24px;">
+      <div class="container">
+        <h1 class="section-title">Unser Shop</h1>
+        <p class="section-subtitle">Alle Pullis sind von uns selbst im Siebdruck bedruckt. Größe wählen, in den Warenkorb legen, bestellen.</p>
+        <div class="pickup-banner" style="margin-bottom:32px;">
+          <div class="icon" id="icon-cash2"></div>
+          <div>
+            <strong>Abholung: jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>
+            Bezahlung ausschließlich bar bei Abholung &ndash; kein PayPal, keine Online-Zahlung.
+          </div>
+        </div>
+        <div class="grid grid-3" id="product-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <!-- Warenkorb-Button -->
+  <div class="cart-panel">
+    <button class="cart-button" id="cart-open-btn">
+      <span id="cart-icon"></span>
+      Warenkorb
+      <span class="cart-count" id="cart-count">0</span>
+    </button>
+  </div>
+
+  <!-- Warenkorb-Modal -->
+  <div class="modal-backdrop hidden" id="cart-modal">
+    <div class="modal">
+      <button class="modal-close" id="cart-close-btn">&times;</button>
+      <h2>Dein Warenkorb</h2>
+      <div id="cart-lines"></div>
+      <div class="cart-total">
+        <span>Gesamt</span>
+        <span id="cart-total">0,00 €</span>
+      </div>
+      <p class="hint" style="margin-top:6px;">Bezahlung bar bei Abholung, freitags ab 11 Uhr bei der alten Apotheke.</p>
+      <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+        <button class="btn btn-primary" id="checkout-btn" disabled>Jetzt bestellen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout-Modal -->
+  <div class="modal-backdrop hidden" id="checkout-modal">
+    <div class="modal">
+      <button class="modal-close" id="checkout-close-btn">&times;</button>
+      <h2>Bestellung abschließen</h2>
+      <form id="checkout-form">
+        <div class="field">
+          <label for="co-name">Dein Name</label>
+          <input type="text" id="co-name" required>
+        </div>
+        <div class="field">
+          <label for="co-klasse">Klasse <span class="hint">(optional)</span></label>
+          <input type="text" id="co-klasse" placeholder="z. B. 8b">
+        </div>
+        <div class="field">
+          <label for="co-phone">Telefonnummer <span class="hint">(optional, falls wir dich erreichen müssen)</span></label>
+          <input type="tel" id="co-phone">
+        </div>
+        <p class="hint">Mit dem Absenden bestellst du verbindlich. Bezahlt wird bar bei Abholung freitags ab 11 Uhr bei der alten Apotheke.</p>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Verbindlich bestellen</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bestätigungs-Modal -->
+  <div class="modal-backdrop hidden" id="confirmation-modal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" id="confirmation-close-btn">&times;</button>
+      <h2>Danke für deine Bestellung! 🎉</h2>
+      <p>Deine Bestellnummer: <strong id="order-confirmation-id"></strong></p>
+      <p>Abholung &amp; Bezahlung: <strong>jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>, bar.</p>
+    </div>
+  </div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    document.getElementById("icon-cash2").innerHTML = SFIcons.cash;
+    document.getElementById("cart-icon").innerHTML = SFIcons.cart;
+  </script>
+  <script src="js/shop.js"></script>
+</body>
+</html>

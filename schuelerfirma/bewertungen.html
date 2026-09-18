@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bewertungen &ndash; Siebdruck-Schülerfirma</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2722%27 fill=%27%23e0632c%27/%3E%3Ccircle cx=%2724%27 cy=%2719%27 r=%276%27 fill=%27%23faf5ea%27/%3E%3Crect x=%2714%27 y=%2726%27 width=%2720%27 height=%2714%27 rx=%274%27 fill=%27%23faf5ea%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="reviews">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section style="padding-bottom:16px;">
+      <div class="container">
+        <h1 class="section-title">Feedback &amp; Bewertungen</h1>
+        <p class="section-subtitle">Wie hat dir dein Pulli gefallen? Wir freuen uns über jede Rückmeldung!</p>
+      </div>
+    </section>
+
+    <section style="padding-top:0;">
+      <div class="container">
+        <div class="grid grid-2" style="align-items:start;">
+          <div class="card">
+            <h2>Deine Bewertung</h2>
+            <form id="review-form">
+              <div class="field">
+                <label for="rv-name">Dein Name <span class="hint">(optional)</span></label>
+                <input type="text" id="rv-name" placeholder="z. B. Mia, 8b">
+              </div>
+              <div class="field">
+                <label>Bewertung</label>
+                <div class="star-input">
+                  <input type="radio" name="rv-rating" id="star5" value="5"><label for="star5">★</label>
+                  <input type="radio" name="rv-rating" id="star4" value="4"><label for="star4">★</label>
+                  <input type="radio" name="rv-rating" id="star3" value="3" checked><label for="star3">★</label>
+                  <input type="radio" name="rv-rating" id="star2" value="2"><label for="star2">★</label>
+                  <input type="radio" name="rv-rating" id="star1" value="1"><label for="star1">★</label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="rv-comment">Dein Feedback</label>
+                <textarea id="rv-comment" required placeholder="Was hat dir gefallen? Was können wir besser machen?"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">Feedback senden</button>
+              <div id="review-message" class="form-message hidden"></div>
+            </form>
+          </div>
+
+          <div>
+            <h2>Das sagen andere</h2>
+            <div id="review-list" style="display:flex; flex-direction:column; gap:16px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/reviews.js"></script>
+</body>
+</html>

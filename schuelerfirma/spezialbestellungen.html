@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spezialbestellungen &ndash; Siebdruck-Schülerfirma</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2722%27 fill=%27%23e0632c%27/%3E%3Ccircle cx=%2724%27 cy=%2719%27 r=%276%27 fill=%27%23faf5ea%27/%3E%3Crect x=%2714%27 y=%2726%27 width=%2720%27 height=%2714%27 rx=%274%27 fill=%27%23faf5ea%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="special">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section style="padding-bottom:16px;">
+      <div class="container">
+        <h1 class="section-title">Spezialbestellungen</h1>
+        <p class="section-subtitle">
+          Du hast ein eigenes Motiv, eine bestimmte Größe oder eine besondere Idee?
+          Schreib uns deinen Wunsch &ndash; wir melden uns telefonisch bei dir, sobald
+          wir deine Bestellung angenommen haben.
+        </p>
+      </div>
+    </section>
+
+    <section style="padding-top:0;">
+      <div class="container">
+        <div class="grid grid-2" style="align-items:start;">
+          <div class="card">
+            <h2>Dein Wunsch</h2>
+            <form id="special-form">
+              <div class="field">
+                <label for="sp-name">Dein Name</label>
+                <input type="text" id="sp-name" required>
+              </div>
+              <div class="field">
+                <label for="sp-phone">Telefonnummer <span class="hint">(Pflichtfeld &ndash; wir rufen dich zurück)</span></label>
+                <input type="tel" id="sp-phone" required>
+              </div>
+              <div class="field">
+                <label for="sp-klasse">Klasse <span class="hint">(optional)</span></label>
+                <input type="text" id="sp-klasse" placeholder="z. B. 9a">
+              </div>
+              <div class="field">
+                <label for="sp-groesse">Gewünschte Größe</label>
+                <input type="text" id="sp-groesse" placeholder="z. B. 152 oder M" required>
+              </div>
+              <div class="field">
+                <label for="sp-menge">Menge</label>
+                <input type="number" id="sp-menge" min="1" value="1" required>
+              </div>
+              <div class="field">
+                <label for="sp-wunsch">Beschreibe deinen Wunsch</label>
+                <textarea id="sp-wunsch" placeholder="Motiv, Farbe, Idee, besondere Wünsche..." required></textarea>
+              </div>
+              <p class="hint">
+                Bezahlt wird immer bar bei Abholung &ndash; jeden Freitag ab 11 Uhr
+                bei der alten Apotheke. Kein PayPal, keine Online-Zahlung.
+              </p>
+              <button type="submit" class="btn btn-secondary" style="width:100%;">Spezialbestellung senden</button>
+              <div id="special-message" class="form-message hidden"></div>
+            </form>
+          </div>
+
+          <div>
+            <div class="pickup-banner" style="margin-bottom:20px;">
+              <div class="icon" id="icon-clock"></div>
+              <div>
+                <strong>Abholung &amp; Bezahlung</strong>
+                Jeden Freitag ab 11 Uhr bei der alten Apotheke, immer bar.
+              </div>
+            </div>
+            <div class="card">
+              <h3>So läuft's ab</h3>
+              <ol style="padding-left:20px; color:var(--color-muted);">
+                <li>Du schickst uns dein Wunschmotiv mit Telefonnummer.</li>
+                <li>Wir schauen, ob wir es umsetzen können, und rufen dich an.</li>
+                <li>Nach der Annahme drucken wir deinen Pulli.</li>
+                <li>Abholung freitags ab 11 Uhr bei der alten Apotheke, bar bezahlt.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    document.getElementById("icon-clock").innerHTML = SFIcons.clock;
+  </script>
+  <script src="js/special.js"></script>
+</body>
+</html>

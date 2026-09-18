@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin-Bereich &ndash; Siebdruck-Schülerfirma</title>
+  <meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2722%27 fill=%27%23e0632c%27/%3E%3Ccircle cx=%2724%27 cy=%2719%27 r=%276%27 fill=%27%23faf5ea%27/%3E%3Crect x=%2714%27 y=%2726%27 width=%2720%27 height=%2714%27 rx=%274%27 fill=%27%23faf5ea%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section>
+      <div class="container">
+
+        <!-- LOGIN -->
+        <div id="admin-login" class="login-wrap">
+          <div class="card login-card">
+            <div class="icon" id="icon-lock"></div>
+            <h2>Admin-Bereich</h2>
+            <p class="section-subtitle" style="margin-bottom:20px;">Bitte Passwort eingeben, um fortzufahren.</p>
+            <form id="login-form">
+              <div class="field">
+                <label for="login-password">Passwort</label>
+                <input type="text" id="login-password" autocomplete="off" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">Anmelden</button>
+              <div id="login-message" class="form-message hidden"></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="admin-dashboard" class="hidden">
+          <h1 class="section-title" style="text-align:left;">Admin-Bereich</h1>
+
+          <div class="stat-row">
+            <div class="stat-box"><div class="num" id="stat-products">0</div><div class="label">Produkte</div></div>
+            <div class="stat-box"><div class="num" id="stat-orders">0</div><div class="label">Offene Bestellungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-special">0</div><div class="label">Offene Spezialbestellungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-reviews">0</div><div class="label">Bewertungen</div></div>
+          </div>
+
+          <div class="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="products">Produkte</button>
+            <button class="admin-tab-btn" data-tab="orders">Bestellungen</button>
+            <button class="admin-tab-btn" data-tab="special">Spezialbestellungen</button>
+            <button class="admin-tab-btn" data-tab="reviews">Bewertungen</button>
+            <button class="admin-tab-btn" data-tab="settings">Einstellungen</button>
+          </div>
+
+          <!-- Produkte -->
+          <div class="admin-panel active" id="panel-products">
+            <div class="card" style="margin-bottom:24px;">
+              <h3>Produkt hinzufügen</h3>
+              <form id="product-form">
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-name">Name</label>
+                    <input type="text" id="pf-name" required>
+                  </div>
+                  <div class="field">
+                    <label for="pf-price">Preis (€)</label>
+                    <input type="number" id="pf-price" step="0.5" min="0" required>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="pf-description">Beschreibung</label>
+                  <textarea id="pf-description"></textarea>
+                </div>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-sizes">Größen <span class="hint">(mit Komma getrennt, z. B. 140, 152, S, M)</span></label>
+                    <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" required>
+                  </div>
+                  <div class="field">
+                    <label for="pf-color">Farbe</label>
+                    <input type="color" id="pf-color" style="height:44px;">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Produkt hinzufügen</button>
+              </form>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="product-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bestellungen -->
+          <div class="admin-panel" id="panel-orders">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Kunde</th><th>Artikel</th><th>Summe</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="orders-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Spezialbestellungen -->
+          <div class="admin-panel" id="panel-special">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Telefon</th><th>Größe/Menge</th><th>Wunsch</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="special-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bewertungen -->
+          <div class="admin-panel" id="panel-reviews">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Bewertung</th><th>Kommentar</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="reviews-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Einstellungen -->
+          <div class="admin-panel" id="panel-settings">
+            <div class="card" style="max-width:420px;">
+              <h3>Passwort ändern</h3>
+              <form id="password-form">
+                <div class="field">
+                  <label for="pw-current">Aktuelles Passwort</label>
+                  <input type="password" id="pw-current" required>
+                </div>
+                <div class="field">
+                  <label for="pw-new">Neues Passwort</label>
+                  <input type="password" id="pw-new" required>
+                </div>
+                <div class="field">
+                  <label for="pw-confirm">Neues Passwort bestätigen</label>
+                  <input type="password" id="pw-confirm" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Passwort ändern</button>
+                <div id="password-message" class="form-message hidden"></div>
+              </form>
+            </div>
+            <div style="margin-top:20px;">
+              <button class="btn btn-outline" id="logout-btn">Abmelden</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    document.getElementById("icon-lock").innerHTML = SFIcons.lock;
+  </script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

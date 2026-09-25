@@ -10,13 +10,13 @@
       <div class="modal-backdrop hidden" id="video-modal">
         <div class="modal modal-video">
           <button type="button" class="modal-close" id="video-modal-close">&times;</button>
-          <h3 style="margin-bottom:12px;">So läuft die Abholung ab</h3>
-          <video id="pickup-video" controls playsinline preload="metadata" style="width:100%; border-radius:10px; background:#000;">
+          <h3 class="modal-video-title">So läuft die Abholung ab</h3>
+          <video id="pickup-video" class="modal-video-el" controls playsinline preload="metadata">
             <source src="video/abholung.mp4" type="video/mp4">
             <source src="video/abholung.webm" type="video/webm">
             Dein Browser kann dieses Video leider nicht abspielen.
           </video>
-          <p style="margin-top:12px; margin-bottom:0; font-weight:700; text-align:center;">Bitte an dieser Tür klopfen.</p>
+          <p class="modal-video-caption">Bitte an dieser Tür klopfen.</p>
         </div>
       </div>
     `;

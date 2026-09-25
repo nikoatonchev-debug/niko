@@ -345,10 +345,38 @@ section {
 
 .modal-video {
   max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.modal-video video {
+.modal-video-title {
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.modal-video-el {
   display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 60vh;
+  max-height: calc(100dvh - 190px);
+  border-radius: 10px;
+  background: #000;
+}
+
+.modal-video-caption {
+  margin: 8px 0 0 0;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-height: 700px) {
+  .modal-video-el {
+    max-height: 52vh;
+    max-height: calc(100dvh - 140px);
+  }
 }
 
 /* ---------- Product cards ---------- */
@@ -647,6 +675,15 @@ legend {
   padding: 28px;
   box-shadow: var(--shadow);
   position: relative;
+}
+
+@media (max-height: 700px) {
+  .modal-backdrop {
+    padding: 10px;
+  }
+  .modal {
+    padding: 16px;
+  }
 }
 
 .modal-close {

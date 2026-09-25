@@ -155,6 +155,14 @@ const SF = (() => {
     }
   }
 
+  // Anzeigetext für den Shop-Bestellstatus (der gespeicherte Wert bleibt
+  // "offen"/"abgeholt", nur die Anzeige soll freundlicher sein).
+  function orderStatusLabel(status) {
+    if (status === "offen") return "Noch nicht abgeholt";
+    if (status === "abgeholt") return "Abgeholt";
+    return status;
+  }
+
   // Verkleinert ein Bild (z. B. Produktfoto) auf eine sinnvolle Größe und
   // gibt es als komprimierte data:-URL zurück, damit es platzsparend im
   // localStorage gespeichert werden kann (es gibt ja keinen Server/Upload).
@@ -387,6 +395,7 @@ const SF = (() => {
     escapeHtml,
     formatPrice,
     formatDate,
+    orderStatusLabel,
     resizeImageFile,
     getProducts,
     getActiveProducts,

@@ -1,6 +1,6 @@
 (function () {
-  function statusBadge(status, map) {
-    return `<span class="badge ${map[status] || ""}">${SF.escapeHtml(status)}</span>`;
+  function statusBadge(status, map, label) {
+    return `<span class="badge ${map[status] || ""}">${SF.escapeHtml(label || status)}</span>`;
   }
 
   const ORDER_STATUS_MAP = { offen: "badge-open", abgeholt: "badge-accepted" };
@@ -31,7 +31,7 @@
           <p>${items}</p>
           <div class="product-meta">
             <span class="price">${SF.formatPrice(o.total)}</span>
-            ${statusBadge(o.status, ORDER_STATUS_MAP)}
+            ${statusBadge(o.status, ORDER_STATUS_MAP, SF.orderStatusLabel(o.status))}
           </div>
         </div>`;
       })

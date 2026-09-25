@@ -230,7 +230,7 @@
           <td>${SF.escapeHtml(o.customerName)}${o.klasse ? " (" + SF.escapeHtml(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + SF.escapeHtml(o.phone) + "</span>" : ""}${o.username ? "<br><span class='hint'>Konto: " + SF.escapeHtml(o.username) + "</span>" : ""}</td>
           <td>${items}</td>
           <td>${SF.formatPrice(o.total)}</td>
-          <td><span class="badge ${badgeClass}">${SF.escapeHtml(o.status)}</span></td>
+          <td><span class="badge ${badgeClass}">${SF.escapeHtml(SF.orderStatusLabel(o.status))}</span></td>
           <td class="actions-cell">
             ${o.status !== "abgeholt" ? `<button class="btn btn-secondary btn-small" data-collect="${o.id}">Als abgeholt markieren</button>` : ""}
             <button class="btn btn-danger btn-small" data-delete-order="${o.id}">Löschen</button>

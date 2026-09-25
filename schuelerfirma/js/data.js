@@ -267,6 +267,10 @@ const SF = (() => {
   function deleteOrder(id) {
     write(KEYS.orders, getOrders().filter((o) => o.id !== id));
   }
+  function getOrdersByUsername(username) {
+    const needle = String(username || "").toLowerCase();
+    return getOrders().filter((o) => (o.username || "").toLowerCase() === needle);
+  }
 
   // ---- Special orders (Spezialbestellungen) ----
   function getSpecialOrders() {
@@ -296,6 +300,10 @@ const SF = (() => {
   }
   function deleteSpecialOrder(id) {
     write(KEYS.specialOrders, getSpecialOrders().filter((o) => o.id !== id));
+  }
+  function getSpecialOrdersByUsername(username) {
+    const needle = String(username || "").toLowerCase();
+    return getSpecialOrders().filter((o) => (o.username || "").toLowerCase() === needle);
   }
 
   // ---- Reviews / Feedback ----
@@ -393,10 +401,12 @@ const SF = (() => {
     addOrder,
     updateOrder,
     deleteOrder,
+    getOrdersByUsername,
     getSpecialOrders,
     addSpecialOrder,
     updateSpecialOrder,
     deleteSpecialOrder,
+    getSpecialOrdersByUsername,
     getReviews,
     addReview,
     deleteReview,

@@ -358,7 +358,8 @@ const SFAuth = (function () {
       el.innerHTML =
         '<span class="auth-link">Hallo, ' +
         SF.escapeHtml(user.username) +
-        '</span><a href="#" class="auth-link auth-logout" id="auth-logout-link">Abmelden</a>';
+        '</span><a href="meine-bestellungen.html" class="auth-link">Meine Bestellungen</a>' +
+        '<a href="#" class="auth-link auth-logout" id="auth-logout-link">Abmelden</a>';
       document.getElementById("auth-logout-link").addEventListener("click", (e) => {
         e.preventDefault();
         logout();

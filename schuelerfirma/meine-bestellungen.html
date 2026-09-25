@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meine Bestellungen &ndash; Siebdruck-Schülerfirma</title>
+<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="orders">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section style="padding-bottom:16px;">
+      <div class="container">
+        <h1 class="section-title">Meine Bestellungen</h1>
+        <p class="section-subtitle">Hier siehst du alle Bestellungen, die du mit deinem Konto aufgegeben hast.</p>
+      </div>
+    </section>
+
+    <section style="padding-top:0;">
+      <div class="container">
+
+        <div id="orders-login-hint" class="card hidden" style="max-width:480px; margin:0 auto; text-align:center;">
+          <p>Bitte melde dich an, um deine Bestellungen zu sehen.</p>
+          <button type="button" class="btn btn-primary" id="orders-login-btn">Anmelden</button>
+        </div>
+
+        <div id="orders-content" class="hidden">
+          <h2>Shop-Bestellungen</h2>
+          <div id="shop-orders-list" style="display:flex; flex-direction:column; gap:14px; margin-bottom:36px;"></div>
+
+          <h2>Spezialbestellungen</h2>
+          <div id="special-orders-list" style="display:flex; flex-direction:column; gap:14px;"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/email-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/orders.js"></script>
+</body>
+</html>

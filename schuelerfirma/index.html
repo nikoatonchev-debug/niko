@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siebdruck-Schülerfirma &ndash; Montessori-Schule Dietramszell</title>
+  <meta name="description" content="Siebdruck-Pullis, handgemacht von Schüler:innen der Montessori-Schule Dietramszell.">
+<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="home">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-text">
+          <h1>Handgedruckte Pullis, made by Schüler:innen</h1>
+          <p>
+            Wir sind eine Schülerfirma der Montessori-Schule Dietramszell und bedrucken
+            Pullis im Siebdruck &ndash; komplett von Hand, Motiv für Motiv. Schau in
+            unserem Shop vorbei oder lass dir deinen eigenen Wunsch-Pulli drucken!
+          </p>
+          <div class="hero-actions">
+            <a href="shop.html" class="btn btn-primary">Zum Shop</a>
+            <a href="spezialbestellungen.html" class="btn btn-outline" style="background:#fff;">Spezialbestellung aufgeben</a>
+          </div>
+        </div>
+        <div class="hero-art">
+          <div style="background:rgba(255,255,255,0.12); border-radius:20px; padding:24px;">
+            <div id="hero-hoodie" style="color:#fff;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2 class="section-title">Wer wir sind</h2>
+        <p class="section-subtitle">
+          Unsere Gruppe besteht meistens aus rund fünf Kindern der 7. und 8. Klasse,
+          manchmal machen auch Neunt- und Zehntklässler:innen mit. Gemeinsam entwerfen
+          wir Motive, drucken sie im Siebdruck auf Pullis und verkaufen sie an der Schule.
+        </p>
+        <div class="grid grid-4">
+          <div class="info-card">
+            <div class="icon" id="icon-team"></div>
+            <h3>Unsere Gruppe</h3>
+            <p>Ca. 5 Schüler:innen der 7.&ndash;10. Klasse, die zusammen die Schülerfirma führen.</p>
+          </div>
+          <div class="info-card">
+            <div class="icon" id="icon-print"></div>
+            <h3>Siebdruck von Hand</h3>
+            <p>Jedes Motiv wird von uns selbst gestaltet und per Siebdruck aufgetragen.</p>
+          </div>
+          <div class="info-card">
+            <div class="icon" id="icon-cash"></div>
+            <h3>Fair &amp; einfach</h3>
+            <p>Bestellen im Shop oder als Spezialwunsch, bar bezahlen bei Abholung.</p>
+          </div>
+          <div class="info-card">
+            <div class="icon" id="icon-sprout"></div>
+            <h3>Teil des Erdkinderplans</h3>
+            <p>Unsere Schülerfirma ist Teil des Erdkinderplans &ndash; wir lernen praktisch, wie man ein kleines Unternehmen führt.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:var(--color-bg-alt); padding-bottom:56px;">
+      <div class="container">
+        <h2 class="section-title">Abholung &amp; Bezahlung</h2>
+        <div class="pickup-banner">
+          <div class="icon" id="icon-pin"></div>
+          <div class="pickup-banner-text">
+            <strong>Jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>
+            Bezahlt wird ausschließlich bar bei Abholung &ndash; keine Online-Zahlung, kein PayPal.
+          </div>
+          <button type="button" class="btn video-btn" data-video-trigger>
+            <span class="icon-camera"></span> Video ansehen
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2 class="section-title">Zwei Wege zu deinem Pulli</h2>
+        <p class="section-subtitle">Schau in unserem fertigen Sortiment vorbei oder lass dir etwas Eigenes drucken.</p>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Shop</h3>
+            <p>Wähle aus unseren fertigen Designs, Größe wählen, bestellen &ndash; fertig.</p>
+            <a href="shop.html" class="btn btn-primary">Zum Shop</a>
+          </div>
+          <div class="card">
+            <h3>Spezialbestellung</h3>
+            <p>Du hast ein eigenes Wunschmotiv oder eine Sondergröße? Schreib uns dein Anliegen inkl. Telefonnummer, wir melden uns.</p>
+            <a href="spezialbestellungen.html" class="btn btn-secondary">Spezialbestellung aufgeben</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/email-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/video.js"></script>
+  <script>
+    document.getElementById("icon-team").innerHTML = SFIcons.team;
+    document.getElementById("icon-print").innerHTML = SFIcons.print;
+    document.getElementById("icon-cash").innerHTML = SFIcons.cash;
+    document.getElementById("icon-sprout").innerHTML = SFIcons.sprout;
+    document.getElementById("icon-pin").innerHTML = SFIcons.pin;
+    document.getElementById("hero-hoodie").innerHTML = SFIcons.hoodie("#f2b705");
+  </script>
+</body>
+</html>

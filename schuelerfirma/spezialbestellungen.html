@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spezialbestellungen &ndash; Siebdruck-Schülerfirma</title>
+<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="special">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section style="padding-bottom:16px;">
+      <div class="container">
+        <h1 class="section-title">Spezialbestellungen</h1>
+        <p class="section-subtitle">
+          Du hast ein eigenes Motiv, eine bestimmte Größe oder eine besondere Idee?
+          Schreib uns deinen Wunsch &ndash; wir melden uns telefonisch bei dir, sobald
+          wir deine Bestellung angenommen haben.
+        </p>
+        <div class="pickup-banner" style="max-width:640px; margin:0 auto;">
+          <div>
+            <strong>Für größere Bestellungen gedacht</strong>
+            Spezialbestellungen sind für mehrere Pullis auf einmal (z. B. für eine ganze Klasse oder Gruppe) &ndash; für ein einzelnes T-Shirt schau einfach in unserem <a href="shop.html">Shop</a> vorbei.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top:0;">
+      <div class="container">
+        <div class="grid grid-2" style="align-items:start;">
+          <div class="card">
+            <h2>Dein Wunsch</h2>
+            <form id="special-form">
+              <div class="field">
+                <label for="sp-name">Dein Name</label>
+                <input type="text" id="sp-name" required>
+              </div>
+              <div class="field">
+                <label for="sp-phone">Telefonnummer <span class="hint">(Pflichtfeld &ndash; wir rufen dich zurück)</span></label>
+                <input type="tel" id="sp-phone" required>
+              </div>
+              <div class="field">
+                <label for="sp-klasse">Klasse <span class="hint">(optional)</span></label>
+                <input type="text" id="sp-klasse" placeholder="z. B. 9a">
+              </div>
+              <div class="field">
+                <label for="sp-groesse">Gewünschte Größe</label>
+                <input type="text" id="sp-groesse" placeholder="z. B. 152 oder M" required>
+              </div>
+              <div class="field">
+                <label>Menge</label>
+                <div id="sp-menge-wrap"></div>
+              </div>
+              <div class="field">
+                <label for="sp-wunsch">Beschreibe deinen Wunsch</label>
+                <textarea id="sp-wunsch" placeholder="Motiv, Farbe, Idee, besondere Wünsche..." required></textarea>
+              </div>
+              <p class="hint">
+                Bezahlt wird immer bar bei Abholung &ndash; jeden Freitag ab 11 Uhr
+                bei der alten Apotheke. Kein PayPal, keine Online-Zahlung.
+              </p>
+              <p class="hint">Zum Absenden musst du angemeldet sein &ndash; falls nicht, fragen wir dich beim Klick auf "Senden".</p>
+              <button type="submit" class="btn btn-secondary" style="width:100%;">Spezialbestellung senden</button>
+              <div id="special-message" class="form-message hidden"></div>
+            </form>
+          </div>
+
+          <div>
+            <div class="pickup-banner" style="margin-bottom:20px;">
+              <div class="icon" id="icon-clock"></div>
+              <div class="pickup-banner-text">
+                <strong>Abholung &amp; Bezahlung</strong>
+                Jeden Freitag ab 11 Uhr bei der alten Apotheke, immer bar.
+              </div>
+              <button type="button" class="btn video-btn" data-video-trigger>
+                <span class="icon-camera"></span> Video ansehen
+              </button>
+            </div>
+            <div class="card">
+              <h3>So läuft's ab</h3>
+              <ol style="padding-left:20px; color:var(--color-muted);">
+                <li>Du schickst uns dein Wunschmotiv mit Telefonnummer.</li>
+                <li>Wir schauen, ob wir es umsetzen können, und rufen dich an.</li>
+                <li>Nach der Annahme drucken wir deinen Pulli.</li>
+                <li>Abholung freitags ab 11 Uhr bei der alten Apotheke, bar bezahlt.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/email-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/video.js"></script>
+  <script>
+    document.getElementById("icon-clock").innerHTML = SFIcons.clock;
+  </script>
+  <script src="js/special.js"></script>
+</body>
+</html>

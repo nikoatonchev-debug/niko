@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin-Bereich &ndash; Siebdruck-Schülerfirma</title>
+  <meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main>
+    <section>
+      <div class="container">
+
+        <!-- LOGIN -->
+        <div id="admin-login" class="login-wrap">
+          <div class="card login-card">
+            <div class="icon" id="icon-lock"></div>
+            <h2>Admin-Bereich</h2>
+            <p class="section-subtitle" style="margin-bottom:20px;">Bitte Passwort eingeben, um fortzufahren.</p>
+            <form id="login-form">
+              <div class="field">
+                <label for="login-password">Passwort</label>
+                <input type="text" id="login-password" autocomplete="off" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">Anmelden</button>
+              <div id="login-message" class="form-message hidden"></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="admin-dashboard" class="hidden">
+          <h1 class="section-title" style="text-align:left;">Admin-Bereich</h1>
+
+          <div class="stat-row">
+            <div class="stat-box"><div class="num" id="stat-products">0</div><div class="label">Produkte</div></div>
+            <div class="stat-box"><div class="num" id="stat-orders">0</div><div class="label">Offene Bestellungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-special">0</div><div class="label">Offene Spezialbestellungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-reviews">0</div><div class="label">Bewertungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-users">0</div><div class="label">Registrierte Kund:innen</div></div>
+          </div>
+
+          <div class="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="products">Produkte</button>
+            <button class="admin-tab-btn" data-tab="orders">Bestellungen</button>
+            <button class="admin-tab-btn" data-tab="special">Spezialbestellungen</button>
+            <button class="admin-tab-btn" data-tab="reviews">Bewertungen</button>
+            <button class="admin-tab-btn" data-tab="users">Kund:innen</button>
+            <button class="admin-tab-btn" data-tab="settings">Einstellungen</button>
+          </div>
+
+          <!-- Produkte -->
+          <div class="admin-panel active" id="panel-products">
+            <div class="card" style="margin-bottom:24px;">
+              <h3 id="product-form-title">Produkt hinzufügen</h3>
+              <form id="product-form">
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-name">Name</label>
+                    <input type="text" id="pf-name" required>
+                  </div>
+                  <div class="field">
+                    <label for="pf-price">Preis (€)</label>
+                    <input type="number" id="pf-price" step="0.5" min="0" required>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="pf-description">Beschreibung</label>
+                  <textarea id="pf-description"></textarea>
+                </div>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-sizes">Größen <span class="hint">(mit Komma getrennt, z. B. 140, 152, S, M)</span></label>
+                    <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" required>
+                  </div>
+                  <div class="field">
+                    <label for="pf-color">Farbe <span class="hint">(nur falls kein Bild hochgeladen wird)</span></label>
+                    <input type="color" id="pf-color" style="height:44px;">
+                  </div>
+                </div>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-stock">Menge / Bestand <span class="hint">(leer lassen = unbegrenzt)</span></label>
+                    <input type="number" id="pf-stock" min="0" placeholder="z. B. 5">
+                  </div>
+                  <div class="field">
+                    <label for="pf-images">Bilder <span class="hint">(mehrere möglich)</span></label>
+                    <input type="file" id="pf-images" accept="image/*" multiple>
+                  </div>
+                </div>
+                <div id="pf-image-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+                <div style="display:flex; gap:10px;">
+                  <button type="submit" class="btn btn-primary" id="product-form-submit">Produkt hinzufügen</button>
+                  <button type="button" class="btn btn-outline hidden" id="product-form-cancel">Abbrechen</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Bild</th><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen</th><th>Bestand</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="product-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bestellungen -->
+          <div class="admin-panel" id="panel-orders">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Kunde</th><th>Artikel</th><th>Summe</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="orders-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Spezialbestellungen -->
+          <div class="admin-panel" id="panel-special">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Telefon</th><th>Größe/Menge</th><th>Wunsch</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="special-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bewertungen -->
+          <div class="admin-panel" id="panel-reviews">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Bewertung</th><th>Kommentar</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="reviews-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Kund:innen -->
+          <div class="admin-panel" id="panel-users">
+            <p class="hint" style="margin-bottom:14px;">Alle Kund:innen, die sich mit E-Mail-Adresse registriert haben.</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Registriert am</th><th>Benutzername</th><th>E-Mail</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Einstellungen -->
+          <div class="admin-panel" id="panel-settings">
+            <div class="card" style="max-width:420px;">
+              <h3>Passwort ändern</h3>
+              <form id="password-form">
+                <div class="field">
+                  <label for="pw-current">Aktuelles Passwort</label>
+                  <input type="password" id="pw-current" required>
+                </div>
+                <div class="field">
+                  <label for="pw-new">Neues Passwort</label>
+                  <input type="password" id="pw-new" required>
+                </div>
+                <div class="field">
+                  <label for="pw-confirm">Neues Passwort bestätigen</label>
+                  <input type="password" id="pw-confirm" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Passwort ändern</button>
+                <div id="password-message" class="form-message hidden"></div>
+              </form>
+            </div>
+            <div style="margin-top:20px;">
+              <button class="btn btn-outline" id="logout-btn">Abmelden</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/email-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById("icon-lock").innerHTML = SFIcons.lock;
+  </script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

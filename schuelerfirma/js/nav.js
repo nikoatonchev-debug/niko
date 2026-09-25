@@ -23,7 +23,7 @@
           <img class="brand-logo" src="images/logo-erdkinderplan.png" alt="Erdkinderplan Logo">
           <span class="brand-text">
             <strong>Siebdruck-Schülerfirma</strong>
-            <span>Montessori-Schule vom Zelt</span>
+            <span>Montessori-Schule Dietramszell</span>
           </span>
         </a>
         <nav class="main-nav">${links}</nav>
@@ -40,7 +40,7 @@
         <div class="footer-grid">
           <div>
             <h4>Siebdruck-Schülerfirma</h4>
-            <p>Ein Projekt von Schüler:innen der 7.&ndash;10. Klasse an der Montessori-Schule vom Zelt. Wir bedrucken Pullis im Siebdruck &ndash; von Hand, mit viel Liebe zum Detail.</p>
+            <p>Ein Projekt von Schüler:innen der 7.&ndash;10. Klasse an der Montessori-Schule Dietramszell. Wir bedrucken Pullis im Siebdruck &ndash; von Hand, mit viel Liebe zum Detail.</p>
           </div>
           <div>
             <h4>Abholung &amp; Bezahlung</h4>
@@ -55,7 +55,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <div>&copy; ${year} Siebdruck-Schülerfirma &middot; Montessori-Schule vom Zelt</div>
+          <div>&copy; ${year} Siebdruck-Schülerfirma &middot; Montessori-Schule Dietramszell</div>
           <button type="button" class="admin-access" id="admin-access-btn" title="Admin-Bereich">
             ${SFIcons.gear} Admin
           </button>

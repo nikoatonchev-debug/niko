@@ -1,6 +1,6 @@
 # Siebdruck-Schülerfirma – Website
 
-Website für die Siebdruck-Schülerfirma der Montessori-Schule vom Zelt.
+Website für die Siebdruck-Schülerfirma der Montessori-Schule Dietramszell.
 
 ## Seiten
 

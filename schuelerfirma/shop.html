@@ -18,10 +18,13 @@
         <p class="section-subtitle">Alle Pullis sind von uns selbst im Siebdruck bedruckt. Größe wählen, in den Warenkorb legen, bestellen.</p>
         <div class="pickup-banner" style="margin-bottom:32px;">
           <div class="icon" id="icon-cash2"></div>
-          <div>
+          <div class="pickup-banner-text">
             <strong>Abholung: jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>
             Bezahlung ausschließlich bar bei Abholung &ndash; kein PayPal, keine Online-Zahlung.
           </div>
+          <button type="button" class="btn video-btn" data-video-trigger>
+            <span class="icon-camera"></span> Video ansehen
+          </button>
         </div>
         <div class="grid grid-3" id="product-grid"></div>
       </div>
@@ -93,6 +96,7 @@
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/video.js"></script>
   <script>
     document.getElementById("icon-cash2").innerHTML = SFIcons.cash;
     document.getElementById("cart-icon").innerHTML = SFIcons.cart;

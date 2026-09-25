@@ -66,4 +66,10 @@ const SFIcons = {
     <path d="M12 12c0-4 3-6 8-6 0 5-3 7-8 6z" fill="currentColor"/>
     <path d="M12 15c0-3.2-2.4-4.8-6.4-4.8 0 4 2.4 5.6 6.4 4.8z" fill="currentColor" opacity="0.65"/>
   </svg>`,
+
+  camera: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.6c.2-.3.5-.4.8-.4h5.4c.3 0 .6.1.8.4l1 1.6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z" fill="currentColor"/>
+    <circle cx="12" cy="13" r="3.6" fill="#fff"/>
+    <circle cx="12" cy="13" r="1.7" fill="currentColor"/>
+  </svg>`,
 };

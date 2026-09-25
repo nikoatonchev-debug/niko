@@ -60,4 +60,10 @@ const SFIcons = {
     <path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="2" fill="none"/>
     <circle cx="12" cy="15" r="1.6" fill="#fff"/>
   </svg>`,
+
+  sprout: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 21V11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M12 12c0-4 3-6 8-6 0 5-3 7-8 6z" fill="currentColor"/>
+    <path d="M12 15c0-3.2-2.4-4.8-6.4-4.8 0 4 2.4 5.6 6.4 4.8z" fill="currentColor" opacity="0.65"/>
+  </svg>`,
 };

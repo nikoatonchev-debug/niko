@@ -42,6 +42,7 @@
             <div class="stat-box"><div class="num" id="stat-orders">0</div><div class="label">Offene Bestellungen</div></div>
             <div class="stat-box"><div class="num" id="stat-special">0</div><div class="label">Offene Spezialbestellungen</div></div>
             <div class="stat-box"><div class="num" id="stat-reviews">0</div><div class="label">Bewertungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-users">0</div><div class="label">Registrierte Kund:innen</div></div>
           </div>
 
           <div class="admin-tabs">
@@ -49,6 +50,7 @@
             <button class="admin-tab-btn" data-tab="orders">Bestellungen</button>
             <button class="admin-tab-btn" data-tab="special">Spezialbestellungen</button>
             <button class="admin-tab-btn" data-tab="reviews">Bewertungen</button>
+            <button class="admin-tab-btn" data-tab="users">Kund:innen</button>
             <button class="admin-tab-btn" data-tab="settings">Einstellungen</button>
           </div>
 
@@ -131,6 +133,19 @@
             </div>
           </div>
 
+          <!-- Kund:innen -->
+          <div class="admin-panel" id="panel-users">
+            <p class="hint" style="margin-bottom:14px;">Alle Kund:innen, die sich mit Telefonnummer registriert haben.</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Registriert am</th><th>Benutzername</th><th>Telefonnummer</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Einstellungen -->
           <div class="admin-panel" id="panel-settings">
             <div class="card" style="max-width:420px;">
@@ -167,6 +182,7 @@
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/auth.js"></script>
   <script>
     document.getElementById("icon-lock").innerHTML = SFIcons.lock;
   </script>

@@ -119,7 +119,16 @@
 
     document.getElementById("checkout-btn").addEventListener("click", () => {
       closeModal("cart-modal");
-      openModal("checkout-modal");
+      SFAuth.requireLogin(() => {
+        const user = SFAuth.getCurrentUser();
+        if (user) {
+          const nameField = document.getElementById("co-name");
+          const phoneField = document.getElementById("co-phone");
+          if (!nameField.value) nameField.value = user.username;
+          if (!phoneField.value) phoneField.value = user.phone;
+        }
+        openModal("checkout-modal");
+      });
     });
     document.getElementById("checkout-close-btn").addEventListener("click", () => closeModal("checkout-modal"));
 
@@ -128,11 +137,13 @@
       const name = document.getElementById("co-name").value.trim();
       const klasse = document.getElementById("co-klasse").value.trim();
       const phone = document.getElementById("co-phone").value.trim();
+      const user = SFAuth.getCurrentUser();
 
       const order = SF.addOrder({
         customerName: name,
         klasse: klasse,
         phone: phone || null,
+        username: user ? user.username : null,
         items: cart.map((c) => ({ ...c })),
         total: cartTotal(),
       });

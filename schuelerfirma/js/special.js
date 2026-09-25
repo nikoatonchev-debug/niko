@@ -20,20 +20,31 @@
         return;
       }
 
-      SF.addSpecialOrder({
-        name,
-        phone,
-        klasse,
-        groesse,
-        menge,
-        wunsch,
-      });
+      SFAuth.requireLogin(() => {
+        const user = SFAuth.getCurrentUser();
 
-      form.reset();
-      msg.textContent =
-        "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben.";
-      msg.className = "form-message success";
-      msg.classList.remove("hidden");
+        SF.addSpecialOrder({
+          name,
+          phone,
+          klasse,
+          groesse,
+          menge,
+          wunsch,
+          username: user ? user.username : null,
+        });
+
+        form.reset();
+        msg.textContent =
+          "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben.";
+        msg.className = "form-message success";
+        msg.classList.remove("hidden");
+      });
+    });
+
+    document.getElementById("sp-phone").addEventListener("focus", () => {
+      const user = SFAuth.getCurrentUser();
+      const field = document.getElementById("sp-phone");
+      if (user && !field.value) field.value = user.phone;
     });
   }
 

@@ -26,7 +26,10 @@
             <span>Montessori-Schule Dietramszell</span>
           </span>
         </a>
-        <nav class="main-nav">${links}</nav>
+        <nav class="main-nav">
+          ${links}
+          <span class="auth-status" id="auth-status"></span>
+        </nav>
       </div>
     `;
   }

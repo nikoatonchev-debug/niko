@@ -15,6 +15,7 @@ const SF = (() => {
     specialOrders: "sf_special_orders",
     reviews: "sf_reviews",
     adminPassword: "sf_admin_password",
+    users: "sf_users",
   };
 
   const DEFAULT_PASSWORD = "1234";
@@ -102,6 +103,9 @@ const SF = (() => {
     }
     if (localStorage.getItem(KEYS.adminPassword) === null) {
       write(KEYS.adminPassword, DEFAULT_PASSWORD);
+    }
+    if (localStorage.getItem(KEYS.users) === null) {
+      write(KEYS.users, []);
     }
   }
 
@@ -264,6 +268,55 @@ const SF = (() => {
     write(KEYS.adminPassword, pw);
   }
 
+  // ---- Kundenkonten ----
+  function getUsers() {
+    return read(KEYS.users, []);
+  }
+  function findUserByUsername(username) {
+    const needle = String(username || "").trim().toLowerCase();
+    return getUsers().find((u) => u.username.toLowerCase() === needle) || null;
+  }
+  function findUserByPhone(phone) {
+    const needle = String(phone || "").replace(/\s+/g, "");
+    return getUsers().find((u) => u.phone.replace(/\s+/g, "") === needle) || null;
+  }
+  function addUser(user) {
+    const list = getUsers();
+    const full = Object.assign(
+      { id: uid("u"), registeredAt: new Date().toISOString() },
+      user
+    );
+    list.unshift(full);
+    write(KEYS.users, list);
+    return full;
+  }
+  function deleteUser(id) {
+    write(KEYS.users, getUsers().filter((u) => u.id !== id));
+  }
+
+  // Einfacher Hash fürs Passwort (kein echtes Backend, also keine echte
+  // Sicherheit – nutzt SubtleCrypto wenn verfügbar, sonst einen simplen
+  // Fallback, damit die Registrierung nicht crasht, z. B. bei file://).
+  async function hashText(text) {
+    try {
+      if (window.crypto && window.crypto.subtle) {
+        const enc = new TextEncoder().encode(text);
+        const buf = await window.crypto.subtle.digest("SHA-256", enc);
+        return Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+    } catch (e) {
+      console.warn("SF: SubtleCrypto nicht verfügbar, nutze Fallback-Hash", e);
+    }
+    let h = 0;
+    const str = String(text);
+    for (let i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) | 0;
+    }
+    return "fallback_" + h;
+  }
+
   return {
     KEYS,
     uid,
@@ -289,5 +342,11 @@ const SF = (() => {
     deleteReview,
     checkPassword,
     setPassword,
+    getUsers,
+    findUserByUsername,
+    findUserByPhone,
+    addUser,
+    deleteUser,
+    hashText,
   };
 })();

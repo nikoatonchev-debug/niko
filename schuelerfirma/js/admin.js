@@ -38,11 +38,13 @@
     const orders = SF.getOrders();
     const special = SF.getSpecialOrders();
     const reviews = SF.getReviews();
+    const users = SF.getUsers();
 
     document.getElementById("stat-products").textContent = products.length;
     document.getElementById("stat-orders").textContent = orders.filter((o) => o.status === "offen").length;
     document.getElementById("stat-special").textContent = special.filter((s) => s.status === "offen").length;
     document.getElementById("stat-reviews").textContent = reviews.length;
+    document.getElementById("stat-users").textContent = users.length;
   }
 
   // ---------- Produkte ----------
@@ -131,7 +133,7 @@
         return `
         <tr>
           <td>${SF.formatDate(o.date)}</td>
-          <td>${SF.escapeHtml(o.customerName)}${o.klasse ? " (" + SF.escapeHtml(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + SF.escapeHtml(o.phone) + "</span>" : ""}</td>
+          <td>${SF.escapeHtml(o.customerName)}${o.klasse ? " (" + SF.escapeHtml(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + SF.escapeHtml(o.phone) + "</span>" : ""}${o.username ? "<br><span class='hint'>Konto: " + SF.escapeHtml(o.username) + "</span>" : ""}</td>
           <td>${items}</td>
           <td>${SF.formatPrice(o.total)}</td>
           <td><span class="badge ${badgeClass}">${SF.escapeHtml(o.status)}</span></td>
@@ -183,7 +185,7 @@
         (s) => `
       <tr>
         <td>${SF.formatDate(s.date)}</td>
-        <td>${SF.escapeHtml(s.name)}${s.klasse ? " (" + SF.escapeHtml(s.klasse) + ")" : ""}</td>
+        <td>${SF.escapeHtml(s.name)}${s.klasse ? " (" + SF.escapeHtml(s.klasse) + ")" : ""}${s.username ? "<br><span class='hint'>Konto: " + SF.escapeHtml(s.username) + "</span>" : ""}</td>
         <td><strong>${SF.escapeHtml(s.phone)}</strong></td>
         <td>${SF.escapeHtml(s.groesse)} &middot; ${s.menge}x</td>
         <td>${SF.escapeHtml(s.wunsch)}</td>
@@ -254,6 +256,37 @@
     );
   }
 
+  // ---------- Kund:innen ----------
+  function renderUsers() {
+    const list = SF.getUsers();
+    const el = document.getElementById("users-table-body");
+    if (list.length === 0) {
+      el.innerHTML = `<tr><td colspan="4">Noch keine registrierten Kund:innen.</td></tr>`;
+      return;
+    }
+    el.innerHTML = list
+      .map(
+        (u) => `
+      <tr>
+        <td>${SF.formatDate(u.registeredAt)}</td>
+        <td>${SF.escapeHtml(u.username)}</td>
+        <td>${SF.escapeHtml(u.phone)}</td>
+        <td class="actions-cell"><button class="btn btn-danger btn-small" data-delete-user="${u.id}">Löschen</button></td>
+      </tr>`
+      )
+      .join("");
+
+    el.querySelectorAll("[data-delete-user]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        if (confirm("Dieses Konto wirklich löschen?")) {
+          SF.deleteUser(btn.getAttribute("data-delete-user"));
+          renderUsers();
+          renderStats();
+        }
+      })
+    );
+  }
+
   // ---------- Einstellungen ----------
   function setupSettings() {
     const form = document.getElementById("password-form");
@@ -302,6 +335,7 @@
     renderOrders();
     renderSpecial();
     renderReviewsAdmin();
+    renderUsers();
   }
 
   function setupLogin() {

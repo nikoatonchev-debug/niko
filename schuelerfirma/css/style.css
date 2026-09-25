@@ -464,19 +464,30 @@ section {
   height: 70%;
 }
 
-.sold-out-banner {
+.product-image img {
+  object-fit: contain;
+}
+
+.sold-out-overlay {
   position: absolute;
-  top: 14px;
-  right: -34px;
-  transform: rotate(35deg);
+  inset: 0;
+  background: rgba(20, 15, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sold-out-text {
   background: #b23a3a;
   color: #fff;
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 1rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 6px 40px;
-  box-shadow: var(--shadow-sm);
+  padding: 10px 22px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  border: 2px solid #fff;
 }
 
 .product-body {
@@ -612,6 +623,56 @@ legend {
 
 .size-options input {
   width: auto;
+}
+
+.qty-stepper {
+  display: flex;
+  align-items: stretch;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  width: fit-content;
+}
+
+.qty-stepper .qty-btn {
+  background: var(--color-bg-alt);
+  border: none;
+  width: 38px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.qty-stepper .qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qty-stepper .qty-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.qty-stepper input {
+  width: 48px;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.qty-stepper input::-webkit-outer-spin-button,
+.qty-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qty-stepper input:focus {
+  outline: none;
 }
 
 .form-message {

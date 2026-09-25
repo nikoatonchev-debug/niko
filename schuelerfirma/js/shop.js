@@ -5,9 +5,46 @@
 
   function productImagesOrIcon(p) {
     if (p.images && p.images.length) {
-      return `<img src="${p.images[0]}" alt="${SF.escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover;">`;
+      return `<img src="${p.images[0]}" alt="${SF.escapeHtml(p.name)}" style="width:100%;height:100%;">`;
     }
     return SFIcons.hoodie(p.color || "#2c6e6b");
+  }
+
+  function qtyStepperHtml(id, max, disabled) {
+    return `
+      <div class="qty-stepper">
+        <button type="button" class="qty-btn" data-qty-dec="${id}" ${disabled ? "disabled" : ""}>&minus;</button>
+        <input type="number" id="${id}" min="1" ${max !== null ? `max="${max}"` : ""} value="1" readonly ${disabled ? "disabled" : ""}>
+        <button type="button" class="qty-btn" data-qty-inc="${id}" ${disabled ? "disabled" : ""}>+</button>
+      </div>
+    `;
+  }
+
+  function wireQtyStepper(id) {
+    const input = document.getElementById(id);
+    const dec = document.querySelector(`[data-qty-dec="${id}"]`);
+    const inc = document.querySelector(`[data-qty-inc="${id}"]`);
+    if (!input || !dec || !inc) return;
+
+    function update() {
+      const min = parseInt(input.min, 10) || 1;
+      const max = input.max !== "" ? parseInt(input.max, 10) : null;
+      let val = parseInt(input.value, 10) || min;
+      if (val < min) val = min;
+      if (max !== null && val > max) val = max;
+      input.value = val;
+      dec.disabled = input.disabled || val <= min;
+      inc.disabled = input.disabled || (max !== null && val >= max);
+    }
+    dec.addEventListener("click", () => {
+      input.value = (parseInt(input.value, 10) || 1) - 1;
+      update();
+    });
+    inc.addEventListener("click", () => {
+      input.value = (parseInt(input.value, 10) || 1) + 1;
+      update();
+    });
+    update();
   }
 
   function productCardHtml(p) {
@@ -20,7 +57,7 @@
       <div class="product-card" data-card="${p.id}">
         <div class="product-image" data-open-detail="${p.id}" style="cursor:pointer; position:relative;">
           ${productImagesOrIcon(p)}
-          ${soldOut ? `<div class="sold-out-banner">Ausverkauft</div>` : ""}
+          ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
         </div>
         <div class="product-body">
           <h3 data-open-detail="${p.id}" style="cursor:pointer;">${SF.escapeHtml(p.name)}</h3>
@@ -35,8 +72,8 @@
             <select id="size-${p.id}" ${soldOut ? "disabled" : ""}>${sizeOptions}</select>
           </div>
           <div class="field" style="margin-bottom:8px;">
-            <label for="qty-${p.id}">Menge</label>
-            <input type="number" id="qty-${p.id}" min="1" value="1" ${soldOut ? "disabled" : ""}>
+            <label>Menge</label>
+            ${qtyStepperHtml(`qty-${p.id}`, soldOut ? null : remaining, soldOut)}
           </div>
           <div class="product-meta">
             <span class="price">${SF.formatPrice(p.price)}</span>
@@ -64,6 +101,7 @@
     products.forEach((p) => {
       const btn = document.querySelector(`[data-add="${p.id}"]`);
       if (btn) btn.addEventListener("click", () => addToCart(p, `size-${p.id}`, `qty-${p.id}`));
+      wireQtyStepper(`qty-${p.id}`);
     });
     el.querySelectorAll("[data-open-detail]").forEach((elm) => {
       elm.addEventListener("click", () => openDetail(elm.getAttribute("data-open-detail")));
@@ -162,7 +200,10 @@
     const galleryEl = document.getElementById("pd-gallery");
     if (images) {
       galleryEl.innerHTML = `
-        <img src="${images[detailImageIndex]}" alt="${SF.escapeHtml(p.name)}" style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-sm);">
+        <div class="product-image" style="aspect-ratio:4/3; border-radius:var(--radius-sm); position:relative;">
+          <img src="${images[detailImageIndex]}" alt="${SF.escapeHtml(p.name)}" style="width:100%;height:100%;">
+          ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
+        </div>
         ${
           images.length > 1
             ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
@@ -184,7 +225,11 @@
         });
       }
     } else {
-      galleryEl.innerHTML = `<div class="product-image" style="aspect-ratio:4/3;">${SFIcons.hoodie(p.color || "#2c6e6b")}</div>`;
+      galleryEl.innerHTML = `
+        <div class="product-image" style="aspect-ratio:4/3; position:relative;">
+          ${SFIcons.hoodie(p.color || "#2c6e6b")}
+          ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
+        </div>`;
     }
 
     document.getElementById("pd-name").textContent = p.name;
@@ -196,8 +241,11 @@
     const sizeSelect = document.getElementById("pd-size");
     sizeSelect.innerHTML = p.sizes.map((s) => `<option value="${SF.escapeHtml(s)}">${SF.escapeHtml(s)}</option>`).join("");
     sizeSelect.disabled = soldOut;
-    document.getElementById("pd-qty").disabled = soldOut;
-    document.getElementById("pd-qty").value = 1;
+
+    const qtyWrap = document.getElementById("pd-qty-wrap");
+    qtyWrap.innerHTML = qtyStepperHtml("pd-qty", soldOut ? null : remaining, soldOut);
+    wireQtyStepper("pd-qty");
+
     const addBtn = document.getElementById("pd-add");
     addBtn.disabled = soldOut;
     addBtn.textContent = soldOut ? "Ausverkauft" : "In den Warenkorb";

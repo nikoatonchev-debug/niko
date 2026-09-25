@@ -26,12 +26,30 @@
             <span>Montessori-Schule Dietramszell</span>
           </span>
         </a>
-        <nav class="main-nav">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Menü öffnen" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="main-nav" id="main-nav">
           ${links}
           <span class="auth-status" id="auth-status"></span>
         </nav>
       </div>
     `;
+
+    const toggle = document.getElementById("nav-toggle");
+    const nav = document.getElementById("main-nav");
+    toggle.addEventListener("click", () => {
+      const open = nav.classList.toggle("open");
+      toggle.classList.toggle("open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    nav.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => {
+        nav.classList.remove("open");
+        toggle.classList.remove("open");
+        toggle.setAttribute("aria-expanded", "false");
+      });
+    });
   }
 
   function renderFooter() {

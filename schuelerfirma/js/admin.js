@@ -48,28 +48,45 @@
   }
 
   // ---------- Produkte ----------
+  let editingProductId = null;
+  let pendingImages = [];
+
   function renderProducts() {
     const list = SF.getProducts();
     const el = document.getElementById("product-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="6">Noch keine Produkte angelegt.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="8">Noch keine Produkte angelegt.</td></tr>`;
       return;
     }
     el.innerHTML = list
-      .map(
-        (p) => `
+      .map((p) => {
+        const remaining = SF.getProductRemaining(p);
+        const soldOut = remaining !== null && remaining <= 0;
+        const stockBadge =
+          remaining === null
+            ? "unbegrenzt"
+            : soldOut
+            ? `<span class="badge badge-declined">ausverkauft</span>`
+            : `${remaining} / ${p.stock} übrig`;
+        const thumb = (p.images && p.images[0])
+          ? `<img src="${p.images[0]}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">`
+          : `<span style="display:inline-block;width:40px;height:40px;border-radius:6px;background:${SF.escapeHtml(p.color || "#999")};"></span>`;
+        return `
       <tr>
-        <td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${SF.escapeHtml(p.color || "#999")};vertical-align:middle;margin-right:6px;"></span>${SF.escapeHtml(p.name)}</td>
+        <td>${thumb}</td>
+        <td>${SF.escapeHtml(p.name)}</td>
         <td>${SF.escapeHtml(p.description || "")}</td>
         <td>${SF.formatPrice(p.price)}</td>
         <td>${SF.escapeHtml((p.sizes || []).join(", "))}</td>
+        <td>${stockBadge}</td>
         <td><span class="badge ${p.active !== false ? "badge-accepted" : ""}">${p.active !== false ? "aktiv" : "inaktiv"}</span></td>
         <td class="actions-cell">
+          <button class="btn btn-outline btn-small" data-edit-product="${p.id}">Bearbeiten</button>
           <button class="btn btn-outline btn-small" data-toggle="${p.id}">${p.active !== false ? "Deaktivieren" : "Aktivieren"}</button>
           <button class="btn btn-danger btn-small" data-delete-product="${p.id}">Löschen</button>
         </td>
-      </tr>`
-      )
+      </tr>`;
+      })
       .join("");
 
     el.querySelectorAll("[data-toggle]").forEach((btn) =>
@@ -85,21 +102,93 @@
       btn.addEventListener("click", () => {
         if (confirm("Dieses Produkt wirklich löschen?")) {
           SF.deleteProduct(btn.getAttribute("data-delete-product"));
+          if (editingProductId === btn.getAttribute("data-delete-product")) exitEditMode();
           renderProducts();
           renderStats();
         }
       })
     );
+    el.querySelectorAll("[data-edit-product]").forEach((btn) =>
+      btn.addEventListener("click", () => enterEditMode(btn.getAttribute("data-edit-product")))
+    );
+  }
+
+  function renderImagePreview() {
+    const el = document.getElementById("pf-image-preview");
+    el.innerHTML = pendingImages
+      .map(
+        (src, i) =>
+          `<div style="position:relative;">
+            <img src="${src}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;">
+            <button type="button" data-remove-image="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:999px;border:none;background:#b23a3a;color:#fff;cursor:pointer;font-size:12px;line-height:1;">&times;</button>
+          </div>`
+      )
+      .join("");
+    el.querySelectorAll("[data-remove-image]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        pendingImages.splice(parseInt(btn.getAttribute("data-remove-image"), 10), 1);
+        renderImagePreview();
+      })
+    );
+  }
+
+  function enterEditMode(id) {
+    const p = SF.getProductById(id);
+    if (!p) return;
+    editingProductId = id;
+    document.getElementById("pf-name").value = p.name;
+    document.getElementById("pf-description").value = p.description || "";
+    document.getElementById("pf-price").value = p.price;
+    document.getElementById("pf-color").value = p.color || "#2c6e6b";
+    document.getElementById("pf-sizes").value = (p.sizes || []).join(", ");
+    document.getElementById("pf-stock").value = p.stock === null || p.stock === undefined ? "" : p.stock;
+    pendingImages = (p.images || []).slice();
+    renderImagePreview();
+    document.getElementById("product-form-title").textContent = "Produkt bearbeiten: " + p.name;
+    document.getElementById("product-form-submit").textContent = "Änderungen speichern";
+    document.getElementById("product-form-cancel").classList.remove("hidden");
+    document.getElementById("product-form").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function exitEditMode() {
+    editingProductId = null;
+    pendingImages = [];
+    document.getElementById("product-form").reset();
+    document.getElementById("pf-color").value = "#2c6e6b";
+    renderImagePreview();
+    document.getElementById("product-form-title").textContent = "Produkt hinzufügen";
+    document.getElementById("product-form-submit").textContent = "Produkt hinzufügen";
+    document.getElementById("product-form-cancel").classList.add("hidden");
   }
 
   function setupProductForm() {
     const form = document.getElementById("product-form");
+    document.getElementById("pf-color").value = "#2c6e6b";
+
+    document.getElementById("pf-images").addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const file of files) {
+        try {
+          const dataUrl = await SF.resizeImageFile(file);
+          pendingImages.push(dataUrl);
+        } catch (err) {
+          console.warn("Bild konnte nicht verarbeitet werden", err);
+        }
+      }
+      e.target.value = "";
+      renderImagePreview();
+    });
+
+    document.getElementById("product-form-cancel").addEventListener("click", exitEditMode);
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("pf-name").value.trim();
       const description = document.getElementById("pf-description").value.trim();
       const price = parseFloat(document.getElementById("pf-price").value);
       const color = document.getElementById("pf-color").value;
+      const stockRaw = document.getElementById("pf-stock").value;
+      const stock = stockRaw === "" ? null : Math.max(0, parseInt(stockRaw, 10));
       const sizes = document
         .getElementById("pf-sizes")
         .value.split(",")
@@ -108,9 +197,14 @@
 
       if (!name || !price || sizes.length === 0) return;
 
-      SF.addProduct({ name, description, price, color, sizes, active: true });
-      form.reset();
-      document.getElementById("pf-color").value = "#2c6e6b";
+      const payload = { name, description, price, color, sizes, stock, images: pendingImages.slice() };
+
+      if (editingProductId) {
+        SF.updateProduct(editingProductId, payload);
+      } else {
+        SF.addProduct(Object.assign({ active: true }, payload));
+      }
+      exitEditMode();
       renderProducts();
       renderStats();
     });
@@ -362,7 +456,6 @@
     setupTabs();
     setupProductForm();
     setupSettings();
-    document.getElementById("pf-color").value = "#2c6e6b";
 
     if (isAuthed()) {
       showDashboard();

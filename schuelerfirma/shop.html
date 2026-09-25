@@ -84,6 +84,31 @@
     </div>
   </div>
 
+  <!-- Produkt-Detailansicht -->
+  <div class="modal-backdrop hidden" id="product-detail-modal">
+    <div class="modal" style="max-width:520px;">
+      <button class="modal-close" id="pd-close-btn">&times;</button>
+      <div id="pd-gallery" style="margin-bottom:16px;"></div>
+      <h2 id="pd-name" style="margin-bottom:6px;"></h2>
+      <p id="pd-desc" class="product-desc" style="margin-bottom:10px;"></p>
+      <p id="pd-stock-hint" class="hint"></p>
+      <div class="grid grid-2" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label for="pd-size">Größe</label>
+          <select id="pd-size"></select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="pd-qty">Menge</label>
+          <input type="number" id="pd-qty" min="1" value="1">
+        </div>
+      </div>
+      <div class="product-meta">
+        <span class="price" id="pd-price"></span>
+        <button class="btn btn-primary" id="pd-add">In den Warenkorb</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bestätigungs-Modal -->
   <div class="modal-backdrop hidden" id="confirmation-modal">
     <div class="modal" style="text-align:center;">

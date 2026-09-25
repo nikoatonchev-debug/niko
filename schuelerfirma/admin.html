@@ -57,7 +57,7 @@
           <!-- Produkte -->
           <div class="admin-panel active" id="panel-products">
             <div class="card" style="margin-bottom:24px;">
-              <h3>Produkt hinzufügen</h3>
+              <h3 id="product-form-title">Produkt hinzufügen</h3>
               <form id="product-form">
                 <div class="grid grid-2">
                   <div class="field">
@@ -79,18 +79,32 @@
                     <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" required>
                   </div>
                   <div class="field">
-                    <label for="pf-color">Farbe</label>
+                    <label for="pf-color">Farbe <span class="hint">(nur falls kein Bild hochgeladen wird)</span></label>
                     <input type="color" id="pf-color" style="height:44px;">
                   </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Produkt hinzufügen</button>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-stock">Menge / Bestand <span class="hint">(leer lassen = unbegrenzt)</span></label>
+                    <input type="number" id="pf-stock" min="0" placeholder="z. B. 5">
+                  </div>
+                  <div class="field">
+                    <label for="pf-images">Bilder <span class="hint">(mehrere möglich)</span></label>
+                    <input type="file" id="pf-images" accept="image/*" multiple>
+                  </div>
+                </div>
+                <div id="pf-image-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+                <div style="display:flex; gap:10px;">
+                  <button type="submit" class="btn btn-primary" id="product-form-submit">Produkt hinzufügen</button>
+                  <button type="button" class="btn btn-outline hidden" id="product-form-cancel">Abbrechen</button>
+                </div>
               </form>
             </div>
 
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen</th><th>Status</th><th>Aktionen</th></tr>
+                  <tr><th>Bild</th><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen</th><th>Bestand</th><th>Status</th><th>Aktionen</th></tr>
                 </thead>
                 <tbody id="product-table-body"></tbody>
               </table>

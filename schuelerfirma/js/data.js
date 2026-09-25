@@ -155,6 +155,40 @@ const SF = (() => {
     }
   }
 
+  // Verkleinert ein Bild (z. B. Produktfoto) auf eine sinnvolle Größe und
+  // gibt es als komprimierte data:-URL zurück, damit es platzsparend im
+  // localStorage gespeichert werden kann (es gibt ja keinen Server/Upload).
+  function resizeImageFile(file, maxDim) {
+    maxDim = maxDim || 900;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Bild konnte nicht gelesen werden"));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // ---- Products ----
   function getProducts() {
     return read(KEYS.products, []);
@@ -180,6 +214,28 @@ const SF = (() => {
   }
   function deleteProduct(id) {
     saveProducts(getProducts().filter((p) => p.id !== id));
+  }
+  function getProductById(id) {
+    return getProducts().find((p) => p.id === id) || null;
+  }
+  // Zählt, wie viele Stück eines Produkts schon in Bestellungen stecken
+  // (egal ob abgeholt oder nicht - die Ware ist dafür reserviert/weg).
+  function getProductSoldCount(productId) {
+    return getOrders().reduce((sum, order) => {
+      const inOrder = (order.items || [])
+        .filter((i) => i.productId === productId)
+        .reduce((s, i) => s + (i.qty || 0), 0);
+      return sum + inOrder;
+    }, 0);
+  }
+  // Gibt zurück, wie viele Stück noch verfügbar sind, oder null wenn die
+  // Menge nicht begrenzt ist (kein stock-Feld gesetzt).
+  function getProductRemaining(product) {
+    if (product.stock === null || product.stock === undefined || product.stock === "") {
+      return null;
+    }
+    const remaining = Number(product.stock) - getProductSoldCount(product.id);
+    return Math.max(0, remaining);
   }
 
   // ---- Orders (Shop) ----
@@ -323,12 +379,16 @@ const SF = (() => {
     escapeHtml,
     formatPrice,
     formatDate,
+    resizeImageFile,
     getProducts,
     getActiveProducts,
     saveProducts,
     addProduct,
     updateProduct,
     deleteProduct,
+    getProductById,
+    getProductSoldCount,
+    getProductRemaining,
     getOrders,
     addOrder,
     updateOrder,

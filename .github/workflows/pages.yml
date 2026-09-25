@@ -1,0 +1,38 @@
+name: Deploy Schülerfirma-Website zu GitHub Pages
+
+on:
+  push:
+    branches:
+      - claude/schueler-firma-website-mcp6im
+    paths:
+      - "schuelerfirma/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: GitHub Pages vorbereiten
+        uses: actions/configure-pages@v5
+      - name: Website-Ordner hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "schuelerfirma"
+      - name: Zu GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4

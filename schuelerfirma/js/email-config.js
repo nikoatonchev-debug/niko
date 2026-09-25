@@ -16,9 +16,9 @@
  */
 
 const SF_EMAIL_CONFIG = {
-  SERVICE_ID: "DEIN_SERVICE_ID",
-  TEMPLATE_ID: "DEIN_TEMPLATE_ID",
-  PUBLIC_KEY: "DEIN_PUBLIC_KEY",
+  SERVICE_ID: "service_1upcgr9",
+  TEMPLATE_ID: "template_wyhlhpf",
+  PUBLIC_KEY: "d7je2VB4CAjz42K1E",
 };
 
 function sfEmailIsConfigured() {

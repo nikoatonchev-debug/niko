@@ -11,6 +11,7 @@ const SFAuth = (function () {
   let pendingReg = null; // { username, email, passwordHash, code }
   let onSuccessCallback = null;
   let emailjsReady = false;
+  let emailjsLoadPromise = null;
 
   function getSession() {
     try {
@@ -44,25 +45,42 @@ const SFAuth = (function () {
     return String(Math.floor(100000 + Math.random() * 900000));
   }
 
+  // Lädt das EmailJS-Skript (falls konfiguriert) und wartet, bis es
+  // wirklich einsatzbereit ist. Gibt true/false zurück (nie einen Fehler),
+  // mit Zeitlimit, damit die Registrierung nie hängen bleibt, wenn das
+  // Skript nicht laden kann (z. B. kein Internet).
   function ensureEmailJs() {
-    if (emailjsReady || !window.sfEmailIsConfigured || !sfEmailIsConfigured()) return;
-    if (window.emailjs) {
-      window.emailjs.init({ publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY });
-      emailjsReady = true;
-      return;
+    if (!window.sfEmailIsConfigured || !sfEmailIsConfigured()) {
+      return Promise.resolve(false);
     }
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
-    script.onload = () => {
-      window.emailjs.init({ publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY });
-      emailjsReady = true;
-    };
-    document.head.appendChild(script);
+    if (emailjsReady && window.emailjs) {
+      return Promise.resolve(true);
+    }
+    if (emailjsLoadPromise) return emailjsLoadPromise;
+
+    emailjsLoadPromise = new Promise((resolve) => {
+      const timeout = setTimeout(() => resolve(false), 6000);
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+      script.onload = () => {
+        clearTimeout(timeout);
+        window.emailjs.init({ publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY });
+        emailjsReady = true;
+        resolve(true);
+      };
+      script.onerror = () => {
+        clearTimeout(timeout);
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+    return emailjsLoadPromise;
   }
 
-  function sendCodeByEmail(email, code) {
-    if (!window.sfEmailIsConfigured || !sfEmailIsConfigured() || !window.emailjs) {
-      return Promise.reject(new Error("EmailJS nicht konfiguriert"));
+  async function sendCodeByEmail(email, code) {
+    const ready = await ensureEmailJs();
+    if (!ready) {
+      throw new Error("EmailJS nicht verfügbar");
     }
     return window.emailjs.send(SF_EMAIL_CONFIG.SERVICE_ID, SF_EMAIL_CONFIG.TEMPLATE_ID, {
       to_email: email,
@@ -304,7 +322,6 @@ const SFAuth = (function () {
   // eingerichtet ist oder der Versand fehlschlägt (z. B. kein Internet
   // zum E-Mail-Anbieter) - so bleibt die Registrierung immer nutzbar.
   async function deliverCode(email, code) {
-    ensureEmailJs();
     try {
       await sendCodeByEmail(email, code);
       hideDemoCode();

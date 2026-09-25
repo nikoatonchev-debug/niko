@@ -90,8 +90,9 @@ img, svg {
 }
 
 .brand-logo {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 40px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

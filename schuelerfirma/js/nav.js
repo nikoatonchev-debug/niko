@@ -20,7 +20,7 @@
     el.innerHTML = `
       <div class="container">
         <a href="index.html" class="brand">
-          <span class="brand-logo">${SFIcons.logo}</span>
+          <img class="brand-logo" src="images/logo-erdkinderplan.png" alt="Erdkinderplan Logo">
           <span class="brand-text">
             <strong>Siebdruck-Schülerfirma</strong>
             <span>Montessori-Schule vom Zelt</span>

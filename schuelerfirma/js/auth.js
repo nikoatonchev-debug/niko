@@ -12,6 +12,7 @@ const SFAuth = (function () {
   let onSuccessCallback = null;
   let emailjsReady = false;
   let emailjsLoadPromise = null;
+  let currentView = null;
 
   function getSession() {
     try {
@@ -146,6 +147,7 @@ const SFAuth = (function () {
           <div id="auth-view-verify" class="hidden">
             <h2>E-Mail-Adresse bestätigen</h2>
             <p class="hint" id="auth-verify-info"></p>
+            <p class="hint">Keine E-Mail angekommen? Schau bitte auch im Spam-Ordner nach.</p>
             <div id="auth-verify-demo" class="form-message hidden"></div>
             <form id="auth-verify-form">
               <div class="field">
@@ -156,6 +158,9 @@ const SFAuth = (function () {
               <div id="auth-verify-message" class="form-message hidden"></div>
             </form>
             <button type="button" class="btn btn-outline btn-small" id="auth-resend-code" style="margin-top:10px;">Code erneut senden</button>
+            <p style="text-align:center; margin-top:14px;">
+              <a href="#" id="auth-verify-cancel" class="hint" style="text-decoration:underline;">Abbrechen</a>
+            </p>
           </div>
         </div>
       </div>
@@ -164,6 +169,7 @@ const SFAuth = (function () {
   }
 
   function showView(name) {
+    currentView = name;
     ["login", "register", "verify"].forEach((v) => {
       document.getElementById("auth-view-" + v).classList.toggle("hidden", v !== name);
     });
@@ -171,6 +177,10 @@ const SFAuth = (function () {
       const el = document.getElementById(id);
       if (el) el.classList.add("hidden");
     });
+    // Während der Code-Eingabe gibt es nur den "Abbrechen"-Link unten als
+    // Ausstieg, damit niemand versehentlich per X oben abbricht.
+    const closeBtn = document.getElementById("auth-modal-close");
+    if (closeBtn) closeBtn.classList.toggle("hidden", name === "verify");
   }
 
   function openModal(view) {
@@ -179,10 +189,20 @@ const SFAuth = (function () {
     showView(view || "login");
     document.getElementById("auth-modal").classList.remove("hidden");
   }
+
+  // Während der Code-Eingabe darf sich das Fenster nicht versehentlich
+  // schließen lassen (Klick daneben / X oben) - nur über den kleinen
+  // "Abbrechen"-Link unten im Verify-Schritt.
   function closeModal() {
+    if (currentView === "verify") return;
+    forceCloseModal();
+  }
+  function forceCloseModal() {
     const modal = document.getElementById("auth-modal");
     if (modal) modal.classList.add("hidden");
+    pendingReg = null;
     onSuccessCallback = null;
+    currentView = null;
   }
 
   function requireLogin(onSuccess) {
@@ -234,7 +254,7 @@ const SFAuth = (function () {
       updateHeaderStatus();
       const cb = onSuccessCallback;
       onSuccessCallback = null;
-      closeModal();
+      forceCloseModal();
       if (cb) cb();
     });
 
@@ -302,7 +322,7 @@ const SFAuth = (function () {
       updateHeaderStatus();
       const cb = onSuccessCallback;
       onSuccessCallback = null;
-      closeModal();
+      forceCloseModal();
       if (cb) cb();
     });
 
@@ -314,6 +334,11 @@ const SFAuth = (function () {
       msg.textContent = "Neuer Code wurde verschickt.";
       msg.className = "form-message success";
       msg.classList.remove("hidden");
+    });
+
+    document.getElementById("auth-verify-cancel").addEventListener("click", (e) => {
+      e.preventDefault();
+      forceCloseModal();
     });
   }
 

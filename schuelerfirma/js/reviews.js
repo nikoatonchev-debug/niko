@@ -17,7 +17,7 @@
       <div class="review-card">
         <div class="review-head">
           <span class="review-name">${SF.escapeHtml(r.name || "Anonym")}</span>
-          <span class="review-date">${SF.formatDate(r.date)}</span>
+          <span class="review-date">${SF.formatDate(r.date, true)}</span>
         </div>
         ${r.rating ? `<div class="stars-display">${starString(r.rating)}</div>` : ""}
         <p>${SF.escapeHtml(r.comment)}</p>

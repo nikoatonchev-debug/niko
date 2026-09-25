@@ -141,18 +141,59 @@ const SF = (() => {
     }) + " €";
   }
 
-  function formatDate(iso) {
+  function formatDate(iso, dateOnly) {
     try {
       const d = new Date(iso);
       if (isNaN(d.getTime())) return iso;
-      return d.toLocaleDateString("de-DE", {
+      const datePart = d.toLocaleDateString("de-DE", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-      }) + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      });
+      if (dateOnly) return datePart;
+      return datePart + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     } catch (e) {
       return iso;
     }
+  }
+
+  // Wiederverwendbares +/- Mengenfeld (Shop, Produkt-Detailansicht,
+  // Spezialbestellungen) – ein Widget statt unterschiedlicher Eingabefelder.
+  function qtyStepperHtml(id, max, disabled) {
+    return `
+      <div class="qty-stepper">
+        <button type="button" class="qty-btn" data-qty-dec="${id}" ${disabled ? "disabled" : ""}>&minus;</button>
+        <input type="number" id="${id}" min="1" ${max !== null && max !== undefined ? `max="${max}"` : ""} value="1" readonly ${disabled ? "disabled" : ""}>
+        <button type="button" class="qty-btn" data-qty-inc="${id}" ${disabled ? "disabled" : ""}>+</button>
+      </div>
+    `;
+  }
+
+  function wireQtyStepper(id) {
+    const input = document.getElementById(id);
+    const dec = document.querySelector(`[data-qty-dec="${id}"]`);
+    const inc = document.querySelector(`[data-qty-inc="${id}"]`);
+    if (!input || !dec || !inc) return;
+
+    function update() {
+      const min = parseInt(input.min, 10) || 1;
+      const max = input.max !== "" ? parseInt(input.max, 10) : null;
+      let val = parseInt(input.value, 10) || min;
+      if (val < min) val = min;
+      if (max !== null && val > max) val = max;
+      input.value = val;
+      dec.disabled = input.disabled || val <= min;
+      inc.disabled = input.disabled || (max !== null && val >= max);
+    }
+    dec.addEventListener("click", () => {
+      input.value = (parseInt(input.value, 10) || 1) - 1;
+      update();
+    });
+    inc.addEventListener("click", () => {
+      input.value = (parseInt(input.value, 10) || 1) + 1;
+      update();
+    });
+    update();
   }
 
   // Anzeigetext für den Shop-Bestellstatus (der gespeicherte Wert bleibt
@@ -395,6 +436,8 @@ const SF = (() => {
     escapeHtml,
     formatPrice,
     formatDate,
+    qtyStepperHtml,
+    wireQtyStepper,
     orderStatusLabel,
     resizeImageFile,
     getProducts,

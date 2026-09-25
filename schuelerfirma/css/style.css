@@ -206,6 +206,7 @@ img, svg {
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
   transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
@@ -512,6 +513,8 @@ section {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin-top: 4px;
 }
 
@@ -519,6 +522,7 @@ section {
   font-weight: 800;
   font-size: 1.2rem;
   color: var(--color-primary-dark);
+  white-space: nowrap;
 }
 
 .badge {
@@ -761,6 +765,17 @@ legend {
   right: 20px;
   bottom: 20px;
   z-index: 60;
+  pointer-events: none;
+}
+
+.cart-panel .cart-button {
+  pointer-events: auto;
+}
+
+/* Reserve clearance at the bottom of scrollable content so the floating
+   cart button never sits on top of the last product row's controls. */
+body[data-page="shop"] main {
+  padding-bottom: 84px;
 }
 
 .cart-button {
@@ -889,6 +904,13 @@ th {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.table-empty {
+  text-align: center;
+  color: var(--color-muted);
+  font-style: italic;
+  padding: 28px 12px;
 }
 
 .actions-cell {

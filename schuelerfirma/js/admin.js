@@ -55,7 +55,7 @@
     const list = SF.getProducts();
     const el = document.getElementById("product-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="8">Noch keine Produkte angelegt.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="8" class="table-empty">Noch keine Produkte angelegt.</td></tr>`;
       return;
     }
     el.innerHTML = list
@@ -215,7 +215,7 @@
     const list = SF.getOrders();
     const el = document.getElementById("orders-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="6">Noch keine Bestellungen.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Bestellungen.</td></tr>`;
       return;
     }
     el.innerHTML = list
@@ -271,7 +271,7 @@
     const list = SF.getSpecialOrders();
     const el = document.getElementById("special-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="7">Noch keine Spezialbestellungen.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="7" class="table-empty">Noch keine Spezialbestellungen.</td></tr>`;
       return;
     }
     el.innerHTML = list
@@ -323,7 +323,7 @@
     const list = SF.getReviews();
     const el = document.getElementById("reviews-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="4">Noch keine Bewertungen.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="4" class="table-empty">Noch keine Bewertungen.</td></tr>`;
       return;
     }
     el.innerHTML = list
@@ -355,7 +355,7 @@
     const list = SF.getUsers();
     const el = document.getElementById("users-table-body");
     if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="4">Noch keine registrierten Kund:innen.</td></tr>`;
+      el.innerHTML = `<tr><td colspan="4" class="table-empty">Noch keine registrierten Kund:innen.</td></tr>`;
       return;
     }
     el.innerHTML = list

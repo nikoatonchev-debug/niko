@@ -10,43 +10,6 @@
     return SFIcons.hoodie(p.color || "#2c6e6b");
   }
 
-  function qtyStepperHtml(id, max, disabled) {
-    return `
-      <div class="qty-stepper">
-        <button type="button" class="qty-btn" data-qty-dec="${id}" ${disabled ? "disabled" : ""}>&minus;</button>
-        <input type="number" id="${id}" min="1" ${max !== null ? `max="${max}"` : ""} value="1" readonly ${disabled ? "disabled" : ""}>
-        <button type="button" class="qty-btn" data-qty-inc="${id}" ${disabled ? "disabled" : ""}>+</button>
-      </div>
-    `;
-  }
-
-  function wireQtyStepper(id) {
-    const input = document.getElementById(id);
-    const dec = document.querySelector(`[data-qty-dec="${id}"]`);
-    const inc = document.querySelector(`[data-qty-inc="${id}"]`);
-    if (!input || !dec || !inc) return;
-
-    function update() {
-      const min = parseInt(input.min, 10) || 1;
-      const max = input.max !== "" ? parseInt(input.max, 10) : null;
-      let val = parseInt(input.value, 10) || min;
-      if (val < min) val = min;
-      if (max !== null && val > max) val = max;
-      input.value = val;
-      dec.disabled = input.disabled || val <= min;
-      inc.disabled = input.disabled || (max !== null && val >= max);
-    }
-    dec.addEventListener("click", () => {
-      input.value = (parseInt(input.value, 10) || 1) - 1;
-      update();
-    });
-    inc.addEventListener("click", () => {
-      input.value = (parseInt(input.value, 10) || 1) + 1;
-      update();
-    });
-    update();
-  }
-
   function productCardHtml(p) {
     const remaining = SF.getProductRemaining(p);
     const soldOut = remaining !== null && remaining <= 0;
@@ -73,7 +36,7 @@
           </div>
           <div class="field" style="margin-bottom:8px;">
             <label>Menge</label>
-            ${qtyStepperHtml(`qty-${p.id}`, soldOut ? null : remaining, soldOut)}
+            ${SF.qtyStepperHtml(`qty-${p.id}`, soldOut ? null : remaining, soldOut)}
           </div>
           <div class="product-meta">
             <span class="price">${SF.formatPrice(p.price)}</span>
@@ -101,7 +64,7 @@
     products.forEach((p) => {
       const btn = document.querySelector(`[data-add="${p.id}"]`);
       if (btn) btn.addEventListener("click", () => addToCart(p, `size-${p.id}`, `qty-${p.id}`));
-      wireQtyStepper(`qty-${p.id}`);
+      SF.wireQtyStepper(`qty-${p.id}`);
     });
     el.querySelectorAll("[data-open-detail]").forEach((elm) => {
       elm.addEventListener("click", () => openDetail(elm.getAttribute("data-open-detail")));
@@ -243,8 +206,8 @@
     sizeSelect.disabled = soldOut;
 
     const qtyWrap = document.getElementById("pd-qty-wrap");
-    qtyWrap.innerHTML = qtyStepperHtml("pd-qty", soldOut ? null : remaining, soldOut);
-    wireQtyStepper("pd-qty");
+    qtyWrap.innerHTML = SF.qtyStepperHtml("pd-qty", soldOut ? null : remaining, soldOut);
+    SF.wireQtyStepper("pd-qty");
 
     const addBtn = document.getElementById("pd-add");
     addBtn.disabled = soldOut;

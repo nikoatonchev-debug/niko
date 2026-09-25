@@ -3,6 +3,9 @@
     const form = document.getElementById("special-form");
     const msg = document.getElementById("special-message");
 
+    document.getElementById("sp-menge-wrap").innerHTML = SF.qtyStepperHtml("sp-menge", null, false);
+    SF.wireQtyStepper("sp-menge");
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 

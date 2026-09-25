@@ -123,9 +123,7 @@
         const user = SFAuth.getCurrentUser();
         if (user) {
           const nameField = document.getElementById("co-name");
-          const phoneField = document.getElementById("co-phone");
           if (!nameField.value) nameField.value = user.username;
-          if (!phoneField.value) phoneField.value = user.phone;
         }
         openModal("checkout-modal");
       });

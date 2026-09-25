@@ -270,7 +270,7 @@
       <tr>
         <td>${SF.formatDate(u.registeredAt)}</td>
         <td>${SF.escapeHtml(u.username)}</td>
-        <td>${SF.escapeHtml(u.phone)}</td>
+        <td>${SF.escapeHtml(u.email)}</td>
         <td class="actions-cell"><button class="btn btn-danger btn-small" data-delete-user="${u.id}">Löschen</button></td>
       </tr>`
       )

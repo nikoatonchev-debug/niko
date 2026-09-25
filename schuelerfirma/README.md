@@ -38,6 +38,32 @@ Datenbank/Server. Das bedeutet:
 - Für erste Tests, Vorführungen und um die Website/den Admin-Bereich
   auszuprobieren, reicht der aktuelle Stand völlig aus.
 
+## Kundenkonten & E-Mail-Bestätigung
+
+Zum Bestellen (Shop-Checkout und Spezialbestellungen) muss man sich mit
+Benutzername, E-Mail-Adresse und Passwort registrieren. Dabei wird ein
+6-stelliger Bestätigungscode an die E-Mail-Adresse geschickt.
+
+Der echte E-Mail-Versand läuft über den kostenlosen Dienst
+[EmailJS](https://www.emailjs.com) (kein eigener Server nötig, keine
+Kreditkarte). Bis ihr das eingerichtet habt, zeigt die Website den Code
+stattdessen direkt auf dem Bildschirm an ("Demo-Modus") – die
+Registrierung funktioniert also auch ohne EmailJS-Konto schon zum
+Ausprobieren.
+
+**Einrichtung von EmailJS:**
+
+1. Kostenloses Konto auf [emailjs.com](https://www.emailjs.com) anlegen.
+2. Unter „Email Services" einen Dienst verbinden (z. B. euer Gmail-Konto)
+   → ihr bekommt eine **Service ID**.
+3. Unter „Email Templates" eine Vorlage anlegen, die `{{to_email}}` und
+   `{{code}}` verwendet → ihr bekommt eine **Template ID**.
+4. Unter „Account" → „General" den **Public Key** kopieren.
+5. Alle drei Werte in `js/email-config.js` eintragen.
+
+Der Admin-Bereich zeigt unter „Kund:innen" alle registrierten Konten
+(Benutzername, E-Mail, Registrierungsdatum).
+
 ## Bilder
 
 Aktuell werden alle Produkte mit einfachen SVG-Platzhalter-"Pullis" in

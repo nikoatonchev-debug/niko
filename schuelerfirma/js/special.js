@@ -40,12 +40,6 @@
         msg.classList.remove("hidden");
       });
     });
-
-    document.getElementById("sp-phone").addEventListener("focus", () => {
-      const user = SFAuth.getCurrentUser();
-      const field = document.getElementById("sp-phone");
-      if (user && !field.value) field.value = user.phone;
-    });
   }
 
   document.addEventListener("DOMContentLoaded", setup);

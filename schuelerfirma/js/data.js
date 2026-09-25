@@ -276,9 +276,9 @@ const SF = (() => {
     const needle = String(username || "").trim().toLowerCase();
     return getUsers().find((u) => u.username.toLowerCase() === needle) || null;
   }
-  function findUserByPhone(phone) {
-    const needle = String(phone || "").replace(/\s+/g, "");
-    return getUsers().find((u) => u.phone.replace(/\s+/g, "") === needle) || null;
+  function findUserByEmail(email) {
+    const needle = String(email || "").trim().toLowerCase();
+    return getUsers().find((u) => u.email.toLowerCase() === needle) || null;
   }
   function addUser(user) {
     const list = getUsers();
@@ -344,7 +344,7 @@ const SF = (() => {
     setPassword,
     getUsers,
     findUserByUsername,
-    findUserByPhone,
+    findUserByEmail,
     addUser,
     deleteUser,
     hashText,

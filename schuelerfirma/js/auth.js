@@ -1,15 +1,16 @@
-/* Kundenkonten: Registrierung (mit Demo-SMS-Code), Login, Session.
+/* Kundenkonten: Registrierung mit E-Mail-Bestätigungscode, Login, Session.
  *
- * Wichtig: Diese Website hat (noch) keinen Server. Ein echter SMS-Versand
- * ist damit nicht möglich – der Bestätigungscode wird hier stattdessen
- * direkt und klar sichtbar als "Demo-Modus" angezeigt. Für echten
- * SMS-Versand braucht ihr später einen Server mit einem SMS-Anbieter.
+ * Solange in js/email-config.js noch keine echten EmailJS-Zugangsdaten
+ * eingetragen sind, wird der Bestätigungscode direkt im Browser als
+ * "Demo-Modus" angezeigt statt per E-Mail verschickt, damit die
+ * Registrierung trotzdem zum Ausprobieren funktioniert.
  */
 
 const SFAuth = (function () {
   const SESSION_KEY = "sf_customer_session";
-  let pendingReg = null; // { username, phone, passwordHash, code }
+  let pendingReg = null; // { username, email, passwordHash, code }
   let onSuccessCallback = null;
+  let emailjsReady = false;
 
   function getSession() {
     try {
@@ -23,7 +24,7 @@ const SFAuth = (function () {
     try {
       localStorage.setItem(
         SESSION_KEY,
-        JSON.stringify({ id: user.id, username: user.username, phone: user.phone })
+        JSON.stringify({ id: user.id, username: user.username, email: user.email })
       );
     } catch (e) {
       console.warn("SFAuth: konnte Session nicht speichern", e);
@@ -41,6 +42,32 @@ const SFAuth = (function () {
 
   function genCode() {
     return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  function ensureEmailJs() {
+    if (emailjsReady || !window.sfEmailIsConfigured || !sfEmailIsConfigured()) return;
+    if (window.emailjs) {
+      window.emailjs.init({ publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY });
+      emailjsReady = true;
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+    script.onload = () => {
+      window.emailjs.init({ publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY });
+      emailjsReady = true;
+    };
+    document.head.appendChild(script);
+  }
+
+  function sendCodeByEmail(email, code) {
+    if (!window.sfEmailIsConfigured || !sfEmailIsConfigured() || !window.emailjs) {
+      return Promise.reject(new Error("EmailJS nicht konfiguriert"));
+    }
+    return window.emailjs.send(SF_EMAIL_CONFIG.SERVICE_ID, SF_EMAIL_CONFIG.TEMPLATE_ID, {
+      to_email: email,
+      code: code,
+    });
   }
 
   function injectModal() {
@@ -79,8 +106,8 @@ const SFAuth = (function () {
                 <input type="text" id="auth-reg-username" autocomplete="username" required>
               </div>
               <div class="field">
-                <label for="auth-reg-phone">Telefonnummer</label>
-                <input type="tel" id="auth-reg-phone" autocomplete="tel" required>
+                <label for="auth-reg-email">E-Mail-Adresse</label>
+                <input type="email" id="auth-reg-email" autocomplete="email" required>
               </div>
               <div class="field">
                 <label for="auth-reg-password">Passwort</label>
@@ -99,9 +126,9 @@ const SFAuth = (function () {
           </div>
 
           <div id="auth-view-verify" class="hidden">
-            <h2>Telefonnummer bestätigen</h2>
+            <h2>E-Mail-Adresse bestätigen</h2>
             <p class="hint" id="auth-verify-info"></p>
-            <div id="auth-verify-demo" class="form-message"></div>
+            <div id="auth-verify-demo" class="form-message hidden"></div>
             <form id="auth-verify-form">
               <div class="field">
                 <label for="auth-verify-code">Bestätigungscode</label>
@@ -196,7 +223,7 @@ const SFAuth = (function () {
     document.getElementById("auth-register-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("auth-reg-username").value.trim();
-      const phone = document.getElementById("auth-reg-phone").value.trim();
+      const email = document.getElementById("auth-reg-email").value.trim();
       const pw = document.getElementById("auth-reg-password").value;
       const pw2 = document.getElementById("auth-reg-password2").value;
 
@@ -204,8 +231,8 @@ const SFAuth = (function () {
         showError("auth-register-message", "Bitte einen Benutzernamen eingeben.");
         return;
       }
-      if (!phone) {
-        showError("auth-register-message", "Bitte eine Telefonnummer eingeben.");
+      if (!email || email.indexOf("@") === -1) {
+        showError("auth-register-message", "Bitte eine gültige E-Mail-Adresse eingeben.");
         return;
       }
       if (pw.length < 4) {
@@ -220,19 +247,19 @@ const SFAuth = (function () {
         showError("auth-register-message", "Dieser Benutzername ist schon vergeben.");
         return;
       }
-      if (SF.findUserByPhone(phone)) {
-        showError("auth-register-message", "Diese Telefonnummer ist schon registriert.");
+      if (SF.findUserByEmail(email)) {
+        showError("auth-register-message", "Diese E-Mail-Adresse ist schon registriert.");
         return;
       }
 
       const passwordHash = await SF.hashText(pw);
       const code = genCode();
-      pendingReg = { username, phone, passwordHash, code };
+      pendingReg = { username, email, passwordHash, code };
 
       document.getElementById("auth-verify-info").textContent =
-        "Wir haben einen Bestätigungscode an " + phone + " geschickt.";
-      renderDemoCode(code);
+        "Wir haben einen Bestätigungscode an " + email + " geschickt.";
       document.getElementById("auth-verify-code").value = "";
+      await deliverCode(email, code);
       showView("verify");
     });
 
@@ -249,7 +276,7 @@ const SFAuth = (function () {
       }
       const user = SF.addUser({
         username: pendingReg.username,
-        phone: pendingReg.phone,
+        email: pendingReg.email,
         passwordHash: pendingReg.passwordHash,
       });
       pendingReg = null;
@@ -261,26 +288,44 @@ const SFAuth = (function () {
       if (cb) cb();
     });
 
-    document.getElementById("auth-resend-code").addEventListener("click", () => {
+    document.getElementById("auth-resend-code").addEventListener("click", async () => {
       if (!pendingReg) return;
       pendingReg.code = genCode();
-      renderDemoCode(pendingReg.code);
+      await deliverCode(pendingReg.email, pendingReg.code);
       const msg = document.getElementById("auth-verify-message");
-      msg.textContent = "Neuer Code wurde (im Demo-Modus) erzeugt.";
+      msg.textContent = "Neuer Code wurde verschickt.";
       msg.className = "form-message success";
       msg.classList.remove("hidden");
     });
   }
 
+  // Versucht den Code per E-Mail (EmailJS) zu verschicken; zeigt ihn
+  // zusätzlich/stattdessen als Demo-Hinweis an, wenn EmailJS nicht
+  // eingerichtet ist oder der Versand fehlschlägt (z. B. kein Internet
+  // zum E-Mail-Anbieter) - so bleibt die Registrierung immer nutzbar.
+  async function deliverCode(email, code) {
+    ensureEmailJs();
+    try {
+      await sendCodeByEmail(email, code);
+      hideDemoCode();
+    } catch (e) {
+      renderDemoCode(code);
+    }
+  }
+
   function renderDemoCode(code) {
     const el = document.getElementById("auth-verify-demo");
     el.className = "form-message";
+    el.classList.remove("hidden");
     el.style.background = "#fff3d6";
     el.style.color = "#8a6100";
     el.innerHTML =
-      "Demo-Modus: Diese Website hat noch keinen echten SMS-Versand. Euer Code lautet <strong>" +
+      "Demo-Modus: Der echte E-Mail-Versand ist noch nicht eingerichtet (siehe js/email-config.js). Euer Code lautet <strong>" +
       SF.escapeHtml(code) +
-      "</strong>. In einer echten Version würde er per SMS verschickt.";
+      "</strong>.";
+  }
+  function hideDemoCode() {
+    document.getElementById("auth-verify-demo").classList.add("hidden");
   }
 
   function logout() {
@@ -313,6 +358,7 @@ const SFAuth = (function () {
   document.addEventListener("DOMContentLoaded", () => {
     injectModal();
     updateHeaderStatus();
+    ensureEmailJs();
   });
 
   return {

@@ -16,6 +16,7 @@
             <source src="video/abholung.webm" type="video/webm">
             Dein Browser kann dieses Video leider nicht abspielen.
           </video>
+          <p style="margin-top:12px; margin-bottom:0; font-weight:700; text-align:center;">Bitte an dieser Tür klopfen.</p>
         </div>
       </div>
     `;

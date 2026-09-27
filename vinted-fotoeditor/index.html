@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fotoeditor">
+<meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
+<meta name="referrer" content="no-referrer">
+<title>Vinted Fotoeditor</title>
+<style>
+  :root {
+    --bg: #f3f5f8;
+    --surface: #ffffff;
+    --surface-2: #e9edf3;
+    --line: #d5dce6;
+    --text: #17202b;
+    --muted: #5b6878;
+    --accent: #1f3a68;
+    --accent-text: #ffffff;
+    --ok: #1d7a46;
+    --warn: #9a6200;
+    --err: #b3261e;
+    --focus: #3b6fd1;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11151c;
+      --surface: #1a2029;
+      --surface-2: #232b36;
+      --line: #313b48;
+      --text: #e8edf3;
+      --muted: #9aa7b6;
+      --accent: #8fb0e8;
+      --accent-text: #0f1826;
+      --ok: #5cc98a;
+      --warn: #e5b04f;
+      --err: #f08a82;
+      --focus: #8fb0e8;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 16px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 20px; }
+  h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 small { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  .cost {
+    font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 12px; display: grid; gap: 2px; min-width: 150px;
+  }
+  .cost b { font-size: 1.25rem; }
+  .cost span { font-size: 0.78rem; color: var(--muted); }
+  .cost button { justify-self: start; margin-top: 2px; }
+  section.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  label { font-weight: 600; font-size: 0.92rem; display: block; margin-bottom: 6px; }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  textarea { min-height: 120px; resize: vertical; font-size: 14px; line-height: 1.4; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row > input { flex: 1 1 220px; }
+  .grid2 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+  .hint { font-size: 0.82rem; color: var(--muted); margin: 6px 0 0; }
+  .hint a { color: var(--accent); }
+  button, .btn {
+    font: inherit; font-size: 0.92rem; font-weight: 600; border-radius: 8px; padding: 9px 14px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--text); text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px;
+  }
+  button.primary, .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.small { padding: 4px 10px; min-height: 30px; font-size: 0.8rem; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .presets button[aria-pressed=true] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .drop {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer;
+    background: var(--bg); transition: border-color .15s, background .15s;
+  }
+  .drop.over { border-color: var(--accent); background: var(--surface-2); }
+  .drop strong { display: block; font-size: 1.05rem; }
+  .drop span { color: var(--muted); font-size: 0.88rem; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .list { display: grid; gap: 12px; }
+  .item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+  .item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .item-name { font-size: 0.86rem; color: var(--muted); overflow-wrap: anywhere; }
+  .pill { font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+  .pill.wait { color: var(--muted); }
+  .pill.run { color: var(--warn); }
+  .pill.done { color: var(--ok); }
+  .pill.fail { color: var(--err); }
+  .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .imgs figure { margin: 0; display: grid; gap: 4px; }
+  .imgs figcaption { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .imgs img, .ph { width: 100%; border-radius: 8px; background: var(--surface-2); display: block; }
+  .ph { aspect-ratio: 3 / 4; display: grid; place-items: center; color: var(--muted); font-size: 0.85rem; text-align: center; padding: 8px; }
+  .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--warn); animation: spin 0.9s linear infinite; margin: 0 auto 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+  .err { color: var(--err); font-size: 0.85rem; overflow-wrap: anywhere; }
+  .meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 8px; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Vinted Fotoeditor <small>KI-Bildbearbeitung über OpenRouter</small></h1>
+    <div class="cost" aria-live="polite">
+      <span>Kosten diese Sitzung</span>
+      <b id="costSession">$0.0000</b>
+      <span>Gesamt auf diesem Gerät: <strong id="costTotal">$0.0000</strong></span>
+      <button class="small" id="resetTotal" type="button">Gesamt zurücksetzen</button>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>Einstellungen</h2>
+    <div class="grid2">
+      <div>
+        <label for="apiKey">OpenRouter API-Key</label>
+        <div class="row">
+          <input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-or-v1-…">
+          <button id="toggleKey" type="button">Zeigen</button>
+        </div>
+        <p class="hint">Wird nur lokal in diesem Browser gespeichert (localStorage) und nur an openrouter.ai gesendet. <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Key erstellen</a></p>
+      </div>
+      <div>
+        <label for="model">Modell</label>
+        <select id="model">
+          <option value="google/gemini-3.1-flash-lite-image">Gemini 3.1 Flash Lite Image (Standard, am günstigsten)</option>
+          <option value="google/gemini-2.5-flash-image">Gemini 2.5 Flash Image (Nano Banana)</option>
+          <option value="google/gemini-3.1-flash-image-preview">Gemini 3.1 Flash Image Preview</option>
+          <option value="google/gemini-3-pro-image-preview">Gemini 3 Pro Image Preview (teurer, höchste Qualität)</option>
+          <option value="__custom">Anderes Modell (ID eingeben)…</option>
+        </select>
+        <input id="customModel" type="text" placeholder="z. B. openai/gpt-5-image-mini" autocapitalize="off" spellcheck="false" hidden style="margin-top:8px">
+        <p class="hint">Standard: google/gemini-3.1-flash-lite-image</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Prompt</h2>
+    <div class="presets" id="presets" role="group" aria-label="Prompt-Voreinstellungen"></div>
+    <details>
+      <summary>Prompt ansehen / anpassen</summary>
+      <textarea id="prompt" aria-label="Prompt" style="margin-top:8px"></textarea>
+      <p class="hint">Änderungen gelten nur für die nächsten Bearbeitungen. Voreinstellung erneut antippen setzt den Originaltext zurück.</p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>Fotos</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Fotos auswählen oder hierher ziehen">
+      <strong>Fotos hierher ziehen oder antippen</strong>
+      <span>Mehrere Fotos gleichzeitig möglich (JPG, PNG, HEIC, WebP)</span>
+    </div>
+    <input id="file" class="sr" type="file" accept="image/*" multiple>
+    <div class="actions">
+      <button class="primary" id="startAll" type="button" disabled>Alle bearbeiten</button>
+      <button id="saveAll" type="button" disabled>Alle Ergebnisse sichern</button>
+      <button id="clearAll" type="button" disabled>Liste leeren</button>
+    </div>
+    <p class="hint" id="queueInfo"></p>
+  </section>
+
+  <div class="list" id="list"><p class="empty" id="empty">Noch keine Fotos hinzugefügt.</p></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const API_URL = 'https://openrouter.ai/api/v1/images';
+  const DEFAULT_MODEL = 'google/gemini-3.1-flash-lite-image';
+  const MAX_EDGE = 2048;       // Eingabebilder werden vor dem Upload auf diese Kantenlänge verkleinert
+  const CONCURRENCY = 2;       // gleichzeitige Anfragen
+
+  const PRESETS = [
+    {
+      id: 'wood',
+      name: 'Holzboden-Hintergrund',
+      prompt: "This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, warm-toned light hardwood wood floor, diagonal planks, evenly lit. Keep any tags, labels, or size stickers sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking."
+    },
+    {
+      id: 'stone',
+      name: 'Stein/Beton-Hintergrund',
+      prompt: "This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, light, mottled stone/concrete surface, evenly lit, natural indoor look. Keep any tags, labels, or size stickers sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking."
+    },
+    {
+      id: 'closeup',
+      name: 'Nahaufnahme (Logo/Etikett, kein Hintergrund sichtbar)',
+      prompt: "This is a product photo of a vintage clothing item for online resale on Vinted. This particular photo is a close-up/macro shot where no background is visible (just fabric filling the frame). Edit this photo: 1) Do NOT add, invent, or change any background - keep the framing and composition essentially identical to the original, since none is visible here. 2) Do not shift, move, resize, reposition, or redraw the logo/tag or any other element - it must stay in exactly the same place and look exactly like the original, just with the fabric wrinkles around it smoothed a bit. 3) Smooth the fabric wrinkles only lightly - tidy but still natural, not catalog-flat. 4) Keep the tag text perfectly sharp and readable (when applicable). 5) Do NOT alter the garment's color, logo/tag design, size, print, cut, or any real stains, holes, or damage - keep everything exactly as it is. Photorealistic, not AI-generated looking."
+    }
+  ];
+
+  // Unterstützte Seitenverhältnisse – das zum Foto passendste wird mitgeschickt.
+  const RATIOS = ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9'];
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} }
+  };
+
+  // ---------- Einstellungen ----------
+  const apiKeyEl = $('apiKey');
+  apiKeyEl.value = store.get('vfe_api_key', '');
+  apiKeyEl.addEventListener('input', () => {
+    const v = apiKeyEl.value.trim();
+    v ? store.set('vfe_api_key', v) : store.del('vfe_api_key');
+    updateButtons();
+  });
+  $('toggleKey').addEventListener('click', (e) => {
+    const show = apiKeyEl.type === 'password';
+    apiKeyEl.type = show ? 'text' : 'password';
+    e.currentTarget.textContent = show ? 'Verbergen' : 'Zeigen';
+  });
+
+  const modelEl = $('model');
+  const customModelEl = $('customModel');
+  const savedModel = store.get('vfe_model', DEFAULT_MODEL);
+  if ([...modelEl.options].some(o => o.value === savedModel)) {
+    modelEl.value = savedModel;
+  } else {
+    modelEl.value = '__custom';
+    customModelEl.value = savedModel;
+  }
+  customModelEl.hidden = modelEl.value !== '__custom';
+  modelEl.addEventListener('change', () => {
+    customModelEl.hidden = modelEl.value !== '__custom';
+    if (modelEl.value !== '__custom') store.set('vfe_model', modelEl.value);
+    else if (customModelEl.value.trim()) store.set('vfe_model', customModelEl.value.trim());
+  });
+  customModelEl.addEventListener('input', () => {
+    if (customModelEl.value.trim()) store.set('vfe_model', customModelEl.value.trim());
+  });
+  const currentModel = () =>
+    modelEl.value === '__custom' ? (customModelEl.value.trim() || DEFAULT_MODEL) : modelEl.value;
+
+  // ---------- Prompt-Voreinstellungen ----------
+  const promptEl = $('prompt');
+  const presetsEl = $('presets');
+  let activePreset = store.get('vfe_preset', 'wood');
+  if (!PRESETS.some(p => p.id === activePreset)) activePreset = 'wood';
+  PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.name;
+    b.dataset.id = p.id;
+    b.addEventListener('click', () => selectPreset(p.id));
+    presetsEl.appendChild(b);
+  });
+  function selectPreset(id) {
+    activePreset = id;
+    store.set('vfe_preset', id);
+    promptEl.value = PRESETS.find(p => p.id === id).prompt;
+    [...presetsEl.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  }
+  selectPreset(activePreset);
+
+  // ---------- Kosten ----------
+  let costSession = 0;
+  let costTotal = parseFloat(store.get('vfe_cost_total', '0')) || 0;
+  const fmt = (n) => '$' + n.toFixed(4);
+  function renderCost() {
+    $('costSession').textContent = fmt(costSession);
+    $('costTotal').textContent = fmt(costTotal);
+  }
+  function addCost(c) {
+    costSession += c;
+    costTotal += c;
+    store.set('vfe_cost_total', String(costTotal));
+    renderCost();
+  }
+  let resetArmed = false;
+  $('resetTotal').addEventListener('click', (e) => {
+    const b = e.currentTarget;
+    if (!resetArmed) {
+      resetArmed = true;
+      b.textContent = 'Wirklich zurücksetzen?';
+      setTimeout(() => { resetArmed = false; b.textContent = 'Gesamt zurücksetzen'; }, 4000);
+      return;
+    }
+    resetArmed = false;
+    b.textContent = 'Gesamt zurücksetzen';
+    costTotal = 0;
+    store.set('vfe_cost_total', '0');
+    renderCost();
+  });
+  renderCost();
+
+  // ---------- Foto-Liste ----------
+  const items = [];
+  let nextId = 1;
+  const listEl = $('list');
+
+  const dropEl = $('drop');
+  const fileEl = $('file');
+  dropEl.addEventListener('click', () => fileEl.click());
+  dropEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); }
+  });
+  fileEl.addEventListener('change', () => { addFiles(fileEl.files); fileEl.value = ''; });
+  ['dragenter', 'dragover'].forEach(t => dropEl.addEventListener(t, (e) => { e.preventDefault(); dropEl.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => dropEl.addEventListener(t, (e) => { e.preventDefault(); dropEl.classList.remove('over'); }));
+  dropEl.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+  // Drop irgendwo auf der Seite soll nicht das Bild im Tab öffnen
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => { e.preventDefault(); if (e.target !== dropEl && !dropEl.contains(e.target)) addFiles(e.dataTransfer.files); });
+
+  function addFiles(fileList) {
+    const files = [...(fileList || [])].filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+    files.forEach(file => {
+      const item = { id: nextId++, file, status: 'wait', previewUrl: URL.createObjectURL(file), resultUrl: null, resultBlob: null, cost: null, error: null };
+      items.push(item);
+      listEl.appendChild(renderItem(item));
+    });
+    $('empty').hidden = items.length > 0;
+    updateButtons();
+  }
+
+  function renderItem(item) {
+    const el = document.createElement('article');
+    el.className = 'item';
+    el.id = 'item-' + item.id;
+    el.innerHTML = `
+      <div class="item-head">
+        <span class="item-name"></span>
+        <span class="pill"></span>
+      </div>
+      <div class="imgs">
+        <figure><figcaption>Original</figcaption><img alt="Originalfoto"></figure>
+        <figure><figcaption>Ergebnis</figcaption><div class="res"></div></figure>
+      </div>
+      <div class="err" hidden></div>
+      <div class="meta"></div>
+      <div class="row btns"></div>`;
+    el.querySelector('.item-name').textContent = item.file.name;
+    el.querySelector('img').src = item.previewUrl;
+    item.el = el;
+    updateItem(item);
+    return el;
+  }
+
+  const LABEL = { wait: 'Wartet', run: 'Wird bearbeitet…', done: 'Fertig', fail: 'Fehler' };
+  function updateItem(item) {
+    const el = item.el;
+    const pill = el.querySelector('.pill');
+    pill.className = 'pill ' + item.status;
+    pill.textContent = LABEL[item.status];
+
+    const res = el.querySelector('.res');
+    res.innerHTML = '';
+    if (item.status === 'done' && item.resultUrl) {
+      const img = document.createElement('img');
+      img.src = item.resultUrl;
+      img.alt = 'Bearbeitetes Foto';
+      res.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'ph';
+      if (item.status === 'run') ph.innerHTML = '<div><div class="spin"></div>KI bearbeitet das Foto…</div>';
+      else if (item.status === 'fail') ph.textContent = 'Kein Ergebnis';
+      else ph.textContent = 'Noch nicht bearbeitet';
+      res.appendChild(ph);
+    }
+
+    const err = el.querySelector('.err');
+    err.hidden = !item.error;
+    err.textContent = item.error || '';
+
+    const meta = el.querySelector('.meta');
+    const parts = [];
+    if (item.usedModel) parts.push(item.usedModel);
+    if (item.presetName) parts.push(item.presetName);
+    if (item.status === 'done') parts.push(item.cost != null ? 'Kosten: ' + fmt(item.cost) : 'Kosten: nicht gemeldet');
+    if (item.seconds) parts.push(item.seconds + ' s');
+    meta.textContent = parts.join(' · ');
+
+    const btns = el.querySelector('.btns');
+    btns.innerHTML = '';
+    if (item.status === 'done') {
+      btns.appendChild(makeBtn('Herunterladen', 'primary', () => downloadItem(item)));
+      if (canShareFiles()) btns.appendChild(makeBtn('In Fotos sichern / Teilen', '', () => shareItems([item])));
+    }
+    if (item.status === 'wait' || item.status === 'fail' || item.status === 'done') {
+      btns.appendChild(makeBtn(item.status === 'wait' ? 'Bearbeiten' : 'Nochmal bearbeiten', '', () => enqueue([item])));
+    }
+    if (item.status !== 'run') btns.appendChild(makeBtn('Entfernen', '', () => removeItem(item)));
+  }
+
+  function makeBtn(text, cls, fn) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    if (cls) b.className = cls;
+    b.addEventListener('click', fn);
+    return b;
+  }
+
+  function removeItem(item) {
+    const i = items.indexOf(item);
+    if (i >= 0) items.splice(i, 1);
+    const qi = queue.indexOf(item);
+    if (qi >= 0) queue.splice(qi, 1);
+    URL.revokeObjectURL(item.previewUrl);
+    if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
+    item.el.remove();
+    $('empty').hidden = items.length > 0;
+    updateButtons();
+  }
+
+  $('clearAll').addEventListener('click', () => {
+    items.filter(i => i.status !== 'run').forEach(removeItem);
+  });
+  $('startAll').addEventListener('click', () => {
+    enqueue(items.filter(i => i.status === 'wait' || i.status === 'fail'));
+  });
+  $('saveAll').addEventListener('click', async () => {
+    const done = items.filter(i => i.status === 'done');
+    if (canShareFiles()) { await shareItems(done); return; }
+    for (const it of done) { downloadItem(it); await sleep(400); }
+  });
+
+  function updateButtons() {
+    const hasKey = !!apiKeyEl.value.trim();
+    const pending = items.filter(i => i.status === 'wait' || i.status === 'fail').length;
+    const done = items.filter(i => i.status === 'done').length;
+    const running = items.filter(i => i.status === 'run').length;
+    $('startAll').disabled = !hasKey || pending === 0;
+    $('startAll').textContent = pending ? `Alle bearbeiten (${pending})` : 'Alle bearbeiten';
+    $('saveAll').disabled = done === 0;
+    $('saveAll').textContent = done ? `Alle Ergebnisse sichern (${done})` : 'Alle Ergebnisse sichern';
+    $('clearAll').disabled = items.length === 0 || items.length === running;
+    const info = [];
+    if (!hasKey) info.push('Bitte zuerst oben den OpenRouter API-Key eintragen.');
+    if (running || queue.length) info.push(`${running} in Bearbeitung, ${queue.length} in der Warteschlange.`);
+    $('queueInfo').textContent = info.join(' ');
+  }
+
+  // ---------- Warteschlange ----------
+  const queue = [];
+  let active = 0;
+  function enqueue(list) {
+    if (!apiKeyEl.value.trim()) { apiKeyEl.focus(); updateButtons(); return; }
+    const prompt = promptEl.value.trim();
+    const preset = PRESETS.find(p => p.id === activePreset);
+    const presetName = preset && preset.prompt === prompt ? preset.name : 'Eigener Prompt';
+    const model = currentModel();
+    list.forEach(item => {
+      if (item.status === 'run' || queue.includes(item)) return;
+      item.job = { prompt, model, presetName };
+      item.status = 'wait';
+      item.error = null;
+      queue.push(item);
+      updateItem(item);
+    });
+    updateButtons();
+    pump();
+  }
+  function pump() {
+    while (active < CONCURRENCY && queue.length) {
+      const item = queue.shift();
+      active++;
+      processItem(item).finally(() => { active--; updateButtons(); pump(); });
+    }
+    updateButtons();
+  }
+
+  async function processItem(item) {
+    const { prompt, model, presetName } = item.job;
+    item.status = 'run';
+    item.usedModel = model;
+    item.presetName = presetName;
+    item.seconds = null;
+    updateItem(item);
+    updateButtons();
+    const t0 = Date.now();
+    try {
+      const { dataUrl, width, height } = await prepareImage(item.file);
+      const body = {
+        model,
+        prompt,
+        input_references: [{ type: 'image_url', image_url: { url: dataUrl } }],
+        aspect_ratio: nearestRatio(width, height),
+        n: 1
+      };
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKeyEl.value.trim(),
+          'Content-Type': 'application/json',
+          'X-Title': 'Vinted Fotoeditor'
+        },
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch {}
+      if (!res.ok) {
+        const msg = (json && json.error && (json.error.message || json.error)) || text || res.statusText;
+        throw new Error(`HTTP ${res.status}: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}`);
+      }
+      if (!json) throw new Error('Unerwartete Antwort von OpenRouter: ' + text.slice(0, 300));
+      const blob = await extractImage(json);
+      const cost = extractCost(json);
+      if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
+      item.resultBlob = blob;
+      item.resultUrl = URL.createObjectURL(blob);
+      item.cost = cost;
+      if (cost != null) addCost(cost);
+      item.status = 'done';
+    } catch (e) {
+      item.status = 'fail';
+      item.error = friendlyError(e);
+    }
+    item.seconds = Math.round((Date.now() - t0) / 1000);
+    updateItem(item);
+  }
+
+  function friendlyError(e) {
+    const m = String((e && e.message) || e);
+    if (/HTTP 401/.test(m)) return 'API-Key ungültig oder fehlt (HTTP 401). Bitte Key prüfen. ' + m;
+    if (/HTTP 402/.test(m)) return 'Nicht genug Guthaben auf OpenRouter (HTTP 402). ' + m;
+    if (/HTTP 429/.test(m)) return 'Zu viele Anfragen (HTTP 429). Kurz warten und nochmal versuchen. ' + m;
+    if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Keine Verbindung zu openrouter.ai. Internet prüfen und nochmal versuchen.';
+    return m;
+  }
+
+  function extractCost(json) {
+    const u = json.usage || {};
+    const c = u.cost ?? u.total_cost ?? json.cost;
+    const n = typeof c === 'string' ? parseFloat(c) : c;
+    return typeof n === 'number' && isFinite(n) ? n : null;
+  }
+
+  async function extractImage(json) {
+    const d = (json.data && json.data[0]) || (json.images && json.images[0]) || null;
+    if (!d) throw new Error('Das Modell hat kein Bild zurückgegeben. ' + JSON.stringify(json).slice(0, 300));
+    if (d.b64_json) {
+      const type = d.media_type || d.mime_type || 'image/png';
+      return b64ToBlob(d.b64_json, type);
+    }
+    const url = d.url || (d.image_url && (d.image_url.url || d.image_url));
+    if (typeof url === 'string') {
+      if (url.startsWith('data:')) return (await fetch(url)).blob();
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('Ergebnisbild konnte nicht geladen werden (HTTP ' + r.status + ').');
+      return r.blob();
+    }
+    throw new Error('Unbekanntes Antwortformat: ' + JSON.stringify(d).slice(0, 300));
+  }
+
+  function b64ToBlob(b64, type) {
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type });
+  }
+
+  function nearestRatio(w, h) {
+    const r = w / h;
+    let best = RATIOS[0], bestD = Infinity;
+    for (const s of RATIOS) {
+      const [a, b] = s.split(':').map(Number);
+      const d = Math.abs(Math.log(r / (a / b)));
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return best;
+  }
+
+  // Foto laden, Ausrichtung übernehmen, auf MAX_EDGE verkleinern, als JPEG-Data-URL
+  async function prepareImage(file) {
+    const img = await loadImage(file);
+    let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+    const cw = Math.round(w * scale), ch = Math.round(h * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, 0, 0, cw, ch);
+    return { dataUrl: canvas.toDataURL('image/jpeg', 0.92), width: cw, height: ch };
+  }
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Foto konnte nicht gelesen werden. Bitte als JPG oder PNG hochladen.')); };
+      img.src = url;
+    });
+  }
+
+  // ---------- Speichern ----------
+  function resultName(item) {
+    const base = item.file.name.replace(/\.[^.]+$/, '') || 'foto';
+    const ext = (item.resultBlob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+    return `${base}-bearbeitet.${ext}`;
+  }
+  function downloadItem(item) {
+    const a = document.createElement('a');
+    a.href = item.resultUrl;
+    a.download = resultName(item);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  function canShareFiles() {
+    try {
+      return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'x.png', { type: 'image/png' })] }));
+    } catch { return false; }
+  }
+  async function shareItems(list) {
+    const files = list.map(it => new File([it.resultBlob], resultName(it), { type: it.resultBlob.type }));
+    try {
+      await navigator.share({ files });
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      for (const it of list) { downloadItem(it); await sleep(400); }
+    }
+  }
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  updateButtons();
+})();
+</script>
+</body>
+</html>

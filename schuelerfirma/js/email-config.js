@@ -10,9 +10,10 @@
  * 4. Unter "Account" -> "General" den "Public Key" kopieren.
  * 5. Alle drei Werte hier unten eintragen und speichern.
  *
- * Solange hier noch die Platzhalter stehen, zeigt die Website den Code
- * stattdessen direkt auf dem Bildschirm an (Demo-Modus) - die Anmeldung
- * funktioniert also auch ohne diese Einrichtung schon zum Ausprobieren.
+ * Der Public Key ist absichtlich öffentlich (so ist EmailJS gedacht). Damit
+ * niemand ihn auf fremden Seiten missbraucht, im EmailJS-Dashboard unter
+ * "Account" -> "Security" nur eure eigene Domain erlauben
+ * (nikoatonchev-debug.github.io).
  */
 
 const SF_EMAIL_CONFIG = {

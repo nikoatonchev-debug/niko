@@ -12,17 +12,22 @@
       return;
     }
     el.innerHTML = list
-      .map(
-        (r) => `
-      <div class="review-card">
+      .map((r) => {
+        const rating = Math.max(0, Math.min(5, Number(r.rating) || 0));
+        return `
+      <article class="review-card">
         <div class="review-head">
-          <span class="review-name">${SF.escapeHtml(r.name || "Anonym")}</span>
+          <h3 class="review-name">${SF.escapeHtml(r.name || "Anonym")}</h3>
           <span class="review-date">${SF.formatDate(r.date, true)}</span>
         </div>
-        ${r.rating ? `<div class="stars-display">${starString(r.rating)}</div>` : ""}
+        ${
+          rating
+            ? `<div class="stars-display" role="img" aria-label="${rating} von 5 Sternen">${starString(rating)}</div>`
+            : ""
+        }
         <p>${SF.escapeHtml(r.comment)}</p>
-      </div>`
-      )
+      </article>`;
+      })
       .join("");
   }
 
@@ -33,10 +38,15 @@
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = document.getElementById("rv-name").value.trim();
-      const comment = document.getElementById("rv-comment").value.trim();
+      const name = SF.clampText(document.getElementById("rv-name").value, 40);
+      const comment = SF.clampText(document.getElementById("rv-comment").value, 1000);
       const ratingInput = form.querySelector('input[name="rv-rating"]:checked');
       const rating = ratingInput ? parseInt(ratingInput.value, 10) : 0;
+
+      if (comment.length < 3) {
+        SFUI.showMessage(msg, "Bitte schreib ein paar Worte zu deinem Feedback.", "error");
+        return;
+      }
 
       SF.addReview({
         name: name || "Anonym",
@@ -45,9 +55,7 @@
       });
 
       form.reset();
-      msg.textContent = "Danke für dein Feedback!";
-      msg.className = "form-message success";
-      msg.classList.remove("hidden");
+      SFUI.showMessage(msg, "Danke für dein Feedback!", "success");
       renderReviews();
     });
   }

@@ -1,71 +1,63 @@
 # Siebdruck-Schülerfirma – Website
 
 Website für die Siebdruck-Schülerfirma der Montessori-Schule Dietramszell.
+Diese Datei wird nicht mit veröffentlicht (siehe `.github/workflows/pages.yml`).
 
 ## Seiten
 
-- `index.html` – Startseite mit Vorstellung der Schülerfirma
+- `index.html` – Startseite
 - `shop.html` – Shop mit Warenkorb und Bestellung
-- `spezialbestellungen.html` – Formular für individuelle Wunschbestellungen (Telefonnummer ist Pflicht)
-- `bewertungen.html` – Kund:innen-Feedback und Bewertungen
-- `admin.html` – Admin-Bereich (Standardpasswort: `1234`, änderbar unter „Einstellungen“)
+- `spezialbestellungen.html` – Wunschbestellungen (Telefonnummer ist Pflicht)
+- `bewertungen.html` – Feedback und Bewertungen
+- `meine-bestellungen.html` – eigene Bestellungen ansehen, Konto löschen
+- `impressum.html`, `datenschutz.html`, `agb.html` – Rechtliches
+  (gelb markierte Felder `[…]` müssen noch ausgefüllt werden)
+- `admin.html` – Admin-Bereich (Zugang ganz unten im Footer)
 
-Der Zugang zum Admin-Bereich befindet sich ganz unten im Footer jeder Seite
-(kleiner „Admin“-Button neben dem Zahnrad-Symbol).
+## Admin-Bereich
+
+Beim allerersten Login gilt das Startpasswort aus dem Code. Direkt danach muss
+ein eigenes Passwort (mindestens 8 Zeichen) festgelegt werden. Nach 5 falschen
+Versuchen wird der Login kurz gesperrt, nach 30 Minuten ohne Aktivität wird man
+automatisch abgemeldet.
 
 ## Lokal ansehen
-
-Da die Seite komplett ohne Server-Backend läuft, reicht ein einfacher
-statischer Webserver, z. B.:
 
 ```
 cd schuelerfirma
 python3 -m http.server 8080
 ```
 
-Danach im Browser `http://localhost:8080/index.html` öffnen.
+Danach `http://localhost:8080/index.html` öffnen.
 
-## Wichtiger Hinweis zu den Daten
+## Wichtig: Wo die Daten liegen
 
-Produkte, Bestellungen, Spezialbestellungen und Bewertungen werden aktuell
-**nur im Browser (localStorage)** gespeichert – es gibt noch keine echte
-Datenbank/Server. Das bedeutet:
+Es gibt noch keinen Server/keine Datenbank. Produkte, Bestellungen,
+Spezialbestellungen, Bewertungen und Konten werden **nur im Browser des
+jeweiligen Geräts (localStorage)** gespeichert. Bestellungen von Kund:innen
+tauchen deshalb **nicht** im Admin-Bereich auf einem anderen Gerät auf, und
+Änderungen an Produkten im Admin-Bereich sehen nur Besucher:innen auf demselben
+Gerät. Für echten Betrieb braucht die Website eine Datenbank im Hintergrund.
 
-- Bestellungen, die Kund:innen auf ihrem eigenen Handy/PC aufgeben, tauchen
-  **nicht automatisch** im Admin-Bereich auf einem anderen Gerät auf.
-- Für den "scharfen" Betrieb mit Bestellungen von überall braucht ihr später
-  einen kleinen Server bzw. eine Datenbank im Hintergrund.
-- Für erste Tests, Vorführungen und um die Website/den Admin-Bereich
-  auszuprobieren, reicht der aktuelle Stand völlig aus.
+## E-Mail-Bestätigung (EmailJS)
 
-## Kundenkonten & E-Mail-Bestätigung
+Der Bestätigungscode wird über [EmailJS](https://www.emailjs.com) verschickt.
+Zugangsdaten stehen in `js/email-config.js`, das EmailJS-Skript liegt lokal in
+`js/vendor/` (Version 4.4.1, BSD-3-Lizenz), es wird also nichts von fremden
+Servern nachgeladen. Klappt der Versand nicht, bekommt man eine Fehlermeldung –
+der Code wird nie auf dem Bildschirm angezeigt.
 
-Zum Bestellen (Shop-Checkout und Spezialbestellungen) muss man sich mit
-Benutzername, E-Mail-Adresse und Passwort registrieren. Dabei wird ein
-6-stelliger Bestätigungscode an die E-Mail-Adresse geschickt.
+Empfohlen im EmailJS-Dashboard: unter „Account“ → „Security“ nur die eigene
+Domain (`nikoatonchev-debug.github.io`) erlauben.
 
-Der echte E-Mail-Versand läuft über den kostenlosen Dienst
-[EmailJS](https://www.emailjs.com) (kein eigener Server nötig, keine
-Kreditkarte). Bis ihr das eingerichtet habt, zeigt die Website den Code
-stattdessen direkt auf dem Bildschirm an ("Demo-Modus") – die
-Registrierung funktioniert also auch ohne EmailJS-Konto schon zum
-Ausprobieren.
+## Sicherheit
 
-**Einrichtung von EmailJS:**
-
-1. Kostenloses Konto auf [emailjs.com](https://www.emailjs.com) anlegen.
-2. Unter „Email Services" einen Dienst verbinden (z. B. euer Gmail-Konto)
-   → ihr bekommt eine **Service ID**.
-3. Unter „Email Templates" eine Vorlage anlegen, die `{{to_email}}` und
-   `{{code}}` verwendet → ihr bekommt eine **Template ID**.
-4. Unter „Account" → „General" den **Public Key** kopieren.
-5. Alle drei Werte in `js/email-config.js` eintragen.
-
-Der Admin-Bereich zeigt unter „Kund:innen" alle registrierten Konten
-(Benutzername, E-Mail, Registrierungsdatum).
-
-## Bilder
-
-Aktuell werden alle Produkte mit einfachen SVG-Platzhalter-"Pullis" in
-Wunschfarbe dargestellt (`js/icons.js`, Funktion `hoodie`). Sobald echte
-Fotos da sind, können diese in `product-image`-Boxen eingebaut werden.
+- Passwörter werden mit PBKDF2 (SHA-256, 150.000 Runden, zufälliges Salt)
+  gespeichert; alte Einträge werden beim nächsten Login automatisch umgestellt.
+- Content-Security-Policy per `<meta>`-Tag auf jeder Seite (GitHub Pages kann
+  keine eigenen HTTP-Header setzen).
+- Login-Sperre nach Fehlversuchen, 30 Sekunden Wartezeit zwischen Code-E-Mails,
+  Codes laufen nach 15 Minuten bzw. 5 Fehlversuchen ab.
+- Achtung: Ohne Server läuft alles im Browser. Wer sich auskennt, kann über die
+  Entwicklerwerkzeuge die eigenen lokal gespeicherten Daten ansehen und ändern.
+  Echte Zugriffskontrolle gibt es erst mit einem Backend.

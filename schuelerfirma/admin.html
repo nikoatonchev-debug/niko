@@ -3,39 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>Admin-Bereich &ndash; Siebdruck-Schülerfirma</title>
   <meta name="robots" content="noindex, nofollow">
-<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="admin">
 
   <header id="site-header" class="site-header"></header>
 
-  <main>
+  <main id="main">
     <section>
       <div class="container">
 
         <!-- LOGIN -->
         <div id="admin-login" class="login-wrap">
           <div class="card login-card">
-            <div class="icon" id="icon-lock"></div>
-            <h2>Admin-Bereich</h2>
-            <p class="section-subtitle" style="margin-bottom:20px;">Bitte Passwort eingeben, um fortzufahren.</p>
-            <form id="login-form">
+            <div class="icon" data-icon="lock"></div>
+            <h1 class="h2">Admin-Bereich</h1>
+            <p class="section-subtitle mb-20">Bitte Passwort eingeben, um fortzufahren.</p>
+            <form id="login-form" novalidate>
               <div class="field">
                 <label for="login-password">Passwort</label>
-                <input type="text" id="login-password" autocomplete="off" required>
+                <input type="password" id="login-password" autocomplete="current-password" maxlength="128" required>
               </div>
-              <button type="submit" class="btn btn-primary" style="width:100%;">Anmelden</button>
+              <button type="submit" class="btn btn-primary btn-block">Anmelden</button>
               <div id="login-message" class="form-message hidden"></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- STARTPASSWORT ÄNDERN -->
+        <div id="admin-force-pw" class="login-wrap hidden">
+          <div class="card login-card">
+            <div class="icon" data-icon="lock"></div>
+            <h1 class="h2">Eigenes Passwort festlegen</h1>
+            <p class="hint mb-20">
+              Du bist noch mit dem Startpasswort angemeldet. Das steht öffentlich im Code der
+              Website, deshalb musst du jetzt ein eigenes Passwort festlegen (mindestens 8 Zeichen).
+            </p>
+            <form id="force-pw-form" novalidate>
+              <div class="field text-left">
+                <label for="fpw-new">Neues Passwort</label>
+                <input type="password" id="fpw-new" autocomplete="new-password" minlength="8" maxlength="128" required>
+              </div>
+              <div class="field text-left">
+                <label for="fpw-confirm">Neues Passwort bestätigen</label>
+                <input type="password" id="fpw-confirm" autocomplete="new-password" maxlength="128" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Passwort speichern</button>
+              <div id="force-pw-message" class="form-message hidden"></div>
             </form>
           </div>
         </div>
 
         <!-- DASHBOARD -->
         <div id="admin-dashboard" class="hidden">
-          <h1 class="section-title" style="text-align:left;">Admin-Bereich</h1>
+          <h1 class="section-title text-left">Admin-Bereich</h1>
 
           <div class="stat-row">
             <div class="stat-box"><div class="num" id="stat-products">0</div><div class="label">Produkte</div></div>
@@ -56,31 +82,31 @@
 
           <!-- Produkte -->
           <div class="admin-panel active" id="panel-products">
-            <div class="card" style="margin-bottom:24px;">
+            <div class="card mb-24">
               <h3 id="product-form-title">Produkt hinzufügen</h3>
-              <form id="product-form">
+              <form id="product-form" novalidate>
                 <div class="grid grid-2">
                   <div class="field">
                     <label for="pf-name">Name</label>
-                    <input type="text" id="pf-name" required>
+                    <input type="text" id="pf-name" maxlength="60" required>
                   </div>
                   <div class="field">
                     <label for="pf-price">Preis (€)</label>
-                    <input type="number" id="pf-price" step="0.5" min="0" required>
+                    <input type="number" id="pf-price" step="0.5" min="0.5" max="1000" required>
                   </div>
                 </div>
                 <div class="field">
                   <label for="pf-description">Beschreibung</label>
-                  <textarea id="pf-description"></textarea>
+                  <textarea id="pf-description" maxlength="500"></textarea>
                 </div>
                 <div class="grid grid-2">
                   <div class="field">
                     <label for="pf-sizes">Größen <span class="hint">(mit Komma getrennt, z. B. 140, 152, S, M)</span></label>
-                    <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" required>
+                    <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" maxlength="120" required>
                   </div>
                   <div class="field">
                     <label for="pf-color">Farbe <span class="hint">(nur falls kein Bild hochgeladen wird)</span></label>
-                    <input type="color" id="pf-color" style="height:44px;">
+                    <input type="color" id="pf-color" class="color-input">
                   </div>
                 </div>
                 <div class="grid grid-2">
@@ -89,15 +115,16 @@
                     <input type="number" id="pf-stock" min="0" placeholder="z. B. 5">
                   </div>
                   <div class="field">
-                    <label for="pf-images">Bilder <span class="hint">(mehrere möglich)</span></label>
+                    <label for="pf-images">Bilder <span class="hint">(mehrere möglich &ndash; nur eigene Fotos oder solche, die ihr verwenden dürft)</span></label>
                     <input type="file" id="pf-images" accept="image/*" multiple>
                   </div>
                 </div>
-                <div id="pf-image-preview" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
-                <div style="display:flex; gap:10px;">
+                <div id="pf-image-preview" class="img-preview-row"></div>
+                <div class="button-row">
                   <button type="submit" class="btn btn-primary" id="product-form-submit">Produkt hinzufügen</button>
                   <button type="button" class="btn btn-outline hidden" id="product-form-cancel">Abbrechen</button>
                 </div>
+                <div id="product-message" class="form-message hidden"></div>
               </form>
             </div>
 
@@ -149,7 +176,7 @@
 
           <!-- Kund:innen -->
           <div class="admin-panel" id="panel-users">
-            <p class="hint" style="margin-bottom:14px;">Alle Kund:innen, die sich mit E-Mail-Adresse registriert haben.</p>
+            <p class="hint mb-14">Alle Kund:innen, die sich mit E-Mail-Adresse registriert haben.</p>
             <div class="table-wrap">
               <table>
                 <thead>
@@ -162,26 +189,26 @@
 
           <!-- Einstellungen -->
           <div class="admin-panel" id="panel-settings">
-            <div class="card" style="max-width:420px;">
+            <div class="card narrow-card-left">
               <h3>Passwort ändern</h3>
-              <form id="password-form">
+              <form id="password-form" novalidate>
                 <div class="field">
                   <label for="pw-current">Aktuelles Passwort</label>
-                  <input type="password" id="pw-current" required>
+                  <input type="password" id="pw-current" autocomplete="current-password" maxlength="128" required>
                 </div>
                 <div class="field">
-                  <label for="pw-new">Neues Passwort</label>
-                  <input type="password" id="pw-new" required>
+                  <label for="pw-new">Neues Passwort <span class="hint">(mindestens 8 Zeichen)</span></label>
+                  <input type="password" id="pw-new" autocomplete="new-password" minlength="8" maxlength="128" required>
                 </div>
                 <div class="field">
                   <label for="pw-confirm">Neues Passwort bestätigen</label>
-                  <input type="password" id="pw-confirm" required>
+                  <input type="password" id="pw-confirm" autocomplete="new-password" maxlength="128" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Passwort ändern</button>
                 <div id="password-message" class="form-message hidden"></div>
               </form>
             </div>
-            <div style="margin-top:20px;">
+            <div class="mt-20">
               <button class="btn btn-outline" id="logout-btn">Abmelden</button>
             </div>
           </div>
@@ -195,12 +222,10 @@
 
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/email-config.js"></script>
   <script src="js/auth.js"></script>
-  <script>
-    document.getElementById("icon-lock").innerHTML = SFIcons.lock;
-  </script>
   <script src="js/admin.js"></script>
 </body>
 </html>

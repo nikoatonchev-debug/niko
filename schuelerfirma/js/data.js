@@ -24,8 +24,7 @@ const SF = (() => {
     {
       id: "p1",
       name: "Waldtier-Pulli",
-      description:
-        "Handgesiebdruckter Hoodie mit unserem Waldtier-Motiv. Jedes Stück ein Unikat.",
+      description: "Hoodie mit unserem Waldtier-Motiv, von uns von Hand im Siebdruck bedruckt.",
       price: 18,
       color: "#4f7d54",
       sizes: ["128", "140", "152", "164", "S", "M", "L"],
@@ -43,7 +42,7 @@ const SF = (() => {
     {
       id: "p3",
       name: "Berg-Pulli",
-      description: "Motiv mit Bergen und Sonnenaufgang – unser Bestseller.",
+      description: "Motiv mit Bergen und Sonnenaufgang.",
       price: 19,
       color: "#2c6e6b",
       sizes: ["152", "164", "S", "M", "L"],
@@ -90,26 +89,37 @@ const SF = (() => {
       write(KEYS.specialOrders, []);
     }
     if (localStorage.getItem(KEYS.reviews) === null) {
-      write(KEYS.reviews, [
-        {
-          id: "r_seed1",
-          name: "Frau Keller (Klassenlehrerin)",
-          rating: 5,
-          comment:
-            "Tolle Pullis, super Druckqualität! Unsere Klasse ist total begeistert.",
-          date: "2025-06-12",
-        },
-      ]);
-    }
-    if (localStorage.getItem(KEYS.adminPassword) === null) {
-      write(KEYS.adminPassword, DEFAULT_PASSWORD);
+      write(KEYS.reviews, []);
     }
     if (localStorage.getItem(KEYS.users) === null) {
       write(KEYS.users, []);
     }
   }
 
+  // Bereinigt Daten aus älteren Versionen der Website, die schon in
+  // Browsern von Besucher:innen gespeichert sind.
+  const LEGACY_DESCRIPTIONS = {
+    p1: "Handgesiebdruckter Hoodie mit unserem Waldtier-Motiv. Jedes Stück ein Unikat.",
+    p3: "Motiv mit Bergen und Sonnenaufgang – unser Bestseller.",
+  };
+  function migrateLegacyData() {
+    const reviews = read(KEYS.reviews, []);
+    const realReviews = reviews.filter((r) => r.id !== "r_seed1");
+    if (realReviews.length !== reviews.length) write(KEYS.reviews, realReviews);
+
+    const products = read(KEYS.products, []);
+    let changed = false;
+    products.forEach((p) => {
+      if (LEGACY_DESCRIPTIONS[p.id] && p.description === LEGACY_DESCRIPTIONS[p.id]) {
+        p.description = DEFAULT_PRODUCTS.find((d) => d.id === p.id).description;
+        changed = true;
+      }
+    });
+    if (changed) write(KEYS.products, products);
+  }
+
   ensureSeeded();
+  migrateLegacyData();
 
   function uid(prefix) {
     return (
@@ -144,7 +154,7 @@ const SF = (() => {
   function formatDate(iso, dateOnly) {
     try {
       const d = new Date(iso);
-      if (isNaN(d.getTime())) return iso;
+      if (isNaN(d.getTime())) return escapeHtml(iso);
       const datePart = d.toLocaleDateString("de-DE", {
         day: "2-digit",
         month: "2-digit",
@@ -153,18 +163,27 @@ const SF = (() => {
       if (dateOnly) return datePart;
       return datePart + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     } catch (e) {
-      return iso;
+      return escapeHtml(iso);
     }
+  }
+
+  function safeColor(c, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(String(c)) ? c : fallback || "#2c6e6b";
+  }
+
+  function clampText(value, maxLen) {
+    return String(value === undefined || value === null ? "" : value).trim().slice(0, maxLen);
   }
 
   // Wiederverwendbares +/- Mengenfeld (Shop, Produkt-Detailansicht,
   // Spezialbestellungen) – ein Widget statt unterschiedlicher Eingabefelder.
   function qtyStepperHtml(id, max, disabled) {
+    const maxAttr = max !== null && max !== undefined ? `max="${Number(max)}"` : "";
     return `
       <div class="qty-stepper">
-        <button type="button" class="qty-btn" data-qty-dec="${id}" ${disabled ? "disabled" : ""}>&minus;</button>
-        <input type="number" id="${id}" min="1" ${max !== null && max !== undefined ? `max="${max}"` : ""} value="1" readonly ${disabled ? "disabled" : ""}>
-        <button type="button" class="qty-btn" data-qty-inc="${id}" ${disabled ? "disabled" : ""}>+</button>
+        <button type="button" class="qty-btn" data-qty-dec="${id}" aria-label="Menge verringern" ${disabled ? "disabled" : ""}>&minus;</button>
+        <input type="number" id="${id}" min="1" ${maxAttr} value="1" readonly aria-live="polite" ${disabled ? "disabled" : ""}>
+        <button type="button" class="qty-btn" data-qty-inc="${id}" aria-label="Menge erhöhen" ${disabled ? "disabled" : ""}>+</button>
       </div>
     `;
   }
@@ -373,12 +392,139 @@ const SF = (() => {
     write(KEYS.reviews, getReviews().filter((r) => r.id !== id));
   }
 
-  // ---- Admin password ----
-  function checkPassword(pw) {
-    return read(KEYS.adminPassword, DEFAULT_PASSWORD) === pw;
+  // ---- Passwörter ----
+  // PBKDF2 mit zufälligem Salt pro Passwort, gespeichert als
+  // "pbkdf2$<iterationen>$<salt>$<hash>". Ältere Einträge (SHA-256 ohne
+  // Salt bzw. Klartext beim Admin) werden beim nächsten Login automatisch
+  // auf dieses Format umgestellt.
+  const PBKDF2_ITERATIONS = 150000;
+
+  function bytesToB64(bytes) {
+    let s = "";
+    bytes.forEach((b) => (s += String.fromCharCode(b)));
+    return btoa(s);
   }
-  function setPassword(pw) {
-    write(KEYS.adminPassword, pw);
+  function b64ToBytes(b64) {
+    return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  }
+  function hasSubtleCrypto() {
+    return !!(window.crypto && window.crypto.subtle);
+  }
+  async function pbkdf2(password, salt, iterations) {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"]
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", hash: "SHA-256", salt, iterations },
+      key,
+      256
+    );
+    return new Uint8Array(bits);
+  }
+  async function hashPassword(password) {
+    if (!hasSubtleCrypto()) {
+      throw new Error("Dieser Browser unterstützt keine sichere Passwort-Speicherung.");
+    }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hash = await pbkdf2(password, salt, PBKDF2_ITERATIONS);
+    return ["pbkdf2", PBKDF2_ITERATIONS, bytesToB64(salt), bytesToB64(hash)].join("$");
+  }
+  function timingSafeEqual(a, b) {
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return diff === 0;
+  }
+  // Gibt { ok, needsUpgrade } zurück.
+  async function verifyPassword(password, stored) {
+    if (typeof stored !== "string" || !stored) return { ok: false, needsUpgrade: false };
+    if (stored.startsWith("pbkdf2$")) {
+      const [, iterStr, saltB64, hashB64] = stored.split("$");
+      const iterations = parseInt(iterStr, 10);
+      const hash = await pbkdf2(password, b64ToBytes(saltB64), iterations);
+      const ok = timingSafeEqual(bytesToB64(hash), hashB64);
+      return { ok, needsUpgrade: ok && iterations < PBKDF2_ITERATIONS };
+    }
+    const legacy = await legacyHash(password);
+    const ok = timingSafeEqual(legacy, stored);
+    return { ok, needsUpgrade: ok };
+  }
+  async function legacyHash(text) {
+    if (hasSubtleCrypto()) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+    let h = 0;
+    const str = String(text);
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return "fallback_" + h;
+  }
+
+  // ---- Admin-Passwort ----
+  // Gespeichert wird { hash, isDefault }. Solange nichts gespeichert ist,
+  // gilt das Startpasswort "1234" – das muss nach dem ersten Login sofort
+  // geändert werden.
+  function readAdminRecord() {
+    const rec = read(KEYS.adminPassword, null);
+    if (rec === null) return { legacyPlain: DEFAULT_PASSWORD, isDefault: true };
+    if (typeof rec === "string") return { legacyPlain: rec, isDefault: rec === DEFAULT_PASSWORD };
+    return rec;
+  }
+  async function verifyAdminPassword(pw) {
+    const rec = readAdminRecord();
+    if (rec.legacyPlain !== undefined) {
+      const ok = timingSafeEqual(String(pw), rec.legacyPlain);
+      if (ok && hasSubtleCrypto()) {
+        write(KEYS.adminPassword, { hash: await hashPassword(pw), isDefault: rec.isDefault });
+      }
+      return ok;
+    }
+    return (await verifyPassword(pw, rec.hash)).ok;
+  }
+  async function setAdminPassword(pw) {
+    write(KEYS.adminPassword, { hash: await hashPassword(pw), isDefault: false });
+  }
+  function adminPasswordIsDefault() {
+    return !!readAdminRecord().isDefault;
+  }
+
+  // ---- Schutz gegen Durchprobieren (Rate-Limit) ----
+  // Nach mehreren Fehlversuchen wird der Login für eine Weile gesperrt,
+  // jede weitere Sperre dauert doppelt so lang (max. 15 Minuten).
+  const RL_PREFIX = "sf_rl_";
+  function lockSecondsLeft(name) {
+    const rec = read(RL_PREFIX + name, null);
+    if (!rec || !rec.until) return 0;
+    return Math.max(0, Math.ceil((rec.until - Date.now()) / 1000));
+  }
+  function registerFailure(name, maxAttempts, baseLockSeconds) {
+    const rec = read(RL_PREFIX + name, { fails: 0, locks: 0, until: 0 });
+    rec.fails += 1;
+    if (rec.fails >= maxAttempts) {
+      const seconds = Math.min(baseLockSeconds * Math.pow(2, rec.locks), 900);
+      rec.until = Date.now() + seconds * 1000;
+      rec.locks += 1;
+      rec.fails = 0;
+    }
+    write(RL_PREFIX + name, rec);
+    return lockSecondsLeft(name);
+  }
+  function clearFailures(name) {
+    localStorage.removeItem(RL_PREFIX + name);
+  }
+  // Einfache Abkühlzeit zwischen zwei Aktionen (z. B. Code-E-Mails).
+  function cooldownSecondsLeft(name, seconds) {
+    const last = read(RL_PREFIX + "cd_" + name, 0);
+    return Math.max(0, Math.ceil((last + seconds * 1000 - Date.now()) / 1000));
+  }
+  function startCooldown(name) {
+    write(RL_PREFIX + "cd_" + name, Date.now());
   }
 
   // ---- Kundenkonten ----
@@ -403,31 +549,16 @@ const SF = (() => {
     write(KEYS.users, list);
     return full;
   }
+  function updateUser(id, changes) {
+    const list = getUsers();
+    const idx = list.findIndex((u) => u.id === id);
+    if (idx !== -1) {
+      list[idx] = Object.assign({}, list[idx], changes);
+      write(KEYS.users, list);
+    }
+  }
   function deleteUser(id) {
     write(KEYS.users, getUsers().filter((u) => u.id !== id));
-  }
-
-  // Einfacher Hash fürs Passwort (kein echtes Backend, also keine echte
-  // Sicherheit – nutzt SubtleCrypto wenn verfügbar, sonst einen simplen
-  // Fallback, damit die Registrierung nicht crasht, z. B. bei file://).
-  async function hashText(text) {
-    try {
-      if (window.crypto && window.crypto.subtle) {
-        const enc = new TextEncoder().encode(text);
-        const buf = await window.crypto.subtle.digest("SHA-256", enc);
-        return Array.from(new Uint8Array(buf))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-      }
-    } catch (e) {
-      console.warn("SF: SubtleCrypto nicht verfügbar, nutze Fallback-Hash", e);
-    }
-    let h = 0;
-    const str = String(text);
-    for (let i = 0; i < str.length; i++) {
-      h = (h * 31 + str.charCodeAt(i)) | 0;
-    }
-    return "fallback_" + h;
   }
 
   return {
@@ -436,6 +567,8 @@ const SF = (() => {
     escapeHtml,
     formatPrice,
     formatDate,
+    safeColor,
+    clampText,
     qtyStepperHtml,
     wireQtyStepper,
     orderStatusLabel,
@@ -462,13 +595,21 @@ const SF = (() => {
     getReviews,
     addReview,
     deleteReview,
-    checkPassword,
-    setPassword,
+    hashPassword,
+    verifyPassword,
+    verifyAdminPassword,
+    setAdminPassword,
+    adminPasswordIsDefault,
+    lockSecondsLeft,
+    registerFailure,
+    clearFailures,
+    cooldownSecondsLeft,
+    startCooldown,
     getUsers,
     findUserByUsername,
     findUserByEmail,
     addUser,
+    updateUser,
     deleteUser,
-    hashText,
   };
 })();

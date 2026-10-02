@@ -3,54 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Bewertungen &ndash; Siebdruck-Schülerfirma</title>
-<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <meta name="description" content="Feedback und Bewertungen zur Siebdruck-Schülerfirma der Montessori-Schule Dietramszell.">
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="reviews">
 
   <header id="site-header" class="site-header"></header>
 
-  <main>
-    <section style="padding-bottom:16px;">
+  <main id="main">
+    <section class="pb-16">
       <div class="container">
         <h1 class="section-title">Feedback &amp; Bewertungen</h1>
         <p class="section-subtitle">Wie hat dir dein Pulli gefallen? Wir freuen uns über jede Rückmeldung!</p>
       </div>
     </section>
 
-    <section style="padding-top:0;">
+    <section class="pt-0">
       <div class="container">
-        <div class="grid grid-2" style="align-items:start;">
+        <div class="grid grid-2 align-start">
           <div class="card">
             <h2>Deine Bewertung</h2>
-            <form id="review-form">
+            <form id="review-form" novalidate>
               <div class="field">
                 <label for="rv-name">Dein Name <span class="hint">(optional)</span></label>
-                <input type="text" id="rv-name" placeholder="z. B. Mia, 8b">
+                <input type="text" id="rv-name" placeholder="z. B. Mia, 8b" maxlength="40">
               </div>
-              <div class="field">
-                <label>Bewertung</label>
+              <fieldset class="field star-fieldset">
+                <legend>Bewertung</legend>
                 <div class="star-input">
-                  <input type="radio" name="rv-rating" id="star5" value="5"><label for="star5">★</label>
-                  <input type="radio" name="rv-rating" id="star4" value="4"><label for="star4">★</label>
-                  <input type="radio" name="rv-rating" id="star3" value="3" checked><label for="star3">★</label>
-                  <input type="radio" name="rv-rating" id="star2" value="2"><label for="star2">★</label>
-                  <input type="radio" name="rv-rating" id="star1" value="1"><label for="star1">★</label>
+                  <input type="radio" name="rv-rating" id="star5" value="5"><label for="star5"><span class="star-glyph" aria-hidden="true"></span><span class="sr-only">5 Sterne</span></label>
+                  <input type="radio" name="rv-rating" id="star4" value="4"><label for="star4"><span class="star-glyph" aria-hidden="true"></span><span class="sr-only">4 Sterne</span></label>
+                  <input type="radio" name="rv-rating" id="star3" value="3" checked><label for="star3"><span class="star-glyph" aria-hidden="true"></span><span class="sr-only">3 Sterne</span></label>
+                  <input type="radio" name="rv-rating" id="star2" value="2"><label for="star2"><span class="star-glyph" aria-hidden="true"></span><span class="sr-only">2 Sterne</span></label>
+                  <input type="radio" name="rv-rating" id="star1" value="1"><label for="star1"><span class="star-glyph" aria-hidden="true"></span><span class="sr-only">1 Stern</span></label>
                 </div>
-              </div>
+              </fieldset>
               <div class="field">
                 <label for="rv-comment">Dein Feedback</label>
-                <textarea id="rv-comment" required placeholder="Was hat dir gefallen? Was können wir besser machen?"></textarea>
+                <textarea id="rv-comment" required maxlength="1000" placeholder="Was hat dir gefallen? Was können wir besser machen?"></textarea>
               </div>
-              <button type="submit" class="btn btn-primary" style="width:100%;">Feedback senden</button>
+              <p class="hint">
+                Dein Name (falls angegeben) und dein Kommentar werden hier öffentlich angezeigt.
+                Mehr in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+              </p>
+              <button type="submit" class="btn btn-primary btn-block">Feedback senden</button>
               <div id="review-message" class="form-message hidden"></div>
             </form>
           </div>
 
           <div>
             <h2>Das sagen andere</h2>
-            <div id="review-list" style="display:flex; flex-direction:column; gap:16px;"></div>
+            <p class="hint review-notice">
+              Hinweis zur Echtheit: Bewertungen kann jede Besucherin und jeder Besucher abgeben.
+              Wir prüfen nicht, ob die Person bei uns gekauft hat. Beleidigende oder unpassende
+              Beiträge löschen wir.
+            </p>
+            <div id="review-list" class="stack-16"></div>
           </div>
         </div>
       </div>
@@ -61,6 +73,7 @@
 
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/email-config.js"></script>
   <script src="js/auth.js"></script>

@@ -29,10 +29,12 @@ jobs:
         uses: actions/checkout@v4
       - name: GitHub Pages vorbereiten
         uses: actions/configure-pages@v5
+      - name: Nur die Website-Dateien zusammenstellen (ohne Doku)
+        run: rsync -a --exclude 'README.md' --exclude '.*' schuelerfirma/ _site/
       - name: Website-Ordner hochladen
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "schuelerfirma"
+          path: "_site"
       - name: Zu GitHub Pages veröffentlichen
         id: deployment
         uses: actions/deploy-pages@v4

@@ -8,15 +8,15 @@
     const wrap = document.createElement("div");
     wrap.innerHTML = `
       <div class="modal-backdrop hidden" id="video-modal">
-        <div class="modal modal-video">
-          <button type="button" class="modal-close" id="video-modal-close">&times;</button>
-          <h3 class="modal-video-title">So läuft die Abholung ab</h3>
+        <div class="modal modal-video" role="dialog" aria-modal="true" aria-labelledby="video-modal-title" aria-describedby="video-modal-caption">
+          <button type="button" class="modal-close" id="video-modal-close" aria-label="Video schließen">&times;</button>
+          <h2 class="modal-video-title h3" id="video-modal-title">So läuft die Abholung ab</h2>
           <video id="pickup-video" class="modal-video-el" controls playsinline preload="metadata">
             <source src="video/abholung.mp4" type="video/mp4">
             <source src="video/abholung.webm" type="video/webm">
             Dein Browser kann dieses Video leider nicht abspielen.
           </video>
-          <p class="modal-video-caption">Bitte an dieser Tür klopfen.</p>
+          <p class="modal-video-caption" id="video-modal-caption">Bitte an dieser Tür klopfen.</p>
         </div>
       </div>
     `;
@@ -35,24 +35,22 @@
     const closeBtn = document.getElementById("video-modal-close");
 
     function openVideo() {
-      modal.classList.remove("hidden");
+      SFUI.openDialog(modal, { onEscape: closeVideo, initialFocus: "#pickup-video" });
     }
     function closeVideo() {
-      modal.classList.add("hidden");
       video.pause();
       video.currentTime = 0;
+      SFUI.closeDialog(modal);
     }
 
     document.querySelectorAll("[data-video-trigger]").forEach((btn) => {
+      btn.setAttribute("aria-haspopup", "dialog");
       btn.addEventListener("click", openVideo);
     });
 
     closeBtn.addEventListener("click", closeVideo);
     modal.addEventListener("click", (e) => {
       if (e.target === modal) closeVideo();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !modal.classList.contains("hidden")) closeVideo();
     });
   }
 

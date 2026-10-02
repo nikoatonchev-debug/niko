@@ -1,13 +1,15 @@
 (function () {
+  const esc = (s) => SF.escapeHtml(s);
+
   function statusBadge(status, map, label) {
-    return `<span class="badge ${map[status] || ""}">${SF.escapeHtml(label || status)}</span>`;
+    return `<span class="badge ${map[status] || ""}">${esc(label || status)}</span>`;
   }
 
   const ORDER_STATUS_MAP = { offen: "badge-open", abgeholt: "badge-accepted" };
   const SPECIAL_STATUS_MAP = { offen: "badge-open", akzeptiert: "badge-accepted", abgelehnt: "badge-declined" };
 
   function orderNumber(id) {
-    return id.slice(-6).toUpperCase();
+    return esc(String(id || "").slice(-6).toUpperCase());
   }
 
   function renderShopOrders(username) {
@@ -19,13 +21,13 @@
     }
     el.innerHTML = list
       .map((o) => {
-        const items = o.items
-          .map((i) => `${i.qty}x ${SF.escapeHtml(i.name)} (${SF.escapeHtml(i.size)})`)
+        const items = (o.items || [])
+          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)})`)
           .join("<br>");
         return `
-        <div class="review-card">
+        <article class="review-card">
           <div class="review-head">
-            <span class="review-name">Bestellung #${orderNumber(o.id)}</span>
+            <h3 class="review-name">Bestellung #${orderNumber(o.id)}</h3>
             <span class="review-date">${SF.formatDate(o.date)}</span>
           </div>
           <p>${items}</p>
@@ -33,7 +35,7 @@
             <span class="price">${SF.formatPrice(o.total)}</span>
             ${statusBadge(o.status, ORDER_STATUS_MAP, SF.orderStatusLabel(o.status))}
           </div>
-        </div>`;
+        </article>`;
       })
       .join("");
   }
@@ -48,21 +50,25 @@
     el.innerHTML = list
       .map(
         (o) => `
-      <div class="review-card">
+      <article class="review-card">
         <div class="review-head">
-          <span class="review-name">Bestellung #${orderNumber(o.id)}</span>
+          <h3 class="review-name">Bestellung #${orderNumber(o.id)}</h3>
           <span class="review-date">${SF.formatDate(o.date)}</span>
         </div>
-        <p>${SF.escapeHtml(o.wunsch)}</p>
-        <p class="hint">Größe ${SF.escapeHtml(o.groesse)} &middot; ${o.menge}x</p>
+        <p>${esc(o.wunsch)}</p>
+        <p class="hint">Größe ${esc(o.groesse)} &middot; ${Number(o.menge) || 1}x</p>
         ${statusBadge(o.status, SPECIAL_STATUS_MAP)}
-      </div>`
+      </article>`
       )
       .join("");
   }
 
   function showOrders() {
     const user = SFAuth.getCurrentUser();
+    if (!user) {
+      showLoginHint();
+      return;
+    }
     document.getElementById("orders-login-hint").classList.add("hidden");
     document.getElementById("orders-content").classList.remove("hidden");
     renderShopOrders(user.username);
@@ -77,6 +83,17 @@
   function setup() {
     document.getElementById("orders-login-btn").addEventListener("click", () => {
       SFAuth.requireLogin(showOrders);
+    });
+
+    document.getElementById("delete-account-btn").addEventListener("click", () => {
+      const user = SFAuth.getCurrentUser();
+      if (!user) return;
+      if (!confirm("Möchtest du dein Konto wirklich löschen? Das kann nicht rückgängig gemacht werden.")) return;
+      SF.deleteUser(user.id);
+      SFAuth.logout();
+      showLoginHint();
+      document.getElementById("orders-login-hint").querySelector("p").textContent =
+        "Dein Konto wurde gelöscht.";
     });
 
     if (SFAuth.isLoggedIn()) {

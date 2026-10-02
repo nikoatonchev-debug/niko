@@ -3,49 +3,53 @@
   let detailProduct = null;
   let detailImageIndex = 0;
 
+  const esc = (s) => SF.escapeHtml(s);
+
   function productImagesOrIcon(p) {
     if (p.images && p.images.length) {
-      return `<img src="${p.images[0]}" alt="${SF.escapeHtml(p.name)}" style="width:100%;height:100%;">`;
+      return `<img src="${esc(p.images[0])}" alt="" class="fill-img">`;
     }
-    return SFIcons.hoodie(p.color || "#2c6e6b");
+    return SFIcons.hoodie(SF.safeColor(p.color));
   }
 
   function productCardHtml(p) {
+    const id = esc(p.id);
     const remaining = SF.getProductRemaining(p);
     const soldOut = remaining !== null && remaining <= 0;
-    const sizeOptions = p.sizes
-      .map((s) => `<option value="${SF.escapeHtml(s)}">${SF.escapeHtml(s)}</option>`)
+    const sizeOptions = (p.sizes || [])
+      .map((s) => `<option value="${esc(s)}">${esc(s)}</option>`)
       .join("");
     return `
-      <div class="product-card" data-card="${p.id}">
-        <div class="product-image" data-open-detail="${p.id}" style="cursor:pointer; position:relative;">
+      <article class="product-card" data-card="${id}">
+        <div class="product-image clickable" data-open-detail="${id}" aria-hidden="true">
           ${productImagesOrIcon(p)}
           ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
         </div>
         <div class="product-body">
-          <h3 data-open-detail="${p.id}" style="cursor:pointer;">${SF.escapeHtml(p.name)}</h3>
-          <p class="product-desc">${SF.escapeHtml(p.description || "")}</p>
+          <h3><button type="button" class="link-btn" data-open-detail="${id}">${esc(p.name)}</button></h3>
+          <p class="product-desc">${esc(p.description || "")}</p>
           ${
             remaining !== null && !soldOut
               ? `<p class="hint">Nur noch ${remaining} Stück verfügbar</p>`
               : ""
           }
-          <div class="field" style="margin-bottom:8px;">
-            <label for="size-${p.id}">Größe</label>
-            <select id="size-${p.id}" ${soldOut ? "disabled" : ""}>${sizeOptions}</select>
+          <div class="field mb-8">
+            <label for="size-${id}">Größe</label>
+            <select id="size-${id}" ${soldOut ? "disabled" : ""}>${sizeOptions}</select>
           </div>
-          <div class="field" style="margin-bottom:8px;">
-            <label>Menge</label>
-            ${SF.qtyStepperHtml(`qty-${p.id}`, soldOut ? null : remaining, soldOut)}
+          <div class="field mb-8">
+            <label for="qty-${id}">Menge</label>
+            ${SF.qtyStepperHtml(`qty-${id}`, soldOut ? null : remaining, soldOut)}
           </div>
           <div class="product-meta">
             <span class="price">${SF.formatPrice(p.price)}</span>
-            <button class="btn btn-primary btn-small" data-add="${p.id}" ${soldOut ? "disabled" : ""}>
+            <button class="btn btn-primary btn-small" data-add="${id}" ${soldOut ? "disabled" : ""}
+              aria-label="${soldOut ? "Ausverkauft" : esc(p.name) + " in den Warenkorb"}">
               ${soldOut ? "Ausverkauft" : "In den Warenkorb"}
             </button>
           </div>
         </div>
-      </div>
+      </article>
     `;
   }
 
@@ -62,7 +66,7 @@
     }
     el.innerHTML = products.map(productCardHtml).join("");
     products.forEach((p) => {
-      const btn = document.querySelector(`[data-add="${p.id}"]`);
+      const btn = el.querySelector(`[data-add="${CSS.escape(p.id)}"]`);
       if (btn) btn.addEventListener("click", () => addToCart(p, `size-${p.id}`, `qty-${p.id}`));
       SF.wireQtyStepper(`qty-${p.id}`);
     });
@@ -79,15 +83,12 @@
 
     const remaining = SF.getProductRemaining(p);
     if (remaining !== null) {
-      const already = cartQtyForProduct(p.id);
-      const room = remaining - already;
+      const room = remaining - cartQtyForProduct(p.id);
       if (room <= 0) {
         renderProducts();
         return;
       }
-      if (qty > room) {
-        qty = room;
-      }
+      if (qty > room) qty = room;
     }
 
     const existing = cart.find((c) => c.productId === p.id && c.size === size);
@@ -99,48 +100,75 @@
     renderCart();
     renderProducts();
     flashCart();
+    announce(`${qty} × ${p.name} (Größe ${size}) in den Warenkorb gelegt.`);
+  }
+
+  function announce(text) {
+    const live = document.getElementById("shop-live");
+    if (live) {
+      live.textContent = "";
+      setTimeout(() => (live.textContent = text), 50);
+    }
   }
 
   function flashCart() {
     const btn = document.getElementById("cart-open-btn");
-    btn.style.transform = "scale(1.08)";
-    setTimeout(() => (btn.style.transform = ""), 150);
+    btn.classList.add("cart-bump");
+    setTimeout(() => btn.classList.remove("cart-bump"), 150);
   }
 
   function cartTotal() {
     return cart.reduce((sum, c) => sum + c.price * c.qty, 0);
   }
 
+  function cartLinesHtml(withRemove) {
+    return cart
+      .map(
+        (c, i) => `
+        <div class="cart-line">
+          <div class="cart-line-info">
+            <strong>${esc(c.name)}</strong>
+            Größe ${esc(c.size)} &middot; ${Number(c.qty)} Stück &middot; ${SF.formatPrice(c.price * c.qty)}
+          </div>
+          ${
+            withRemove
+              ? `<button class="btn btn-outline btn-small" data-remove="${i}" aria-label="${esc(c.name)} (Größe ${esc(c.size)}) entfernen">Entfernen</button>`
+              : ""
+          }
+        </div>`
+      )
+      .join("");
+  }
+
   function renderCart() {
-    const countEl = document.getElementById("cart-count");
-    countEl.textContent = cart.reduce((n, c) => n + c.qty, 0);
+    const count = cart.reduce((n, c) => n + c.qty, 0);
+    document.getElementById("cart-count").textContent = count;
+    document
+      .getElementById("cart-open-btn")
+      .setAttribute("aria-label", `Warenkorb öffnen, ${count} Artikel`);
 
     const linesEl = document.getElementById("cart-lines");
     if (cart.length === 0) {
       linesEl.innerHTML = `<p>Dein Warenkorb ist noch leer.</p>`;
     } else {
-      linesEl.innerHTML = cart
-        .map(
-          (c, i) => `
-        <div class="cart-line">
-          <div class="cart-line-info">
-            <strong>${SF.escapeHtml(c.name)}</strong>
-            Größe ${SF.escapeHtml(c.size)} &middot; ${c.qty} Stück &middot; ${SF.formatPrice(c.price * c.qty)}
-          </div>
-          <button class="btn btn-outline btn-small" data-remove="${i}">Entfernen</button>
-        </div>`
-        )
-        .join("");
+      linesEl.innerHTML = cartLinesHtml(true);
       linesEl.querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", () => {
           cart.splice(parseInt(btn.getAttribute("data-remove"), 10), 1);
           renderCart();
           renderProducts();
+          const next = linesEl.querySelector("[data-remove]") || document.getElementById("cart-close-btn");
+          next.focus();
         });
       });
     }
     document.getElementById("cart-total").textContent = SF.formatPrice(cartTotal());
     document.getElementById("checkout-btn").disabled = cart.length === 0;
+  }
+
+  function renderCheckoutSummary() {
+    document.getElementById("co-summary-lines").innerHTML = cartLinesHtml(false);
+    document.getElementById("co-summary-total").textContent = SF.formatPrice(cartTotal());
   }
 
   // ---------- Produkt-Detailansicht ----------
@@ -150,7 +178,7 @@
     detailProduct = p;
     detailImageIndex = 0;
     renderDetail();
-    openModal("product-detail-modal");
+    openModal("product-detail-modal", "#pd-size");
   }
 
   function renderDetail() {
@@ -159,20 +187,22 @@
     const images = p.images && p.images.length ? p.images : null;
     const remaining = SF.getProductRemaining(p);
     const soldOut = remaining !== null && remaining <= 0;
+    const overlay = soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : "";
 
     const galleryEl = document.getElementById("pd-gallery");
     if (images) {
+      const n = detailImageIndex + 1;
       galleryEl.innerHTML = `
-        <div class="product-image" style="aspect-ratio:4/3; border-radius:var(--radius-sm); position:relative;">
-          <img src="${images[detailImageIndex]}" alt="${SF.escapeHtml(p.name)}" style="width:100%;height:100%;">
-          ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
+        <div class="product-image product-image-detail">
+          <img src="${esc(images[detailImageIndex])}" alt="${esc(p.name)} – Bild ${n} von ${images.length}" class="fill-img">
+          ${overlay}
         </div>
         ${
           images.length > 1
-            ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                <button type="button" class="btn btn-outline btn-small" id="pd-prev">&larr; Zurück</button>
-                <span class="hint">${detailImageIndex + 1} / ${images.length}</span>
-                <button type="button" class="btn btn-outline btn-small" id="pd-next">Weiter &rarr;</button>
+            ? `<div class="gallery-nav">
+                <button type="button" class="btn btn-outline btn-small" id="pd-prev" aria-label="Vorheriges Bild">&larr; Zurück</button>
+                <span class="hint" aria-live="polite">${n} / ${images.length}</span>
+                <button type="button" class="btn btn-outline btn-small" id="pd-next" aria-label="Nächstes Bild">Weiter &rarr;</button>
               </div>`
             : ""
         }
@@ -181,17 +211,19 @@
         document.getElementById("pd-prev").addEventListener("click", () => {
           detailImageIndex = (detailImageIndex - 1 + images.length) % images.length;
           renderDetail();
+          document.getElementById("pd-prev").focus();
         });
         document.getElementById("pd-next").addEventListener("click", () => {
           detailImageIndex = (detailImageIndex + 1) % images.length;
           renderDetail();
+          document.getElementById("pd-next").focus();
         });
       }
     } else {
       galleryEl.innerHTML = `
-        <div class="product-image" style="aspect-ratio:4/3; position:relative;">
-          ${SFIcons.hoodie(p.color || "#2c6e6b")}
-          ${soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : ""}
+        <div class="product-image product-image-detail">
+          ${SFIcons.hoodie(SF.safeColor(p.color))}
+          ${overlay}
         </div>`;
     }
 
@@ -202,7 +234,9 @@
       remaining !== null && !soldOut ? `Nur noch ${remaining} Stück verfügbar` : "";
 
     const sizeSelect = document.getElementById("pd-size");
-    sizeSelect.innerHTML = p.sizes.map((s) => `<option value="${SF.escapeHtml(s)}">${SF.escapeHtml(s)}</option>`).join("");
+    sizeSelect.innerHTML = (p.sizes || [])
+      .map((s) => `<option value="${esc(s)}">${esc(s)}</option>`)
+      .join("");
     sizeSelect.disabled = soldOut;
 
     const qtyWrap = document.getElementById("pd-qty-wrap");
@@ -214,11 +248,14 @@
     addBtn.textContent = soldOut ? "Ausverkauft" : "In den Warenkorb";
   }
 
-  function openModal(id) {
-    document.getElementById(id).classList.remove("hidden");
+  function openModal(id, initialFocus) {
+    SFUI.openDialog(document.getElementById(id), {
+      onEscape: () => closeModal(id),
+      initialFocus,
+    });
   }
   function closeModal(id) {
-    document.getElementById(id).classList.add("hidden");
+    SFUI.closeDialog(document.getElementById(id));
   }
 
   function setup() {
@@ -226,19 +263,22 @@
     renderCart();
 
     document.getElementById("cart-open-btn").addEventListener("click", () => openModal("cart-modal"));
+    ["cart-modal", "checkout-modal", "product-detail-modal", "confirmation-modal"].forEach((id) => {
+      document.getElementById(id).addEventListener("click", (e) => {
+        if (e.target.id === id) closeModal(id);
+      });
+    });
     document.getElementById("cart-close-btn").addEventListener("click", () => closeModal("cart-modal"));
-    document.getElementById("cart-modal").addEventListener("click", (e) => {
-      if (e.target.id === "cart-modal") closeModal("cart-modal");
-    });
-
     document.getElementById("pd-close-btn").addEventListener("click", () => closeModal("product-detail-modal"));
-    document.getElementById("product-detail-modal").addEventListener("click", (e) => {
-      if (e.target.id === "product-detail-modal") closeModal("product-detail-modal");
-    });
+    document.getElementById("checkout-close-btn").addEventListener("click", () => closeModal("checkout-modal"));
+    document.getElementById("confirmation-close-btn").addEventListener("click", () => closeModal("confirmation-modal"));
+    document.getElementById("confirmation-ok-btn").addEventListener("click", () => closeModal("confirmation-modal"));
+
     document.getElementById("pd-add").addEventListener("click", () => {
       if (detailProduct) {
         addToCart(detailProduct, "pd-size", "pd-qty");
         closeModal("product-detail-modal");
+        document.getElementById("cart-open-btn").focus();
       }
     });
 
@@ -246,26 +286,36 @@
       closeModal("cart-modal");
       SFAuth.requireLogin(() => {
         const user = SFAuth.getCurrentUser();
-        if (user) {
-          const nameField = document.getElementById("co-name");
-          if (!nameField.value) nameField.value = user.username;
-        }
-        openModal("checkout-modal");
+        const nameField = document.getElementById("co-name");
+        if (user && !nameField.value) nameField.value = user.username;
+        renderCheckoutSummary();
+        openModal("checkout-modal", "#co-name");
       });
     });
-    document.getElementById("checkout-close-btn").addEventListener("click", () => closeModal("checkout-modal"));
 
     document.getElementById("checkout-form").addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = document.getElementById("co-name").value.trim();
-      const klasse = document.getElementById("co-klasse").value.trim();
-      const phone = document.getElementById("co-phone").value.trim();
+      const msg = document.getElementById("checkout-message");
+      const name = SF.clampText(document.getElementById("co-name").value, 60);
+      const klasse = SF.clampText(document.getElementById("co-klasse").value, 20);
+      const phone = SF.clampText(document.getElementById("co-phone").value, 25);
       const user = SFAuth.getCurrentUser();
+
+      let error = null;
+      if (cart.length === 0) error = "Dein Warenkorb ist leer.";
+      else if (name.length < 2) error = "Bitte gib deinen Namen an.";
+      else if (!klasse) error = "Bitte gib deinen Klassennamen an.";
+      else if (!/^[0-9 +()/-]{6,25}$/.test(phone)) error = "Bitte gib eine gültige Telefonnummer an (nur Ziffern, Leerzeichen, + / - ( )).";
+      if (error) {
+        SFUI.showMessage(msg, error, "error");
+        return;
+      }
+      SFUI.hideMessage(msg);
 
       const order = SF.addOrder({
         customerName: name,
         klasse: klasse,
-        phone: phone || null,
+        phone: phone,
         username: user ? user.username : null,
         items: cart.map((c) => ({ ...c })),
         total: cartTotal(),
@@ -277,10 +327,8 @@
       document.getElementById("checkout-form").reset();
       closeModal("checkout-modal");
       document.getElementById("order-confirmation-id").textContent = order.id.slice(-6).toUpperCase();
-      openModal("confirmation-modal");
+      openModal("confirmation-modal", "#confirmation-ok-btn");
     });
-
-    document.getElementById("confirmation-close-btn").addEventListener("click", () => closeModal("confirmation-modal"));
   }
 
   document.addEventListener("DOMContentLoaded", setup);

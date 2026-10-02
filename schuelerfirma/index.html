@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Siebdruck-Schülerfirma &ndash; Montessori-Schule Dietramszell</title>
   <meta name="description" content="Siebdruck-Pullis, handgemacht von Schüler:innen der Montessori-Schule Dietramszell.">
-<link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="home">
 
   <header id="site-header" class="site-header"></header>
 
-  <main>
+  <main id="main">
     <section class="hero">
       <div class="container">
         <div class="hero-text">
@@ -24,12 +26,12 @@
           </p>
           <div class="hero-actions">
             <a href="shop.html" class="btn btn-primary">Zum Shop</a>
-            <a href="spezialbestellungen.html" class="btn btn-outline" style="background:#fff;">Spezialbestellung aufgeben</a>
+            <a href="spezialbestellungen.html" class="btn btn-outline btn-on-dark">Spezialbestellung aufgeben</a>
           </div>
         </div>
         <div class="hero-art">
-          <div style="background:rgba(255,255,255,0.12); border-radius:20px; padding:24px;">
-            <div id="hero-hoodie" style="color:#fff;"></div>
+          <div class="hero-art-box">
+            <div data-icon="hoodie" data-icon-color="#f2b705"></div>
           </div>
         </div>
       </div>
@@ -45,22 +47,22 @@
         </p>
         <div class="grid grid-4">
           <div class="info-card">
-            <div class="icon" id="icon-team"></div>
+            <div class="icon" data-icon="team"></div>
             <h3>Unsere Gruppe</h3>
             <p>Ca. 5 Schüler:innen der 7.&ndash;10. Klasse, die zusammen die Schülerfirma führen.</p>
           </div>
           <div class="info-card">
-            <div class="icon" id="icon-print"></div>
+            <div class="icon" data-icon="print"></div>
             <h3>Siebdruck von Hand</h3>
             <p>Jedes Motiv wird von uns selbst gestaltet und per Siebdruck aufgetragen.</p>
           </div>
           <div class="info-card">
-            <div class="icon" id="icon-cash"></div>
-            <h3>Fair &amp; einfach</h3>
+            <div class="icon" data-icon="cash"></div>
+            <h3>Einfach &amp; persönlich</h3>
             <p>Bestellen im Shop oder als Spezialwunsch, bar bezahlen bei Abholung.</p>
           </div>
           <div class="info-card">
-            <div class="icon" id="icon-sprout"></div>
+            <div class="icon" data-icon="sprout"></div>
             <h3>Teil des Erdkinderplans</h3>
             <p>Unsere Schülerfirma ist Teil des Erdkinderplans &ndash; wir lernen praktisch, wie man ein kleines Unternehmen führt.</p>
           </div>
@@ -68,11 +70,11 @@
       </div>
     </section>
 
-    <section style="background:var(--color-bg-alt); padding-bottom:56px;">
+    <section class="section-alt">
       <div class="container">
         <h2 class="section-title">Abholung &amp; Bezahlung</h2>
         <div class="pickup-banner">
-          <div class="icon" id="icon-pin"></div>
+          <div class="icon" data-icon="pin"></div>
           <div class="pickup-banner-text">
             <strong>Jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>
             Bezahlt wird ausschließlich bar bei Abholung &ndash; keine Online-Zahlung, kein PayPal.
@@ -108,17 +110,10 @@
 
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/email-config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/video.js"></script>
-  <script>
-    document.getElementById("icon-team").innerHTML = SFIcons.team;
-    document.getElementById("icon-print").innerHTML = SFIcons.print;
-    document.getElementById("icon-cash").innerHTML = SFIcons.cash;
-    document.getElementById("icon-sprout").innerHTML = SFIcons.sprout;
-    document.getElementById("icon-pin").innerHTML = SFIcons.pin;
-    document.getElementById("hero-hoodie").innerHTML = SFIcons.hoodie("#f2b705");
-  </script>
 </body>
 </html>

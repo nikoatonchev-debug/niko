@@ -70,11 +70,15 @@ const SF = (() => {
     }
   }
 
+  // Gibt false zurück, wenn der Browser-Speicher voll/gesperrt ist, damit
+  // die Oberfläche eine Fehlermeldung zeigen kann statt still zu scheitern.
   function write(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch (e) {
       console.warn("SF: konnte", key, "nicht speichern", e);
+      return false;
     }
   }
 
@@ -265,20 +269,19 @@ const SF = (() => {
     return getProducts().filter((p) => p.active !== false);
   }
   function saveProducts(list) {
-    write(KEYS.products, list);
+    return write(KEYS.products, list);
   }
   function addProduct(product) {
     const list = getProducts();
     list.push(Object.assign({ id: uid("p"), active: true }, product));
-    saveProducts(list);
+    return saveProducts(list);
   }
   function updateProduct(id, changes) {
     const list = getProducts();
     const idx = list.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      list[idx] = Object.assign({}, list[idx], changes);
-      saveProducts(list);
-    }
+    if (idx === -1) return false;
+    list[idx] = Object.assign({}, list[idx], changes);
+    return saveProducts(list);
   }
   function deleteProduct(id) {
     saveProducts(getProducts().filter((p) => p.id !== id));
@@ -321,8 +324,7 @@ const SF = (() => {
       order
     );
     list.unshift(full);
-    write(KEYS.orders, list);
-    return full;
+    return write(KEYS.orders, list) ? full : null;
   }
   function updateOrder(id, changes) {
     const list = getOrders();
@@ -335,9 +337,15 @@ const SF = (() => {
   function deleteOrder(id) {
     write(KEYS.orders, getOrders().filter((o) => o.id !== id));
   }
-  function getOrdersByUsername(username) {
-    const needle = String(username || "").toLowerCase();
-    return getOrders().filter((o) => (o.username || "").toLowerCase() === needle);
+  // Neue Bestellungen hängen an der Konto-ID; ältere (ohne userId) werden
+  // noch über den Benutzernamen zugeordnet.
+  function belongsTo(order, user) {
+    if (!user) return false;
+    if (order.userId) return order.userId === user.id;
+    return !!order.username && order.username.toLowerCase() === String(user.username || "").toLowerCase();
+  }
+  function getOrdersForUser(user) {
+    return getOrders().filter((o) => belongsTo(o, user));
   }
 
   // ---- Special orders (Spezialbestellungen) ----
@@ -355,8 +363,7 @@ const SF = (() => {
       order
     );
     list.unshift(full);
-    write(KEYS.specialOrders, list);
-    return full;
+    return write(KEYS.specialOrders, list) ? full : null;
   }
   function updateSpecialOrder(id, changes) {
     const list = getSpecialOrders();
@@ -369,9 +376,8 @@ const SF = (() => {
   function deleteSpecialOrder(id) {
     write(KEYS.specialOrders, getSpecialOrders().filter((o) => o.id !== id));
   }
-  function getSpecialOrdersByUsername(username) {
-    const needle = String(username || "").toLowerCase();
-    return getSpecialOrders().filter((o) => (o.username || "").toLowerCase() === needle);
+  function getSpecialOrdersForUser(user) {
+    return getSpecialOrders().filter((o) => belongsTo(o, user));
   }
 
   // ---- Reviews / Feedback ----
@@ -385,8 +391,7 @@ const SF = (() => {
       review
     );
     list.unshift(full);
-    write(KEYS.reviews, list);
-    return full;
+    return write(KEYS.reviews, list) ? full : null;
   }
   function deleteReview(id) {
     write(KEYS.reviews, getReviews().filter((r) => r.id !== id));
@@ -546,8 +551,7 @@ const SF = (() => {
       user
     );
     list.unshift(full);
-    write(KEYS.users, list);
-    return full;
+    return write(KEYS.users, list) ? full : null;
   }
   function updateUser(id, changes) {
     const list = getUsers();
@@ -557,7 +561,26 @@ const SF = (() => {
       write(KEYS.users, list);
     }
   }
+  // Löscht das Konto und löst die Bestellungen davon, damit ein späteres
+  // Konto mit demselben Namen sie nicht sehen kann. Name/Telefon bleiben
+  // für die Abwicklung im Admin-Bereich erhalten.
   function deleteUser(id) {
+    const user = getUsers().find((u) => u.id === id);
+    if (user) {
+      [KEYS.orders, KEYS.specialOrders].forEach((key) => {
+        const list = read(key, []);
+        let changed = false;
+        list.forEach((o) => {
+          if (belongsTo(o, user)) {
+            o.userId = null;
+            o.username = null;
+            o.accountDeleted = true;
+            changed = true;
+          }
+        });
+        if (changed) write(key, list);
+      });
+    }
     write(KEYS.users, getUsers().filter((u) => u.id !== id));
   }
 
@@ -586,12 +609,12 @@ const SF = (() => {
     addOrder,
     updateOrder,
     deleteOrder,
-    getOrdersByUsername,
+    getOrdersForUser,
     getSpecialOrders,
     addSpecialOrder,
     updateSpecialOrder,
     deleteSpecialOrder,
-    getSpecialOrdersByUsername,
+    getSpecialOrdersForUser,
     getReviews,
     addReview,
     deleteReview,

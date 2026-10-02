@@ -1,4 +1,6 @@
 (function () {
+  const REVIEW_COOLDOWN_S = 60;
+
   function starString(n) {
     n = Math.max(0, Math.min(5, Number(n) || 0));
     return "★".repeat(n) + "☆".repeat(5 - n);
@@ -47,12 +49,22 @@
         SFUI.showMessage(msg, "Bitte schreib ein paar Worte zu deinem Feedback.", "error");
         return;
       }
+      const wait = SF.cooldownSecondsLeft("review", REVIEW_COOLDOWN_S);
+      if (wait > 0) {
+        SFUI.showMessage(msg, `Danke! Bitte warte noch ${wait} Sekunden, bevor du die nächste Bewertung abgibst.`, "error");
+        return;
+      }
 
-      SF.addReview({
+      const saved = SF.addReview({
         name: name || "Anonym",
         rating,
         comment,
       });
+      if (!saved) {
+        SFUI.showMessage(msg, "Dein Feedback konnte nicht gespeichert werden (Browser-Speicher voll oder gesperrt).", "error");
+        return;
+      }
+      SF.startCooldown("review");
 
       form.reset();
       SFUI.showMessage(msg, "Danke für dein Feedback!", "success");

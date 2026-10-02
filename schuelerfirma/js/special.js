@@ -33,15 +33,24 @@
       SFAuth.requireLogin(() => {
         const user = SFAuth.getCurrentUser();
 
-        SF.addSpecialOrder({
+        const saved = SF.addSpecialOrder({
           name,
           phone,
           klasse,
           groesse,
           menge,
           wunsch,
+          userId: user ? user.id : null,
           username: user ? user.username : null,
         });
+        if (!saved) {
+          SFUI.showMessage(
+            msg,
+            "Deine Anfrage konnte nicht gespeichert werden (Speicher deines Browsers ist voll oder gesperrt).",
+            "error"
+          );
+          return;
+        }
 
         form.reset();
         renderMenge();

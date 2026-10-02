@@ -422,6 +422,10 @@ const SFAuth = (function () {
         email: pendingReg.email,
         passwordHash: pendingReg.passwordHash,
       });
+      if (!user) {
+        SFUI.showMessage(msg, "Dein Konto konnte nicht gespeichert werden (Browser-Speicher voll oder gesperrt).", "error");
+        return;
+      }
       pendingReg = null;
       finishLogin(user);
     });

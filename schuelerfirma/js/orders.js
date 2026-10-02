@@ -12,8 +12,8 @@
     return esc(String(id || "").slice(-6).toUpperCase());
   }
 
-  function renderShopOrders(username) {
-    const list = SF.getOrdersByUsername(username);
+  function renderShopOrders(user) {
+    const list = SF.getOrdersForUser(user);
     const el = document.getElementById("shop-orders-list");
     if (list.length === 0) {
       el.innerHTML = `<p class="hint">Du hast noch keine Shop-Bestellungen aufgegeben.</p>`;
@@ -40,8 +40,8 @@
       .join("");
   }
 
-  function renderSpecialOrders(username) {
-    const list = SF.getSpecialOrdersByUsername(username);
+  function renderSpecialOrders(user) {
+    const list = SF.getSpecialOrdersForUser(user);
     const el = document.getElementById("special-orders-list");
     if (list.length === 0) {
       el.innerHTML = `<p class="hint">Du hast noch keine Spezialbestellungen aufgegeben.</p>`;
@@ -71,8 +71,8 @@
     }
     document.getElementById("orders-login-hint").classList.add("hidden");
     document.getElementById("orders-content").classList.remove("hidden");
-    renderShopOrders(user.username);
-    renderSpecialOrders(user.username);
+    renderShopOrders(user);
+    renderSpecialOrders(user);
   }
 
   function showLoginHint() {

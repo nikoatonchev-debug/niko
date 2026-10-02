@@ -316,10 +316,19 @@
         customerName: name,
         klasse: klasse,
         phone: phone,
+        userId: user ? user.id : null,
         username: user ? user.username : null,
         items: cart.map((c) => ({ ...c })),
         total: cartTotal(),
       });
+      if (!order) {
+        SFUI.showMessage(
+          msg,
+          "Deine Bestellung konnte nicht gespeichert werden (Speicher deines Browsers ist voll oder gesperrt). Bitte versuche es in einem anderen Browser.",
+          "error"
+        );
+        return;
+      }
 
       cart = [];
       renderCart();

@@ -2,7 +2,16 @@
   const SESSION_KEY = "sf_admin_session";
   const IDLE_LIMIT_MS = 30 * 60 * 1000;
   const PASSWORD_MIN = 8;
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+  const MAX_IMAGES = 8;
   const esc = (s) => SF.escapeHtml(s);
+
+  function accountLabel(o) {
+    if (o.username) return "<br><span class='hint'>Konto: " + esc(o.username) + "</span>";
+    if (o.accountDeleted) return "<br><span class='hint'>Konto gelöscht</span>";
+    return "";
+  }
 
   // ---------- Session (nur in diesem Tab, mit Auto-Logout bei Inaktivität) ----------
   function isAuthed() {
@@ -223,17 +232,33 @@
     const msg = document.getElementById("product-message");
     document.getElementById("pf-color").value = "#2c6e6b";
 
+    // Bilder werden neu als JPEG gezeichnet: das entfernt versteckte Daten
+    // (z. B. GPS-Standort aus Handyfotos) und alles, was kein Bild ist.
     document.getElementById("pf-images").addEventListener("change", async (e) => {
-      const files = Array.from(e.target.files || []).filter((f) => /^image\//.test(f.type));
-      for (const file of files) {
+      const problems = [];
+      for (const file of Array.from(e.target.files || [])) {
+        if (pendingImages.length >= MAX_IMAGES) {
+          problems.push(`Maximal ${MAX_IMAGES} Bilder pro Produkt.`);
+          break;
+        }
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          problems.push(`„${file.name}“ ist kein JPG-, PNG-, WebP- oder GIF-Bild.`);
+          continue;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          problems.push(`„${file.name}“ ist größer als 15 MB.`);
+          continue;
+        }
         try {
           pendingImages.push(await SF.resizeImageFile(file));
         } catch (err) {
-          console.warn("Bild konnte nicht verarbeitet werden", err);
+          problems.push(`„${file.name}“ konnte nicht gelesen werden.`);
         }
       }
       e.target.value = "";
       renderImagePreview();
+      if (problems.length) SFUI.showMessage(msg, problems.join(" "), "error");
+      else SFUI.hideMessage(msg);
     });
 
     document.getElementById("product-form-cancel").addEventListener("click", exitEditMode);
@@ -262,10 +287,16 @@
       SFUI.hideMessage(msg);
 
       const payload = { name, description, price, color, sizes, stock, images: pendingImages.slice() };
-      if (editingProductId) {
-        SF.updateProduct(editingProductId, payload);
-      } else {
-        SF.addProduct(Object.assign({ active: true }, payload));
+      const ok = editingProductId
+        ? SF.updateProduct(editingProductId, payload)
+        : SF.addProduct(Object.assign({ active: true }, payload));
+      if (!ok) {
+        SFUI.showMessage(
+          msg,
+          "Konnte nicht gespeichert werden: Der Speicher des Browsers ist voll. Bitte weniger oder kleinere Bilder verwenden.",
+          "error"
+        );
+        return;
       }
       exitEditMode();
       renderProducts();
@@ -292,7 +323,7 @@
         return `
         <tr>
           <td>${SF.formatDate(o.date)}</td>
-          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + esc(o.phone) + "</span>" : ""}${o.username ? "<br><span class='hint'>Konto: " + esc(o.username) + "</span>" : ""}</td>
+          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + esc(o.phone) + "</span>" : ""}${accountLabel(o)}</td>
           <td>${items}</td>
           <td>${SF.formatPrice(o.total)}</td>
           <td><span class="badge ${badgeClass}">${esc(SF.orderStatusLabel(o.status))}</span></td>
@@ -341,7 +372,7 @@
         return `
       <tr>
         <td>${SF.formatDate(s.date)}</td>
-        <td>${esc(s.name)}${s.klasse ? " (" + esc(s.klasse) + ")" : ""}${s.username ? "<br><span class='hint'>Konto: " + esc(s.username) + "</span>" : ""}</td>
+        <td>${esc(s.name)}${s.klasse ? " (" + esc(s.klasse) + ")" : ""}${accountLabel(s)}</td>
         <td><strong>${esc(s.phone)}</strong></td>
         <td>${esc(s.groesse)} &middot; ${Number(s.menge) || 1}x</td>
         <td>${esc(s.wunsch)}</td>

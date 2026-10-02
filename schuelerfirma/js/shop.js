@@ -1,5 +1,6 @@
 (function () {
   let cart = []; // { productId, name, size, qty, price }
+  let products = []; // aktuelle Produktliste aus der Datenbank
   let detailProduct = null;
   let detailImageIndex = 0;
 
@@ -59,7 +60,6 @@
 
   function renderProducts() {
     const el = document.getElementById("product-grid");
-    const products = SF.getActiveProducts();
     if (products.length === 0) {
       el.innerHTML = `<p>Aktuell sind keine Produkte im Shop verfügbar. Schau bald wieder vorbei!</p>`;
       return;
@@ -73,6 +73,21 @@
     el.querySelectorAll("[data-open-detail]").forEach((elm) => {
       elm.addEventListener("click", () => openDetail(elm.getAttribute("data-open-detail")));
     });
+  }
+
+  async function loadProducts() {
+    const el = document.getElementById("product-grid");
+    try {
+      products = await SFDB.getActiveProducts();
+    } catch (e) {
+      el.innerHTML = `<p class="form-message error" role="alert">Die Produkte konnten gerade nicht geladen werden. ${SF.escapeHtml(SFDB.errorMessage(e))}</p>`;
+      return false;
+    }
+    // Waren, die inzwischen weniger werden/verschwinden, aus dem Warenkorb nehmen
+    cart = cart.filter((c) => products.some((p) => p.id === c.productId));
+    renderCart();
+    renderProducts();
+    return true;
   }
 
   function addToCart(p, sizeFieldId, qtyFieldId) {
@@ -173,7 +188,7 @@
 
   // ---------- Produkt-Detailansicht ----------
   function openDetail(productId) {
-    const p = SF.getProducts().find((x) => x.id === productId);
+    const p = products.find((x) => x.id === productId);
     if (!p) return;
     detailProduct = p;
     detailImageIndex = 0;
@@ -259,7 +274,10 @@
   }
 
   function setup() {
-    renderProducts();
+    const grid = document.getElementById("product-grid");
+    grid.setAttribute("aria-busy", "true");
+    grid.innerHTML = `<p class="hint">Produkte werden geladen …</p>`;
+    loadProducts().then(() => grid.removeAttribute("aria-busy"));
     renderCart();
 
     document.getElementById("cart-open-btn").addEventListener("click", () => openModal("cart-modal"));
@@ -293,16 +311,18 @@
       });
     });
 
-    document.getElementById("checkout-form").addEventListener("submit", (e) => {
+    document.getElementById("checkout-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = document.getElementById("checkout-message");
+      const submitBtn = document.querySelector("#checkout-form button[type=submit]");
       const name = SF.clampText(document.getElementById("co-name").value, 60);
       const klasse = SF.clampText(document.getElementById("co-klasse").value, 20);
       const phone = SF.clampText(document.getElementById("co-phone").value, 25);
-      const user = SFAuth.getCurrentUser();
 
       let error = null;
       if (cart.length === 0) error = "Dein Warenkorb ist leer.";
+      else if (new Set(cart.map((c) => c.productId)).size > SFDB.MAX_CART_PRODUCTS)
+        error = `Bitte bestelle höchstens ${SFDB.MAX_CART_PRODUCTS} verschiedene Produkte auf einmal.`;
       else if (name.length < 2) error = "Bitte gib deinen Namen an.";
       else if (!klasse) error = "Bitte gib deinen Klassennamen an.";
       else if (!/^[0-9 +()/-]{6,25}$/.test(phone)) error = "Bitte gib eine gültige Telefonnummer an (nur Ziffern, Leerzeichen, + / - ( )).";
@@ -312,31 +332,32 @@
       }
       SFUI.hideMessage(msg);
 
-      const order = SF.addOrder({
-        customerName: name,
-        klasse: klasse,
-        phone: phone,
-        userId: user ? user.id : null,
-        username: user ? user.username : null,
-        items: cart.map((c) => ({ ...c })),
-        total: cartTotal(),
-      });
-      if (!order) {
-        SFUI.showMessage(
-          msg,
-          "Deine Bestellung konnte nicht gespeichert werden (Speicher deines Browsers ist voll oder gesperrt). Bitte versuche es in einem anderen Browser.",
-          "error"
-        );
-        return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Bestellung wird gesendet …";
+      try {
+        const order = await SFDB.placeOrder({
+          customerName: name,
+          klasse,
+          phone,
+          items: cart.map((c) => ({ productId: c.productId, size: c.size, qty: c.qty })),
+        });
+        cart = [];
+        renderCart();
+        await loadProducts();
+        document.getElementById("checkout-form").reset();
+        closeModal("checkout-modal");
+        document.getElementById("order-confirmation-id").textContent = order.id.slice(-6).toUpperCase();
+        openModal("confirmation-modal", "#confirmation-ok-btn");
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+        if (err && (err.code === "sf/soldout" || err.code === "sf/gone")) {
+          await loadProducts();
+          renderCheckoutSummary();
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Zahlungspflichtig bestellen";
       }
-
-      cart = [];
-      renderCart();
-      renderProducts();
-      document.getElementById("checkout-form").reset();
-      closeModal("checkout-modal");
-      document.getElementById("order-confirmation-id").textContent = order.id.slice(-6).toUpperCase();
-      openModal("confirmation-modal", "#confirmation-ok-btn");
     });
   }
 

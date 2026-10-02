@@ -1,64 +1,106 @@
 (function () {
-  const SESSION_KEY = "sf_admin_session";
   const IDLE_LIMIT_MS = 30 * 60 * 1000;
-  const PASSWORD_MIN = 8;
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
-  const MAX_IMAGES = 8;
+  const MAX_IMAGES = 6;
+  const MAX_TOTAL_IMAGE_BYTES = 800 * 1024; // Firestore: höchstens 1 MB pro Dokument
   const esc = (s) => SF.escapeHtml(s);
 
-  function accountLabel(o) {
-    if (o.username) return "<br><span class='hint'>Konto: " + esc(o.username) + "</span>";
-    if (o.accountDeleted) return "<br><span class='hint'>Konto gelöscht</span>";
-    return "";
+  let lastActivity = Date.now();
+  let products = [];
+  let editingProductId = null;
+  let pendingImages = [];
+
+  // ---------- Anmeldung / Ansicht ----------
+  function showOnly(id) {
+    ["admin-login", "admin-dashboard"].forEach((s) =>
+      document.getElementById(s).classList.toggle("hidden", s !== id)
+    );
+  }
+  function showLogin(notice, type) {
+    showOnly("admin-login");
+    if (notice) SFUI.showMessage(document.getElementById("login-message"), notice, type || "error");
+  }
+  async function showDashboard() {
+    const user = SFDB.currentUser();
+    document.getElementById("admin-email-label").textContent = user ? user.email : "";
+    showOnly("admin-dashboard");
+    await renderAll();
   }
 
-  // ---------- Session (nur in diesem Tab, mit Auto-Logout bei Inaktivität) ----------
-  function isAuthed() {
-    const last = parseInt(sessionStorage.getItem(SESSION_KEY) || "0", 10);
-    if (!last) return false;
-    if (Date.now() - last > IDLE_LIMIT_MS) {
-      sessionStorage.removeItem(SESSION_KEY);
-      return false;
+  async function handleAuthState(user) {
+    if (!user) {
+      showOnly("admin-login");
+      return;
     }
-    return true;
+    if (!user.isAdmin) {
+      await SFDB.logout();
+      showLogin(
+        user.emailVerified
+          ? "Dieses Konto hat keinen Zugriff auf den Admin-Bereich."
+          : "Bitte bestätige zuerst deine E-Mail-Adresse (Link in der E-Mail) und melde dich dann erneut an.",
+        "error"
+      );
+      return;
+    }
+    lastActivity = Date.now();
+    await showDashboard();
   }
-  function touchSession() {
-    if (sessionStorage.getItem(SESSION_KEY)) sessionStorage.setItem(SESSION_KEY, String(Date.now()));
-  }
-  function setAuthed(v) {
-    if (v) sessionStorage.setItem(SESSION_KEY, String(Date.now()));
-    else sessionStorage.removeItem(SESSION_KEY);
-  }
+
   function watchIdle() {
-    ["click", "keydown"].forEach((ev) => document.addEventListener(ev, touchSession, { passive: true }));
-    setInterval(() => {
-      if (!document.getElementById("admin-dashboard").classList.contains("hidden") && !isAuthed()) {
-        showLogin("Du wurdest nach 30 Minuten ohne Aktivität automatisch abgemeldet.");
+    ["click", "keydown"].forEach((ev) =>
+      document.addEventListener(ev, () => (lastActivity = Date.now()), { passive: true })
+    );
+    setInterval(async () => {
+      if (!document.getElementById("admin-dashboard").classList.contains("hidden") && Date.now() - lastActivity > IDLE_LIMIT_MS) {
+        await SFDB.logout();
+        showLogin("Du wurdest nach 30 Minuten ohne Aktivität automatisch abgemeldet.", "error");
       }
     }, 60 * 1000);
   }
 
-  function showOnly(id) {
-    ["admin-login", "admin-force-pw", "admin-dashboard"].forEach((s) =>
-      document.getElementById(s).classList.toggle("hidden", s !== id)
-    );
-  }
-  function showLogin(notice) {
-    setAuthed(false);
-    showOnly("admin-login");
+  function setupLogin() {
+    const form = document.getElementById("login-form");
     const msg = document.getElementById("login-message");
-    if (notice) SFUI.showMessage(msg, notice, "error");
-    document.getElementById("login-password").focus();
-  }
-  function showDashboard() {
-    if (SF.adminPasswordIsDefault()) {
-      showOnly("admin-force-pw");
-      document.getElementById("fpw-new").focus();
-      return;
-    }
-    showOnly("admin-dashboard");
-    renderAll();
+    const btn = document.getElementById("login-submit");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = SF.clampText(document.getElementById("login-email").value, 100);
+      const pw = document.getElementById("login-password").value;
+      if (!email || !pw) {
+        SFUI.showMessage(msg, "Bitte gib E-Mail-Adresse und Passwort ein.", "error");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Einen Moment …";
+      try {
+        await SFDB.login(email, pw);
+        form.reset();
+        SFUI.hideMessage(msg);
+        // Weiter geht es in handleAuthState (onAuthChange)
+        await handleAuthState(SFDB.currentUser());
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Anmelden";
+      }
+    });
+
+    document.getElementById("admin-reset-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = SF.clampText(document.getElementById("login-email").value, 100);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        SFUI.showMessage(msg, "Bitte gib oben deine E-Mail-Adresse ein und tippe dann noch einmal auf „Passwort vergessen?“.", "error");
+        return;
+      }
+      try {
+        await SFDB.resetPassword(email);
+        SFUI.showMessage(msg, "Falls es ein Konto mit dieser E-Mail-Adresse gibt, haben wir dir einen Link geschickt (auch im Spam-Ordner nachsehen).", "success");
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      }
+    });
   }
 
   // ---------- Tabs ----------
@@ -98,34 +140,39 @@
     activate(buttons.find((b) => b.classList.contains("active")) || buttons[0]);
   }
 
-  // ---------- Stats ----------
-  function renderStats() {
-    document.getElementById("stat-products").textContent = SF.getProducts().length;
-    document.getElementById("stat-orders").textContent = SF.getOrders().filter((o) => o.status === "offen").length;
-    document.getElementById("stat-special").textContent = SF.getSpecialOrders().filter((s) => s.status === "offen").length;
-    document.getElementById("stat-reviews").textContent = SF.getReviews().length;
-    document.getElementById("stat-users").textContent = SF.getUsers().length;
+  function loadError(tbodyId, cols, err) {
+    document.getElementById(tbodyId).innerHTML = `<tr><td colspan="${cols}" class="table-empty">${esc(SFDB.errorMessage(err))}</td></tr>`;
+  }
+
+  async function guarded(fn) {
+    try {
+      await fn();
+    } catch (err) {
+      alert(SFDB.errorMessage(err));
+    }
   }
 
   // ---------- Produkte ----------
-  let editingProductId = null;
-  let pendingImages = [];
-
-  function renderProducts() {
-    const list = SF.getProducts();
+  async function renderProducts() {
     const el = document.getElementById("product-table-body");
-    if (list.length === 0) {
+    try {
+      products = await SFDB.getProducts();
+    } catch (err) {
+      loadError("product-table-body", 8, err);
+      return;
+    }
+    if (products.length === 0) {
       el.innerHTML = `<tr><td colspan="8" class="table-empty">Noch keine Produkte angelegt.</td></tr>`;
       return;
     }
-    el.innerHTML = list
+    el.innerHTML = products
       .map((p) => {
         const id = esc(p.id);
         const remaining = SF.getProductRemaining(p);
         const soldOut = remaining !== null && remaining <= 0;
         const stockBadge =
           remaining === null
-            ? "unbegrenzt"
+            ? `unbegrenzt<br><span class="hint">${p.sold} verkauft</span>`
             : soldOut
             ? `<span class="badge badge-declined">ausverkauft</span>`
             : `${remaining} / ${Number(p.stock)} übrig`;
@@ -133,7 +180,6 @@
           p.images && p.images[0]
             ? `<img src="${esc(p.images[0])}" alt="" class="admin-thumb">`
             : `<span class="admin-thumb" style="background:${SF.safeColor(p.color, "#999999")};"></span>`;
-        const active = p.active !== false;
         return `
       <tr>
         <td>${thumb}</td>
@@ -142,10 +188,10 @@
         <td>${SF.formatPrice(p.price)}</td>
         <td>${esc((p.sizes || []).join(", "))}</td>
         <td>${stockBadge}</td>
-        <td><span class="badge ${active ? "badge-accepted" : ""}">${active ? "aktiv" : "inaktiv"}</span></td>
+        <td><span class="badge ${p.active ? "badge-accepted" : ""}">${p.active ? "aktiv" : "inaktiv"}</span></td>
         <td class="actions-cell">
           <button class="btn btn-outline btn-small" data-edit-product="${id}" aria-label="${esc(p.name)} bearbeiten">Bearbeiten</button>
-          <button class="btn btn-outline btn-small" data-toggle="${id}" aria-label="${esc(p.name)} ${active ? "deaktivieren" : "aktivieren"}">${active ? "Deaktivieren" : "Aktivieren"}</button>
+          <button class="btn btn-outline btn-small" data-toggle="${id}" aria-label="${esc(p.name)} ${p.active ? "deaktivieren" : "aktivieren"}">${p.active ? "Deaktivieren" : "Aktivieren"}</button>
           <button class="btn btn-danger btn-small" data-delete-product="${id}" aria-label="${esc(p.name)} löschen">Löschen</button>
         </td>
       </tr>`;
@@ -153,25 +199,27 @@
       .join("");
 
     el.querySelectorAll("[data-toggle]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-toggle");
-        const p = SF.getProductById(id);
-        if (!p) return;
-        SF.updateProduct(id, { active: !(p.active !== false) });
-        renderProducts();
-        renderStats();
-      })
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          const p = products.find((x) => x.id === btn.getAttribute("data-toggle"));
+          if (!p) return;
+          await SFDB.setProductActive(p.id, !p.active);
+          await renderProducts();
+          renderStats();
+        })
+      )
     );
     el.querySelectorAll("[data-delete-product]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-delete-product");
-        if (confirm("Dieses Produkt wirklich löschen?")) {
-          SF.deleteProduct(id);
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          const id = btn.getAttribute("data-delete-product");
+          if (!confirm("Dieses Produkt wirklich löschen?")) return;
+          await SFDB.deleteProduct(id);
           if (editingProductId === id) exitEditMode();
-          renderProducts();
+          await renderProducts();
           renderStats();
-        }
-      })
+        })
+      )
     );
     el.querySelectorAll("[data-edit-product]").forEach((btn) =>
       btn.addEventListener("click", () => enterEditMode(btn.getAttribute("data-edit-product")))
@@ -198,7 +246,7 @@
   }
 
   function enterEditMode(id) {
-    const p = SF.getProductById(id);
+    const p = products.find((x) => x.id === id);
     if (!p) return;
     editingProductId = id;
     document.getElementById("pf-name").value = p.name;
@@ -227,6 +275,10 @@
     document.getElementById("product-form-cancel").classList.add("hidden");
   }
 
+  function totalImageBytes() {
+    return pendingImages.reduce((n, src) => n + SF.dataUrlBytes(src), 0);
+  }
+
   function setupProductForm() {
     const form = document.getElementById("product-form");
     const msg = document.getElementById("product-message");
@@ -250,7 +302,12 @@
           continue;
         }
         try {
-          pendingImages.push(await SF.resizeImageFile(file));
+          const img = await SF.resizeImageFile(file, 800, 150 * 1024);
+          if (totalImageBytes() + SF.dataUrlBytes(img) > MAX_TOTAL_IMAGE_BYTES) {
+            problems.push(`„${file.name}“ passt nicht mehr dazu: Alle Bilder eines Produkts zusammen dürfen höchstens etwa 800 KB groß sein.`);
+            continue;
+          }
+          pendingImages.push(img);
         } catch (err) {
           problems.push(`„${file.name}“ konnte nicht gelesen werden.`);
         }
@@ -263,7 +320,7 @@
 
     document.getElementById("product-form-cancel").addEventListener("click", exitEditMode);
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = SF.clampText(document.getElementById("pf-name").value, 60);
       const description = SF.clampText(document.getElementById("pf-description").value, 500);
@@ -286,34 +343,41 @@
       }
       SFUI.hideMessage(msg);
 
+      const submit = document.getElementById("product-form-submit");
+      submit.disabled = true;
+      submit.textContent = "Wird gespeichert …";
       const payload = { name, description, price, color, sizes, stock, images: pendingImages.slice() };
-      const ok = editingProductId
-        ? SF.updateProduct(editingProductId, payload)
-        : SF.addProduct(Object.assign({ active: true }, payload));
-      if (!ok) {
-        SFUI.showMessage(
-          msg,
-          "Konnte nicht gespeichert werden: Der Speicher des Browsers ist voll. Bitte weniger oder kleinere Bilder verwenden.",
-          "error"
-        );
-        return;
+      try {
+        if (editingProductId) await SFDB.updateProduct(editingProductId, payload);
+        else await SFDB.addProduct(Object.assign({ active: true }, payload));
+        exitEditMode();
+        await renderProducts();
+        renderStats();
+        SFUI.showMessage(msg, "Gespeichert.", "success");
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      } finally {
+        submit.disabled = false;
+        submit.textContent = editingProductId ? "Änderungen speichern" : "Produkt hinzufügen";
       }
-      exitEditMode();
-      renderProducts();
-      renderStats();
-      SFUI.showMessage(msg, "Gespeichert.", "success");
     });
   }
 
   // ---------- Bestellungen (Shop) ----------
-  function renderOrders() {
-    const list = SF.getOrders();
+  let orders = [];
+  async function renderOrders() {
     const el = document.getElementById("orders-table-body");
-    if (list.length === 0) {
+    try {
+      orders = await SFDB.getAllOrders();
+    } catch (err) {
+      loadError("orders-table-body", 6, err);
+      return;
+    }
+    if (orders.length === 0) {
       el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Bestellungen.</td></tr>`;
       return;
     }
-    el.innerHTML = list
+    el.innerHTML = orders
       .map((o) => {
         const id = esc(o.id);
         const items = (o.items || [])
@@ -322,57 +386,66 @@
         const badgeClass = o.status === "abgeholt" ? "badge-accepted" : "badge-open";
         return `
         <tr>
-          <td>${SF.formatDate(o.date)}</td>
-          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + esc(o.phone) + "</span>" : ""}${accountLabel(o)}</td>
+          <td>${SF.formatDate(o.date)}<br><span class="hint">#${esc(String(o.id).slice(-6).toUpperCase())}</span></td>
+          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + esc(o.phone) + "</span>" : ""}${o.username ? "<br><span class='hint'>Konto: " + esc(o.username) + "</span>" : ""}</td>
           <td>${items}</td>
           <td>${SF.formatPrice(o.total)}</td>
           <td><span class="badge ${badgeClass}">${esc(SF.orderStatusLabel(o.status))}</span></td>
           <td class="actions-cell">
             ${o.status !== "abgeholt" ? `<button class="btn btn-secondary btn-small" data-collect="${id}">Als abgeholt markieren</button>` : ""}
-            <button class="btn btn-danger btn-small" data-delete-order="${id}" aria-label="Bestellung vom ${SF.formatDate(o.date)} löschen">Löschen</button>
+            <button class="btn btn-danger btn-small" data-delete-order="${id}" aria-label="Bestellung #${esc(String(o.id).slice(-6).toUpperCase())} löschen">Löschen</button>
           </td>
         </tr>`;
       })
       .join("");
 
     el.querySelectorAll("[data-collect]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        SF.updateOrder(btn.getAttribute("data-collect"), { status: "abgeholt" });
-        renderOrders();
-        renderStats();
-      })
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          await SFDB.updateOrderStatus(btn.getAttribute("data-collect"), "abgeholt");
+          await renderOrders();
+          renderStats();
+        })
+      )
     );
     el.querySelectorAll("[data-delete-order]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (confirm("Diese Bestellung wirklich löschen?")) {
-          SF.deleteOrder(btn.getAttribute("data-delete-order"));
-          renderOrders();
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          if (!confirm("Diese Bestellung wirklich löschen?")) return;
+          await SFDB.deleteOrder(btn.getAttribute("data-delete-order"));
+          await renderOrders();
           renderStats();
-        }
-      })
+        })
+      )
     );
   }
 
   // ---------- Spezialbestellungen ----------
+  let specials = [];
   function statusBadge(status) {
     const map = { offen: "badge-open", akzeptiert: "badge-accepted", abgelehnt: "badge-declined" };
     return `<span class="badge ${map[status] || ""}">${esc(status)}</span>`;
   }
 
-  function renderSpecial() {
-    const list = SF.getSpecialOrders();
+  async function renderSpecial() {
     const el = document.getElementById("special-table-body");
-    if (list.length === 0) {
+    try {
+      specials = await SFDB.getAllSpecialOrders();
+    } catch (err) {
+      loadError("special-table-body", 7, err);
+      return;
+    }
+    if (specials.length === 0) {
       el.innerHTML = `<tr><td colspan="7" class="table-empty">Noch keine Spezialbestellungen.</td></tr>`;
       return;
     }
-    el.innerHTML = list
+    el.innerHTML = specials
       .map((s) => {
         const id = esc(s.id);
         return `
       <tr>
         <td>${SF.formatDate(s.date)}</td>
-        <td>${esc(s.name)}${s.klasse ? " (" + esc(s.klasse) + ")" : ""}${accountLabel(s)}</td>
+        <td>${esc(s.name)}${s.klasse ? " (" + esc(s.klasse) + ")" : ""}${s.username ? "<br><span class='hint'>Konto: " + esc(s.username) + "</span>" : ""}</td>
         <td><strong>${esc(s.phone)}</strong></td>
         <td>${esc(s.groesse)} &middot; ${Number(s.menge) || 1}x</td>
         <td>${esc(s.wunsch)}</td>
@@ -386,40 +459,45 @@
       })
       .join("");
 
-    el.querySelectorAll("[data-accept]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        SF.updateSpecialOrder(btn.getAttribute("data-accept"), { status: "akzeptiert" });
-        renderSpecial();
-        renderStats();
-      })
-    );
-    el.querySelectorAll("[data-decline]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        SF.updateSpecialOrder(btn.getAttribute("data-decline"), { status: "abgelehnt" });
-        renderSpecial();
-        renderStats();
-      })
-    );
+    const setStatus = (attr, status) =>
+      el.querySelectorAll(`[${attr}]`).forEach((btn) =>
+        btn.addEventListener("click", () =>
+          guarded(async () => {
+            await SFDB.updateSpecialOrderStatus(btn.getAttribute(attr), status);
+            await renderSpecial();
+            renderStats();
+          })
+        )
+      );
+    setStatus("data-accept", "akzeptiert");
+    setStatus("data-decline", "abgelehnt");
     el.querySelectorAll("[data-delete-special]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (confirm("Diese Spezialbestellung wirklich löschen?")) {
-          SF.deleteSpecialOrder(btn.getAttribute("data-delete-special"));
-          renderSpecial();
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          if (!confirm("Diese Spezialbestellung wirklich löschen?")) return;
+          await SFDB.deleteSpecialOrder(btn.getAttribute("data-delete-special"));
+          await renderSpecial();
           renderStats();
-        }
-      })
+        })
+      )
     );
   }
 
   // ---------- Bewertungen ----------
-  function renderReviewsAdmin() {
-    const list = SF.getReviews();
+  let reviews = [];
+  async function renderReviewsAdmin() {
     const el = document.getElementById("reviews-table-body");
-    if (list.length === 0) {
+    try {
+      reviews = await SFDB.getReviews();
+    } catch (err) {
+      loadError("reviews-table-body", 5, err);
+      return;
+    }
+    if (reviews.length === 0) {
       el.innerHTML = `<tr><td colspan="5" class="table-empty">Noch keine Bewertungen.</td></tr>`;
       return;
     }
-    el.innerHTML = list
+    el.innerHTML = reviews
       .map((r) => {
         const rating = Math.max(0, Math.min(5, Number(r.rating) || 0));
         return `
@@ -434,150 +512,85 @@
       .join("");
 
     el.querySelectorAll("[data-delete-review]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (confirm("Diese Bewertung wirklich löschen?")) {
-          SF.deleteReview(btn.getAttribute("data-delete-review"));
-          renderReviewsAdmin();
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          if (!confirm("Diese Bewertung wirklich löschen?")) return;
+          await SFDB.deleteReview(btn.getAttribute("data-delete-review"));
+          await renderReviewsAdmin();
           renderStats();
-        }
-      })
+        })
+      )
     );
   }
 
   // ---------- Kund:innen ----------
-  function renderUsers() {
-    const list = SF.getUsers();
+  let users = [];
+  async function renderUsers() {
     const el = document.getElementById("users-table-body");
-    if (list.length === 0) {
-      el.innerHTML = `<tr><td colspan="4" class="table-empty">Noch keine registrierten Kund:innen.</td></tr>`;
+    try {
+      users = await SFDB.getUsers();
+    } catch (err) {
+      loadError("users-table-body", 3, err);
       return;
     }
-    el.innerHTML = list
+    if (users.length === 0) {
+      el.innerHTML = `<tr><td colspan="3" class="table-empty">Noch keine registrierten Kund:innen.</td></tr>`;
+      return;
+    }
+    el.innerHTML = users
       .map(
         (u) => `
       <tr>
-        <td>${SF.formatDate(u.registeredAt)}</td>
+        <td>${SF.formatDate(u.createdAt)}</td>
         <td>${esc(u.username)}</td>
         <td>${esc(u.email)}</td>
-        <td class="actions-cell"><button class="btn btn-danger btn-small" data-delete-user="${esc(u.id)}" aria-label="Konto ${esc(u.username)} löschen">Löschen</button></td>
       </tr>`
       )
       .join("");
-
-    el.querySelectorAll("[data-delete-user]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (confirm("Dieses Konto wirklich löschen?")) {
-          SF.deleteUser(btn.getAttribute("data-delete-user"));
-          renderUsers();
-          renderStats();
-        }
-      })
-    );
   }
 
-  // ---------- Passwort ----------
-  function validateNewPassword(next, confirmPw) {
-    if (next.length < PASSWORD_MIN) return `Das neue Passwort muss mindestens ${PASSWORD_MIN} Zeichen haben.`;
-    if (next.length > 128) return "Das neue Passwort darf höchstens 128 Zeichen haben.";
-    if (next === "1234") return "Bitte wähle ein anderes Passwort als das Startpasswort.";
-    if (next !== confirmPw) return "Die neuen Passwörter stimmen nicht überein.";
-    return null;
+  // ---------- Stats ----------
+  function renderStats() {
+    document.getElementById("stat-products").textContent = products.length;
+    document.getElementById("stat-orders").textContent = orders.filter((o) => o.status === "offen").length;
+    document.getElementById("stat-special").textContent = specials.filter((s) => s.status === "offen").length;
+    document.getElementById("stat-reviews").textContent = reviews.length;
+    document.getElementById("stat-users").textContent = users.length;
   }
 
-  function setupForcePassword() {
-    const form = document.getElementById("force-pw-form");
-    const msg = document.getElementById("force-pw-message");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const next = document.getElementById("fpw-new").value;
-      const error = validateNewPassword(next, document.getElementById("fpw-confirm").value);
-      if (error) {
-        SFUI.showMessage(msg, error, "error");
-        return;
-      }
-      await SF.setAdminPassword(next);
-      form.reset();
-      SFUI.hideMessage(msg);
-      showDashboard();
-    });
-  }
-
-  function setupSettings() {
-    const form = document.getElementById("password-form");
-    const msg = document.getElementById("password-message");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const current = document.getElementById("pw-current").value;
-      const next = document.getElementById("pw-new").value;
-
-      if (!(await SF.verifyAdminPassword(current))) {
-        SFUI.showMessage(msg, "Aktuelles Passwort ist falsch.", "error");
-        return;
-      }
-      const error = validateNewPassword(next, document.getElementById("pw-confirm").value);
-      if (error) {
-        SFUI.showMessage(msg, error, "error");
-        return;
-      }
-      await SF.setAdminPassword(next);
-      form.reset();
-      SFUI.showMessage(msg, "Passwort erfolgreich geändert.", "success");
-    });
-
-    document.getElementById("logout-btn").addEventListener("click", () => showLogin());
-  }
-
-  function renderAll() {
+  async function renderAll() {
+    await Promise.all([renderProducts(), renderOrders(), renderSpecial(), renderReviewsAdmin(), renderUsers()]);
     renderStats();
-    renderProducts();
-    renderOrders();
-    renderSpecial();
-    renderReviewsAdmin();
-    renderUsers();
   }
 
-  function setupLogin() {
-    const form = document.getElementById("login-form");
-    const msg = document.getElementById("login-message");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const locked = SF.lockSecondsLeft("admin-login");
-      if (locked > 0) {
-        SFUI.showMessage(msg, `Zu viele Fehlversuche. Bitte warte ${locked} Sekunden.`, "error");
-        return;
-      }
-      const pw = document.getElementById("login-password").value;
-      if (await SF.verifyAdminPassword(pw)) {
-        SF.clearFailures("admin-login");
-        setAuthed(true);
-        form.reset();
-        SFUI.hideMessage(msg);
-        showDashboard();
-      } else {
-        const lockedNow = SF.registerFailure("admin-login", 5, 30);
-        SFUI.showMessage(
-          msg,
-          lockedNow > 0 ? `Zu viele Fehlversuche. Bitte warte ${lockedNow} Sekunden.` : "Falsches Passwort.",
-          "error"
-        );
+  // ---------- Einstellungen ----------
+  function setupSettings() {
+    const msg = document.getElementById("password-message");
+    document.getElementById("admin-reset-btn").addEventListener("click", async () => {
+      const user = SFDB.currentUser();
+      if (!user) return;
+      try {
+        await SFDB.resetPassword(user.email);
+        SFUI.showMessage(msg, "Wir haben dir einen Link an " + user.email + " geschickt (auch im Spam-Ordner nachsehen).", "success");
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
       }
     });
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await SFDB.logout();
+      showLogin();
+    });
+    document.getElementById("refresh-btn").addEventListener("click", () => guarded(renderAll));
   }
 
-  function setup() {
+  async function setup() {
     setupLogin();
-    setupForcePassword();
     setupTabs();
     setupProductForm();
     setupSettings();
     watchIdle();
-    sessionStorage.removeItem("sf_admin_authed");
-
-    if (isAuthed()) {
-      showDashboard();
-    } else {
-      showOnly("admin-login");
-    }
+    await SFDB.ready;
+    await handleAuthState(SFDB.currentUser());
   }
 
   document.addEventListener("DOMContentLoaded", setup);

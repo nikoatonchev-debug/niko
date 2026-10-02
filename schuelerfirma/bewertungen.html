@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Bewertungen &ndash; Siebdruck-Schülerfirma</title>
   <meta name="description" content="Feedback und Bewertungen zur Siebdruck-Schülerfirma der Montessori-Schule Dietramszell.">
@@ -27,7 +27,11 @@
         <div class="grid grid-2 align-start">
           <div class="card">
             <h2>Deine Bewertung</h2>
-            <form id="review-form" novalidate>
+            <div id="review-login-hint" class="hidden">
+              <p>Damit Bewertungen echt bleiben, kannst du bewerten, sobald du angemeldet bist (eine Bewertung pro Konto).</p>
+              <button type="button" class="btn btn-primary" id="review-login-btn">Anmelden</button>
+            </div>
+            <form id="review-form" class="hidden" novalidate>
               <div class="field">
                 <label for="rv-name">Dein Name <span class="hint">(optional)</span></label>
                 <input type="text" id="rv-name" placeholder="z. B. Mia, 8b" maxlength="40">
@@ -47,10 +51,11 @@
                 <textarea id="rv-comment" required maxlength="1000" placeholder="Was hat dir gefallen? Was können wir besser machen?"></textarea>
               </div>
               <p class="hint">
-                Dein Name (falls angegeben) und dein Kommentar werden hier öffentlich angezeigt.
+                Dein Name (falls angegeben) und dein Kommentar werden hier öffentlich angezeigt. Du kannst deine Bewertung später ändern oder löschen.
                 Mehr in der <a href="datenschutz.html">Datenschutzerklärung</a>.
               </p>
               <button type="submit" class="btn btn-primary btn-block">Feedback senden</button>
+              <button type="button" class="btn btn-outline btn-small mt-10 hidden" id="review-delete-btn">Meine Bewertung löschen</button>
               <div id="review-message" class="form-message hidden"></div>
             </form>
           </div>
@@ -58,8 +63,8 @@
           <div>
             <h2>Das sagen andere</h2>
             <p class="hint review-notice">
-              Hinweis zur Echtheit: Bewertungen kann jede Besucherin und jeder Besucher abgeben.
-              Wir prüfen nicht, ob die Person bei uns gekauft hat. Beleidigende oder unpassende
+              Hinweis zur Echtheit: Bewerten kann, wer ein Konto mit bestätigter E-Mail-Adresse hat
+              (eine Bewertung pro Konto). Wir prüfen nicht, ob die Person bei uns gekauft hat. Beleidigende oder unpassende
               Beiträge löschen wir.
             </p>
             <div id="review-list" class="stack-16"></div>
@@ -75,7 +80,9 @@
   <script src="js/data.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
-  <script src="js/email-config.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/reviews.js"></script>
 </body>

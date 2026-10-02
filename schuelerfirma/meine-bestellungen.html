@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex">
   <title>Meine Bestellungen &ndash; Siebdruck-Schülerfirma</title>
@@ -40,10 +40,21 @@
           <div class="card danger-zone">
             <h2 class="h3">Konto löschen</h2>
             <p class="hint">
-              Löscht dein Kundenkonto (Benutzername, E-Mail-Adresse, Passwort) und meldet dich ab.
+              Löscht dein Kundenkonto (Benutzername, E-Mail-Adresse, Passwort) und deine Bewertung und meldet dich ab.
               Bereits aufgegebene Bestellungen bleiben für die Abwicklung bei uns gespeichert.
             </p>
             <button type="button" class="btn btn-danger btn-small" id="delete-account-btn">Mein Konto löschen</button>
+            <form id="delete-account-form" class="hidden" novalidate>
+              <div class="field">
+                <label for="delete-account-password">Zur Sicherheit: dein Passwort</label>
+                <input type="password" id="delete-account-password" autocomplete="current-password" maxlength="128">
+              </div>
+              <div class="button-row">
+                <button type="submit" class="btn btn-danger btn-small">Konto endgültig löschen</button>
+                <button type="button" class="btn btn-outline btn-small" id="delete-account-cancel">Abbrechen</button>
+              </div>
+              <div id="delete-account-message" class="form-message hidden"></div>
+            </form>
           </div>
         </div>
 
@@ -57,7 +68,9 @@
   <script src="js/data.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
-  <script src="js/email-config.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/orders.js"></script>
 </body>

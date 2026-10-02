@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://api.emailjs.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="no-referrer">
   <title>Admin-Bereich &ndash; Siebdruck-Schülerfirma</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-page="admin">
+<body data-page="admin" data-auth-persistence="session">
 
   <header id="site-header" class="site-header"></header>
 
@@ -25,37 +25,18 @@
             <h1 class="h2">Admin-Bereich</h1>
             <p class="section-subtitle mb-20">Bitte Passwort eingeben, um fortzufahren.</p>
             <form id="login-form" novalidate>
-              <div class="field">
+              <div class="field text-left">
+                <label for="login-email">E-Mail-Adresse</label>
+                <input type="email" id="login-email" autocomplete="username" maxlength="100" required>
+              </div>
+              <div class="field text-left">
                 <label for="login-password">Passwort</label>
                 <input type="password" id="login-password" autocomplete="current-password" maxlength="128" required>
               </div>
-              <button type="submit" class="btn btn-primary btn-block">Anmelden</button>
+              <button type="submit" class="btn btn-primary btn-block" id="login-submit">Anmelden</button>
               <div id="login-message" class="form-message hidden"></div>
             </form>
-          </div>
-        </div>
-
-        <!-- STARTPASSWORT ÄNDERN -->
-        <div id="admin-force-pw" class="login-wrap hidden">
-          <div class="card login-card">
-            <div class="icon" data-icon="lock"></div>
-            <h1 class="h2">Eigenes Passwort festlegen</h1>
-            <p class="hint mb-20">
-              Du bist noch mit dem Startpasswort angemeldet. Das steht öffentlich im Code der
-              Website, deshalb musst du jetzt ein eigenes Passwort festlegen (mindestens 8 Zeichen).
-            </p>
-            <form id="force-pw-form" novalidate>
-              <div class="field text-left">
-                <label for="fpw-new">Neues Passwort</label>
-                <input type="password" id="fpw-new" autocomplete="new-password" minlength="8" maxlength="128" required>
-              </div>
-              <div class="field text-left">
-                <label for="fpw-confirm">Neues Passwort bestätigen</label>
-                <input type="password" id="fpw-confirm" autocomplete="new-password" maxlength="128" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-block">Passwort speichern</button>
-              <div id="force-pw-message" class="form-message hidden"></div>
-            </form>
+            <p class="hint text-center mt-14"><a href="#" id="admin-reset-link">Passwort vergessen?</a></p>
           </div>
         </div>
 
@@ -176,11 +157,12 @@
 
           <!-- Kund:innen -->
           <div class="admin-panel" id="panel-users">
-            <p class="hint mb-14">Alle Kund:innen, die sich mit E-Mail-Adresse registriert haben.</p>
+            <p class="hint mb-14">Alle Kund:innen, die ein Konto angelegt haben. Ein Konto selbst lässt sich in der
+              <strong>Firebase-Konsole</strong> unter „Authentication“ löschen (Kund:innen können es auch selbst unter „Meine Bestellungen“ löschen).</p>
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>Registriert am</th><th>Benutzername</th><th>E-Mail</th><th>Aktionen</th></tr>
+                  <tr><th>Registriert am</th><th>Benutzername</th><th>E-Mail</th></tr>
                 </thead>
                 <tbody id="users-table-body"></tbody>
               </table>
@@ -190,26 +172,15 @@
           <!-- Einstellungen -->
           <div class="admin-panel" id="panel-settings">
             <div class="card narrow-card-left">
-              <h3>Passwort ändern</h3>
-              <form id="password-form" novalidate>
-                <div class="field">
-                  <label for="pw-current">Aktuelles Passwort</label>
-                  <input type="password" id="pw-current" autocomplete="current-password" maxlength="128" required>
-                </div>
-                <div class="field">
-                  <label for="pw-new">Neues Passwort <span class="hint">(mindestens 8 Zeichen)</span></label>
-                  <input type="password" id="pw-new" autocomplete="new-password" minlength="8" maxlength="128" required>
-                </div>
-                <div class="field">
-                  <label for="pw-confirm">Neues Passwort bestätigen</label>
-                  <input type="password" id="pw-confirm" autocomplete="new-password" maxlength="128" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Passwort ändern</button>
-                <div id="password-message" class="form-message hidden"></div>
-              </form>
+              <h3>Konto &amp; Passwort</h3>
+              <p class="hint">Angemeldet als <strong id="admin-email-label"></strong>.</p>
+              <p class="hint">Dein Passwort änderst du über einen Link, den wir dir per E-Mail schicken.</p>
+              <button type="button" class="btn btn-primary" id="admin-reset-btn">Link zum Passwort-Ändern senden</button>
+              <div id="password-message" class="form-message hidden"></div>
             </div>
             <div class="mt-20">
-              <button class="btn btn-outline" id="logout-btn">Abmelden</button>
+              <button type="button" class="btn btn-outline" id="logout-btn">Abmelden</button>
+              <button type="button" class="btn btn-outline" id="refresh-btn">Daten neu laden</button>
             </div>
           </div>
 
@@ -224,7 +195,9 @@
   <script src="js/data.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/nav.js"></script>
-  <script src="js/email-config.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
 </body>

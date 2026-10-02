@@ -12,8 +12,7 @@
     return esc(String(id || "").slice(-6).toUpperCase());
   }
 
-  function renderShopOrders(user) {
-    const list = SF.getOrdersForUser(user);
+  function renderShopOrders(list) {
     const el = document.getElementById("shop-orders-list");
     if (list.length === 0) {
       el.innerHTML = `<p class="hint">Du hast noch keine Shop-Bestellungen aufgegeben.</p>`;
@@ -40,8 +39,7 @@
       .join("");
   }
 
-  function renderSpecialOrders(user) {
-    const list = SF.getSpecialOrdersForUser(user);
+  function renderSpecialOrders(list) {
     const el = document.getElementById("special-orders-list");
     if (list.length === 0) {
       el.innerHTML = `<p class="hint">Du hast noch keine Spezialbestellungen aufgegeben.</p>`;
@@ -63,44 +61,77 @@
       .join("");
   }
 
-  function showOrders() {
-    const user = SFAuth.getCurrentUser();
-    if (!user) {
+  function showLoginHint(text) {
+    document.getElementById("orders-content").classList.add("hidden");
+    const hint = document.getElementById("orders-login-hint");
+    hint.classList.remove("hidden");
+    if (text) hint.querySelector("p").textContent = text;
+  }
+
+  async function showOrders() {
+    const user = SFDB.currentUser();
+    if (!user || !user.emailVerified) {
       showLoginHint();
       return;
     }
     document.getElementById("orders-login-hint").classList.add("hidden");
     document.getElementById("orders-content").classList.remove("hidden");
-    renderShopOrders(user);
-    renderSpecialOrders(user);
+    const shopEl = document.getElementById("shop-orders-list");
+    const specialEl = document.getElementById("special-orders-list");
+    shopEl.innerHTML = specialEl.innerHTML = `<p class="hint">Wird geladen …</p>`;
+    try {
+      const [orders, special] = await Promise.all([SFDB.getMyOrders(), SFDB.getMySpecialOrders()]);
+      renderShopOrders(orders);
+      renderSpecialOrders(special);
+    } catch (e) {
+      const m = `<p class="form-message error" role="alert">${esc(SFDB.errorMessage(e))}</p>`;
+      shopEl.innerHTML = specialEl.innerHTML = m;
+    }
   }
 
-  function showLoginHint() {
-    document.getElementById("orders-content").classList.add("hidden");
-    document.getElementById("orders-login-hint").classList.remove("hidden");
+  function setupDeleteAccount() {
+    const openBtn = document.getElementById("delete-account-btn");
+    const form = document.getElementById("delete-account-form");
+    const msg = document.getElementById("delete-account-message");
+    openBtn.addEventListener("click", () => {
+      form.classList.remove("hidden");
+      openBtn.classList.add("hidden");
+      document.getElementById("delete-account-password").focus();
+    });
+    document.getElementById("delete-account-cancel").addEventListener("click", () => {
+      form.classList.add("hidden");
+      form.reset();
+      SFUI.hideMessage(msg);
+      openBtn.classList.remove("hidden");
+      openBtn.focus();
+    });
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const password = document.getElementById("delete-account-password").value;
+      if (!password) {
+        SFUI.showMessage(msg, "Bitte gib zur Sicherheit dein Passwort ein.", "error");
+        return;
+      }
+      try {
+        await SFDB.deleteAccount(password);
+        form.reset();
+        form.classList.add("hidden");
+        openBtn.classList.remove("hidden");
+        showLoginHint("Dein Konto wurde gelöscht.");
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      }
+    });
   }
 
-  function setup() {
+  async function setup() {
     document.getElementById("orders-login-btn").addEventListener("click", () => {
       SFAuth.requireLogin(showOrders);
     });
-
-    document.getElementById("delete-account-btn").addEventListener("click", () => {
-      const user = SFAuth.getCurrentUser();
-      if (!user) return;
-      if (!confirm("Möchtest du dein Konto wirklich löschen? Das kann nicht rückgängig gemacht werden.")) return;
-      SF.deleteUser(user.id);
-      SFAuth.logout();
-      showLoginHint();
-      document.getElementById("orders-login-hint").querySelector("p").textContent =
-        "Dein Konto wurde gelöscht.";
-    });
-
-    if (SFAuth.isLoggedIn()) {
-      showOrders();
-    } else {
-      showLoginHint();
-    }
+    setupDeleteAccount();
+    await SFDB.ready;
+    showOrders();
+    SFDB.onAuthChange(() => showOrders());
   }
 
   document.addEventListener("DOMContentLoaded", setup);

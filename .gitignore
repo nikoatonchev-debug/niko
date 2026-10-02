@@ -10,3 +10,9 @@ _site
 *.tgz
 .header.json
 .simstate.json
+
+# Firebase-Emulator
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log

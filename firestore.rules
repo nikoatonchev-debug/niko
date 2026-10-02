@@ -1,0 +1,150 @@
+rules_version = '2';
+
+// Sicherheitsregeln der Schuelerfirma-Datenbank. Diese Regeln laufen auf den
+// Servern von Google und koennen vom Browser aus nicht umgangen werden.
+//
+// Wer ist "Admin"? Nur wer sich mit einer unten eingetragenen, BESTAETIGTEN
+// E-Mail-Adresse angemeldet hat. Weitere Admins: Adresse in die Liste in
+// isAdmin() eintragen und die Regeln neu veroeffentlichen.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+    function isAdmin() {
+      return verified() && request.auth.token.email in ['erdkinderkollektiv@gmail.com'];
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function text(v, maxLen) {
+      return v is string && v.size() >= 1 && v.size() <= maxLen;
+    }
+    function optText(v, maxLen) {
+      return v is string && v.size() <= maxLen;
+    }
+    function phoneOk(v) {
+      return v is string && v.matches('^[0-9 +()/-]{6,25}$');
+    }
+
+    // ---------- Produkte: alle duerfen lesen, nur Admin darf aendern ----------
+    // Ausnahme: Beim Bestellen darf ein bestaetigtes Konto den Zaehler "sold"
+    // erhoehen - aber nur genau um die Menge aus einer neuen Bestellung, die in
+    // derselben Transaktion angelegt wird, und nie ueber den Bestand hinaus.
+    match /products/{productId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || stockUpdate(productId);
+
+      function stockUpdate(productId) {
+        let after = request.resource.data;
+        let before = resource.data;
+        return verified()
+          && after.diff(before).affectedKeys().hasOnly(['sold', 'lastOrderId'])
+          && after.lastOrderId is string
+          && after.lastOrderId.matches('^[A-Za-z0-9]{20}$')
+          && orderIsNewAndMine(after.lastOrderId, productId, after.sold, before.get('sold', 0))
+          && (before.get('stock', null) == null || after.sold <= before.stock);
+      }
+
+      function orderIsNewAndMine(orderId, productId, newSold, oldSold) {
+        let path = /databases/$(database)/documents/orders/$(orderId);
+        let order = getAfter(path).data;
+        return !exists(path)
+          && order.userId == request.auth.uid
+          && order.qtyByProduct.get(productId, 0) > 0
+          && newSold == oldSold + order.qtyByProduct[productId];
+      }
+    }
+
+    // ---------- Bestellungen: Kund:in sieht nur die eigenen, Admin alle ----------
+    match /orders/{orderId} {
+      allow create: if verified() && validOrder();
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['offen', 'abgeholt'];
+      allow delete: if isAdmin();
+
+      function validOrder() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['userId', 'username', 'customerName', 'klasse', 'phone', 'items', 'total', 'qtyByProduct', 'date', 'status'])
+          && d.keys().hasAll(['userId', 'customerName', 'klasse', 'phone', 'items', 'total', 'qtyByProduct', 'date', 'status'])
+          && d.userId == request.auth.uid
+          && d.status == 'offen'
+          && d.date == request.time
+          && optText(d.get('username', ''), 60)
+          && text(d.customerName, 60)
+          && text(d.klasse, 20)
+          && phoneOk(d.phone)
+          && d.items is list && d.items.size() >= 1 && d.items.size() <= 20
+          && d.total is number && d.total > 0 && d.total <= 2000
+          && d.qtyByProduct is map && d.qtyByProduct.size() >= 1 && d.qtyByProduct.size() <= 8;
+      }
+    }
+
+    // ---------- Spezialbestellungen ----------
+    match /specialOrders/{orderId} {
+      allow create: if verified() && validSpecial();
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['offen', 'akzeptiert', 'abgelehnt'];
+      allow delete: if isAdmin();
+
+      function validSpecial() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['userId', 'username', 'name', 'phone', 'klasse', 'groesse', 'menge', 'wunsch', 'date', 'status'])
+          && d.keys().hasAll(['userId', 'name', 'phone', 'groesse', 'menge', 'wunsch', 'date', 'status'])
+          && d.userId == request.auth.uid
+          && d.status == 'offen'
+          && d.date == request.time
+          && optText(d.get('username', ''), 60)
+          && text(d.name, 60)
+          && phoneOk(d.phone)
+          && optText(d.get('klasse', ''), 20)
+          && text(d.groesse, 30)
+          && d.menge is int && d.menge >= 1 && d.menge <= 500
+          && d.wunsch is string && d.wunsch.size() >= 5 && d.wunsch.size() <= 1000;
+      }
+    }
+
+    // ---------- Bewertungen: oeffentlich lesbar, pro Konto genau eine ----------
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create, update: if verified() && reviewId == request.auth.uid && validReview();
+      allow delete: if isAdmin() || isOwner(reviewId);
+
+      function validReview() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['userId', 'name', 'rating', 'comment', 'date'])
+          && d.keys().hasAll(['userId', 'name', 'rating', 'comment', 'date'])
+          && d.userId == request.auth.uid
+          && d.date == request.time
+          && optText(d.name, 40)
+          && d.rating is int && d.rating >= 0 && d.rating <= 5
+          && d.comment is string && d.comment.size() >= 3 && d.comment.size() <= 1000;
+      }
+    }
+
+    // ---------- Kundenprofile ----------
+    match /users/{uid} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['username', 'email', 'createdAt'])
+        && request.resource.data.keys().hasAll(['username', 'email', 'createdAt'])
+        && text(request.resource.data.username, 30)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow read: if isAdmin() || isOwner(uid);
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username'])
+        && text(request.resource.data.username, 30);
+      allow delete: if isAdmin() || isOwner(uid);
+    }
+  }
+}

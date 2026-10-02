@@ -1,101 +1,26 @@
-/* Kundenkonten: Registrierung mit E-Mail-Bestätigungscode, Login, Session.
+/* Kundenkonten: Registrierung, Anmeldung und E-Mail-Bestätigung über Firebase.
  *
- * Der Code wird über EmailJS verschickt (Zugangsdaten in js/email-config.js,
- * Skript lokal unter js/vendor/). Klappt der Versand nicht, wird die
- * Registrierung abgebrochen – der Code wird nie auf dem Bildschirm gezeigt.
+ * Ablauf: Registrieren -> Firebase schickt einen Bestätigungslink per E-Mail
+ * -> man klickt ihn an und tippt dann hier auf "Ich habe bestätigt". Bestellen
+ * und Bewerten geht nur mit bestätigter E-Mail-Adresse (das prüft auch die
+ * Datenbank selbst, nicht nur diese Seite).
  */
 
 const SFAuth = (function () {
-  const SESSION_KEY = "sf_customer_session";
-  const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-  const CODE_TTL_MS = 15 * 60 * 1000;
-  const CODE_MAX_ATTEMPTS = 5;
-  const MAIL_COOLDOWN_S = 30;
-  const LOGIN_MAX_ATTEMPTS = 5;
-  const LOGIN_LOCK_S = 30;
+  const MAIL_COOLDOWN_S = 60;
   const PASSWORD_MIN = 8;
-  const EMAILJS_SRC = "js/vendor/emailjs-browser-4.4.1.min.js";
 
-  let pendingReg = null; // { username, email, passwordHash, code, expiresAt, attempts }
   let onSuccessCallback = null;
-  let emailjsLoadPromise = null;
   let currentView = null;
   let resendTimer = null;
+  let wired = false;
 
-  function getSession() {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return null;
-      const s = JSON.parse(raw);
-      if (!s.loggedInAt || Date.now() - s.loggedInAt > SESSION_MAX_AGE_MS) {
-        localStorage.removeItem(SESSION_KEY);
-        return null;
-      }
-      return s;
-    } catch (e) {
-      return null;
-    }
-  }
-  function setSession(user) {
-    try {
-      localStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ id: user.id, username: user.username, email: user.email, loggedInAt: Date.now() })
-      );
-    } catch (e) {
-      console.warn("SFAuth: konnte Session nicht speichern", e);
-    }
-  }
-  function clearSession() {
-    localStorage.removeItem(SESSION_KEY);
+  function getCurrentUser() {
+    return SFDB.currentUser();
   }
   function isLoggedIn() {
-    return !!getSession();
-  }
-  function getCurrentUser() {
-    return getSession();
-  }
-
-  function genCode() {
-    return String((crypto.getRandomValues(new Uint32Array(1))[0] % 900000) + 100000);
-  }
-
-  // Lädt das EmailJS-Skript und gibt true/false zurück (nie einen Fehler),
-  // mit Zeitlimit, damit die Registrierung nie hängen bleibt.
-  function ensureEmailJs() {
-    if (!window.sfEmailIsConfigured || !sfEmailIsConfigured()) return Promise.resolve(false);
-    if (emailjsLoadPromise) return emailjsLoadPromise;
-
-    emailjsLoadPromise = new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(false), 6000);
-      const script = document.createElement("script");
-      script.src = EMAILJS_SRC;
-      script.onload = () => {
-        clearTimeout(timeout);
-        window.emailjs.init({
-          publicKey: SF_EMAIL_CONFIG.PUBLIC_KEY,
-          blockHeadless: true,
-          limitRate: { id: "sf-code-mail", throttle: MAIL_COOLDOWN_S * 1000 },
-        });
-        resolve(true);
-      };
-      script.onerror = () => {
-        clearTimeout(timeout);
-        emailjsLoadPromise = null;
-        resolve(false);
-      };
-      document.head.appendChild(script);
-    });
-    return emailjsLoadPromise;
-  }
-
-  async function sendCodeByEmail(email, code) {
-    const ready = await ensureEmailJs();
-    if (!ready) throw new Error("EmailJS nicht verfügbar");
-    return window.emailjs.send(SF_EMAIL_CONFIG.SERVICE_ID, SF_EMAIL_CONFIG.TEMPLATE_ID, {
-      to_email: email,
-      code: code,
-    });
+    const u = SFDB.currentUser();
+    return !!(u && u.emailVerified);
   }
 
   function injectModal() {
@@ -111,17 +36,20 @@ const SFAuth = (function () {
             <p class="hint">Zum Bestellen musst du angemeldet sein.</p>
             <form id="auth-login-form" novalidate>
               <div class="field">
-                <label for="auth-login-username">Benutzername</label>
-                <input type="text" id="auth-login-username" autocomplete="username" maxlength="30" required>
+                <label for="auth-login-email">E-Mail-Adresse</label>
+                <input type="email" id="auth-login-email" autocomplete="email" maxlength="100" required>
               </div>
               <div class="field">
                 <label for="auth-login-password">Passwort</label>
                 <input type="password" id="auth-login-password" autocomplete="current-password" maxlength="128" required>
               </div>
-              <button type="submit" class="btn btn-primary btn-block">Anmelden</button>
+              <button type="submit" class="btn btn-primary btn-block" id="auth-login-submit">Anmelden</button>
               <div id="auth-login-message" class="form-message hidden"></div>
             </form>
             <p class="hint text-center mt-14">
+              <a href="#" id="auth-show-reset">Passwort vergessen?</a>
+            </p>
+            <p class="hint text-center">
               Noch kein Konto? <a href="#" id="auth-show-register">Jetzt registrieren</a>
             </p>
           </div>
@@ -130,8 +58,8 @@ const SFAuth = (function () {
             <h2 id="auth-title-register">Registrieren</h2>
             <form id="auth-register-form" novalidate>
               <div class="field">
-                <label for="auth-reg-username">Benutzername <span class="hint">(2–30 Zeichen)</span></label>
-                <input type="text" id="auth-reg-username" autocomplete="username" minlength="2" maxlength="30" required>
+                <label for="auth-reg-username">Benutzername <span class="hint">(wird bei Bewertungen angezeigt)</span></label>
+                <input type="text" id="auth-reg-username" autocomplete="nickname" minlength="2" maxlength="30" required>
               </div>
               <div class="field">
                 <label for="auth-reg-email">E-Mail-Adresse</label>
@@ -146,11 +74,11 @@ const SFAuth = (function () {
                 <input type="password" id="auth-reg-password2" autocomplete="new-password" maxlength="128" required>
               </div>
               <p class="hint">
-                Wir speichern Benutzername, E-Mail-Adresse und dein Passwort (nur verschlüsselt),
-                um dein Konto anzulegen. An deine E-Mail-Adresse schicken wir einen Bestätigungscode.
-                Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+                Wir speichern Benutzername und E-Mail-Adresse bei unserem Anbieter Google Firebase.
+                Dein Passwort speichert Firebase nur verschlüsselt. Wir schicken dir eine E-Mail mit
+                einem Bestätigungslink. Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.
               </p>
-              <button type="submit" class="btn btn-primary btn-block" id="auth-register-submit">Code anfordern</button>
+              <button type="submit" class="btn btn-primary btn-block" id="auth-register-submit">Registrieren</button>
               <div id="auth-register-message" class="form-message hidden"></div>
             </form>
             <p class="hint text-center mt-14">
@@ -161,19 +89,30 @@ const SFAuth = (function () {
           <div id="auth-view-verify" class="hidden">
             <h2 id="auth-title-verify">E-Mail-Adresse bestätigen</h2>
             <p class="hint" id="auth-verify-info"></p>
-            <p class="hint">Keine E-Mail angekommen? Schau bitte auch im Spam-Ordner nach. Der Code ist 15 Minuten gültig.</p>
-            <form id="auth-verify-form" novalidate>
-              <div class="field">
-                <label for="auth-verify-code">Bestätigungscode</label>
-                <input type="text" id="auth-verify-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-block">Bestätigen &amp; registrieren</button>
-              <div id="auth-verify-message" class="form-message hidden"></div>
-            </form>
-            <button type="button" class="btn btn-outline btn-small mt-10" id="auth-resend-code">Code erneut senden</button>
+            <p class="hint">
+              Klicke in der E-Mail auf den Bestätigungslink und tippe danach hier auf
+              „Ich habe bestätigt“. Keine E-Mail angekommen? Schau bitte auch im Spam-Ordner nach.
+            </p>
+            <div id="auth-verify-message" class="form-message hidden"></div>
+            <button type="button" class="btn btn-primary btn-block mt-10" id="auth-verify-check">Ich habe bestätigt</button>
+            <button type="button" class="btn btn-outline btn-small mt-10" id="auth-resend-code">E-Mail erneut senden</button>
             <p class="text-center mt-14">
               <a href="#" id="auth-verify-cancel" class="hint underline">Abbrechen</a>
             </p>
+          </div>
+
+          <div id="auth-view-reset" class="hidden">
+            <h2 id="auth-title-reset">Passwort zurücksetzen</h2>
+            <p class="hint">Wir schicken dir eine E-Mail mit einem Link, über den du ein neues Passwort festlegen kannst.</p>
+            <form id="auth-reset-form" novalidate>
+              <div class="field">
+                <label for="auth-reset-email">E-Mail-Adresse</label>
+                <input type="email" id="auth-reset-email" autocomplete="email" maxlength="100" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="auth-reset-submit">Link senden</button>
+              <div id="auth-reset-message" class="form-message hidden"></div>
+            </form>
+            <p class="hint text-center mt-14"><a href="#" id="auth-reset-back">Zurück zum Login</a></p>
           </div>
         </div>
       </div>
@@ -187,16 +126,23 @@ const SFAuth = (function () {
 
   function showView(name) {
     currentView = name;
-    ["login", "register", "verify"].forEach((v) => {
+    ["login", "register", "verify", "reset"].forEach((v) => {
       document.getElementById("auth-view-" + v).classList.toggle("hidden", v !== name);
     });
-    ["auth-login-message", "auth-register-message", "auth-verify-message"].forEach((id) =>
-      SFUI.hideMessage(msgEl(id))
-    );
+    ["login", "register", "verify", "reset"].forEach((v) => SFUI.hideMessage(msgEl("auth-" + v + "-message")));
     document.querySelector("#auth-modal .modal").setAttribute("aria-labelledby", "auth-title-" + name);
-    // Während der Code-Eingabe gibt es nur den "Abbrechen"-Link unten als
+    // Während der Bestätigung gibt es nur den "Abbrechen"-Link unten als
     // Ausstieg, damit niemand versehentlich per X oben abbricht.
     document.getElementById("auth-modal-close").classList.toggle("hidden", name === "verify");
+    if (name === "verify") {
+      const u = SFDB.currentUser();
+      document.getElementById("auth-verify-info").textContent = u
+        ? "Wir haben eine E-Mail an " + u.email + " geschickt."
+        : "";
+      startResendTimer();
+    } else {
+      stopResendTimer();
+    }
     const firstField = document.querySelector("#auth-view-" + name + " input");
     if (firstField && !document.getElementById("auth-modal").classList.contains("hidden")) {
       firstField.focus();
@@ -213,7 +159,7 @@ const SFAuth = (function () {
     });
   }
 
-  // Während der Code-Eingabe darf sich das Fenster nicht versehentlich
+  // Während der Bestätigung darf sich das Fenster nicht versehentlich
   // schließen lassen (Klick daneben / X / Escape) - nur über "Abbrechen".
   function closeModal() {
     if (currentView === "verify") return;
@@ -222,47 +168,40 @@ const SFAuth = (function () {
   function forceCloseModal() {
     const modal = document.getElementById("auth-modal");
     if (modal) SFUI.closeDialog(modal);
-    pendingReg = null;
     onSuccessCallback = null;
     currentView = null;
     stopResendTimer();
   }
 
-  function requireLogin(onSuccess) {
-    if (isLoggedIn()) {
+  async function requireLogin(onSuccess) {
+    await SFDB.ready;
+    const u = SFDB.currentUser();
+    if (u && u.emailVerified) {
       onSuccess();
       return;
     }
     onSuccessCallback = onSuccess;
-    openModal("login");
+    openModal(u ? "verify" : "login");
   }
 
-  function finishLogin(user) {
-    setSession(user);
-    updateHeaderStatus();
+  function finishLogin() {
     const cb = onSuccessCallback;
     onSuccessCallback = null;
     forceCloseModal();
     if (cb) cb();
   }
 
-  function lockMessage(seconds) {
-    return seconds >= 60
-      ? `Zu viele Fehlversuche. Bitte warte ${Math.ceil(seconds / 60)} Minute(n) und versuche es dann erneut.`
-      : `Zu viele Fehlversuche. Bitte warte ${seconds} Sekunden und versuche es dann erneut.`;
-  }
-
   function startResendTimer() {
     stopResendTimer();
     const btn = document.getElementById("auth-resend-code");
     function tick() {
-      const left = SF.cooldownSecondsLeft("mail", MAIL_COOLDOWN_S);
+      const left = SF.cooldownSecondsLeft("verify-mail", MAIL_COOLDOWN_S);
       if (left > 0) {
         btn.disabled = true;
-        btn.textContent = `Code erneut senden (${left} s)`;
+        btn.textContent = `E-Mail erneut senden (${left} s)`;
       } else {
         btn.disabled = false;
-        btn.textContent = "Code erneut senden";
+        btn.textContent = "E-Mail erneut senden";
         stopResendTimer();
       }
     }
@@ -274,18 +213,11 @@ const SFAuth = (function () {
     resendTimer = null;
   }
 
-  async function deliverCode(email, code) {
-    try {
-      await sendCodeByEmail(email, code);
-      SF.startCooldown("mail");
-      return true;
-    } catch (e) {
-      console.warn("SFAuth: E-Mail-Versand fehlgeschlagen", e);
-      return false;
-    }
+  function setBusy(btn, busy, busyText, idleText) {
+    btn.disabled = busy;
+    btn.textContent = busy ? busyText : idleText;
   }
 
-  let wired = false;
   function wireModal() {
     if (wired) return;
     wired = true;
@@ -294,49 +226,46 @@ const SFAuth = (function () {
     document.getElementById("auth-modal").addEventListener("click", (e) => {
       if (e.target.id === "auth-modal") closeModal();
     });
-
-    document.getElementById("auth-show-register").addEventListener("click", (e) => {
-      e.preventDefault();
-      showView("register");
-    });
-    document.getElementById("auth-show-login").addEventListener("click", (e) => {
-      e.preventDefault();
-      showView("login");
-    });
+    const link = (id, view) =>
+      document.getElementById(id).addEventListener("click", (e) => {
+        e.preventDefault();
+        showView(view);
+      });
+    link("auth-show-register", "register");
+    link("auth-show-login", "login");
+    link("auth-show-reset", "reset");
+    link("auth-reset-back", "login");
 
     document.getElementById("auth-login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = msgEl("auth-login-message");
-      const locked = SF.lockSecondsLeft("login");
-      if (locked > 0) {
-        SFUI.showMessage(msg, lockMessage(locked), "error");
-        return;
-      }
-      const username = SF.clampText(document.getElementById("auth-login-username").value, 30);
+      const btn = document.getElementById("auth-login-submit");
+      const email = SF.clampText(document.getElementById("auth-login-email").value, 100);
       const password = document.getElementById("auth-login-password").value;
-      const user = SF.findUserByUsername(username);
-      const result = user ? await SF.verifyPassword(password, user.passwordHash) : { ok: false };
-      if (!result.ok) {
-        const lockedNow = SF.registerFailure("login", LOGIN_MAX_ATTEMPTS, LOGIN_LOCK_S);
-        SFUI.showMessage(
-          msg,
-          lockedNow > 0 ? lockMessage(lockedNow) : "Benutzername oder Passwort ist falsch.",
-          "error"
-        );
+      if (!email || !password) {
+        SFUI.showMessage(msg, "Bitte gib E-Mail-Adresse und Passwort ein.", "error");
         return;
       }
-      SF.clearFailures("login");
-      if (result.needsUpgrade) {
-        SF.updateUser(user.id, { passwordHash: await SF.hashPassword(password) });
+      setBusy(btn, true, "Einen Moment …", "Anmelden");
+      try {
+        const u = await SFDB.login(email, password);
+        document.getElementById("auth-login-form").reset();
+        if (u.emailVerified) {
+          finishLogin();
+        } else {
+          showView("verify");
+        }
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      } finally {
+        setBusy(btn, false, "", "Anmelden");
       }
-      document.getElementById("auth-login-form").reset();
-      finishLogin(user);
     });
 
     document.getElementById("auth-register-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = msgEl("auth-register-message");
-      const submitBtn = document.getElementById("auth-register-submit");
+      const btn = document.getElementById("auth-register-submit");
       const username = SF.clampText(document.getElementById("auth-reg-username").value, 30);
       const email = SF.clampText(document.getElementById("auth-reg-email").value, 100);
       const pw = document.getElementById("auth-reg-password").value;
@@ -348,126 +277,119 @@ const SFAuth = (function () {
       else if (pw.length < PASSWORD_MIN) error = `Das Passwort muss mindestens ${PASSWORD_MIN} Zeichen haben.`;
       else if (pw.length > 128) error = "Das Passwort darf höchstens 128 Zeichen haben.";
       else if (pw !== pw2) error = "Die Passwörter stimmen nicht überein.";
-      else if (SF.findUserByUsername(username)) error = "Dieser Benutzername ist schon vergeben.";
-      else if (SF.findUserByEmail(email)) error = "Diese E-Mail-Adresse ist schon registriert.";
       if (error) {
         SFUI.showMessage(msg, error, "error");
         return;
       }
-      const wait = SF.cooldownSecondsLeft("mail", MAIL_COOLDOWN_S);
-      if (wait > 0) {
-        SFUI.showMessage(msg, `Bitte warte noch ${wait} Sekunden, bevor ein neuer Code verschickt wird.`, "error");
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Code wird gesendet …";
+      setBusy(btn, true, "Konto wird angelegt …", "Registrieren");
       try {
-        const passwordHash = await SF.hashPassword(pw);
-        const code = genCode();
-        const sent = await deliverCode(email, code);
-        if (!sent) {
-          SFUI.showMessage(
-            msg,
-            "Die E-Mail mit dem Code konnte gerade nicht verschickt werden. Bitte prüfe deine Internetverbindung und versuche es in ein paar Minuten erneut.",
-            "error"
-          );
-          return;
-        }
-        pendingReg = { username, email, passwordHash, code, expiresAt: Date.now() + CODE_TTL_MS, attempts: 0 };
-        document.getElementById("auth-verify-info").textContent =
-          "Wir haben einen Bestätigungscode an " + email + " geschickt.";
-        document.getElementById("auth-verify-code").value = "";
+        await SFDB.register({ username, email, password: pw });
+        SF.startCooldown("verify-mail");
         document.getElementById("auth-register-form").reset();
         showView("verify");
-        startResendTimer();
       } catch (err) {
-        SFUI.showMessage(msg, err.message || "Registrierung fehlgeschlagen.", "error");
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Code anfordern";
+        setBusy(btn, false, "", "Registrieren");
       }
     });
 
-    document.getElementById("auth-verify-form").addEventListener("submit", (e) => {
-      e.preventDefault();
+    document.getElementById("auth-verify-check").addEventListener("click", async () => {
       const msg = msgEl("auth-verify-message");
-      if (!pendingReg) {
-        showView("register");
-        return;
+      const btn = document.getElementById("auth-verify-check");
+      setBusy(btn, true, "Ich prüfe das …", "Ich habe bestätigt");
+      try {
+        const u = await SFDB.refreshUser();
+        if (u && u.emailVerified) {
+          finishLogin();
+        } else {
+          SFUI.showMessage(
+            msg,
+            "Deine E-Mail-Adresse ist noch nicht bestätigt. Bitte klicke auf den Link in der E-Mail (schau auch im Spam-Ordner nach) und tippe dann noch einmal hier.",
+            "error"
+          );
+        }
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      } finally {
+        setBusy(btn, false, "", "Ich habe bestätigt");
       }
-      if (Date.now() > pendingReg.expiresAt) {
-        SFUI.showMessage(msg, "Der Code ist abgelaufen. Bitte fordere einen neuen Code an.", "error");
-        return;
-      }
-      if (pendingReg.attempts >= CODE_MAX_ATTEMPTS) {
-        SFUI.showMessage(msg, "Zu viele falsche Eingaben. Bitte fordere einen neuen Code an.", "error");
-        return;
-      }
-      const entered = document.getElementById("auth-verify-code").value.trim();
-      if (entered !== pendingReg.code) {
-        pendingReg.attempts += 1;
-        const left = CODE_MAX_ATTEMPTS - pendingReg.attempts;
-        SFUI.showMessage(
-          msg,
-          left > 0
-            ? `Der Code ist leider falsch. Noch ${left} Versuch(e).`
-            : "Zu viele falsche Eingaben. Bitte fordere einen neuen Code an.",
-          "error"
-        );
-        return;
-      }
-      const user = SF.addUser({
-        username: pendingReg.username,
-        email: pendingReg.email,
-        passwordHash: pendingReg.passwordHash,
-      });
-      if (!user) {
-        SFUI.showMessage(msg, "Dein Konto konnte nicht gespeichert werden (Browser-Speicher voll oder gesperrt).", "error");
-        return;
-      }
-      pendingReg = null;
-      finishLogin(user);
     });
 
     document.getElementById("auth-resend-code").addEventListener("click", async () => {
-      if (!pendingReg) return;
       const msg = msgEl("auth-verify-message");
-      if (SF.cooldownSecondsLeft("mail", MAIL_COOLDOWN_S) > 0) return;
-      const code = genCode();
-      const sent = await deliverCode(pendingReg.email, code);
-      if (!sent) {
-        SFUI.showMessage(msg, "Der Code konnte gerade nicht verschickt werden. Bitte versuche es gleich noch einmal.", "error");
-        return;
+      if (SF.cooldownSecondsLeft("verify-mail", MAIL_COOLDOWN_S) > 0) return;
+      try {
+        await SFDB.resendVerification();
+        SF.startCooldown("verify-mail");
+        SFUI.showMessage(msg, "Wir haben dir die E-Mail noch einmal geschickt.", "success");
+        startResendTimer();
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
       }
-      pendingReg.code = code;
-      pendingReg.expiresAt = Date.now() + CODE_TTL_MS;
-      pendingReg.attempts = 0;
-      SFUI.showMessage(msg, "Neuer Code wurde verschickt.", "success");
-      startResendTimer();
     });
 
-    document.getElementById("auth-verify-cancel").addEventListener("click", (e) => {
+    document.getElementById("auth-verify-cancel").addEventListener("click", async (e) => {
       e.preventDefault();
       forceCloseModal();
+      try {
+        await SFDB.logout();
+      } catch (err) {
+        console.warn(err);
+      }
+    });
+
+    document.getElementById("auth-reset-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = msgEl("auth-reset-message");
+      const btn = document.getElementById("auth-reset-submit");
+      const email = SF.clampText(document.getElementById("auth-reset-email").value, 100);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        SFUI.showMessage(msg, "Bitte gib deine E-Mail-Adresse ein.", "error");
+        return;
+      }
+      setBusy(btn, true, "Einen Moment …", "Link senden");
+      try {
+        await SFDB.resetPassword(email);
+        SFUI.showMessage(
+          msg,
+          "Falls es ein Konto mit dieser E-Mail-Adresse gibt, haben wir dir einen Link geschickt (schau auch im Spam-Ordner nach).",
+          "success"
+        );
+      } catch (err) {
+        SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+      } finally {
+        setBusy(btn, false, "", "Link senden");
+      }
     });
   }
 
-  function logout() {
-    clearSession();
-    updateHeaderStatus();
+  async function logout() {
+    await SFDB.logout();
   }
 
   function updateHeaderStatus() {
     const el = document.getElementById("auth-status");
     if (!el) return;
-    const user = getCurrentUser();
-    if (user) {
+    const user = SFDB.currentUser();
+    if (user && user.emailVerified) {
       el.innerHTML =
         '<span class="auth-link">Hallo, ' +
         SF.escapeHtml(user.username) +
         '</span><a href="meine-bestellungen.html" class="auth-link">Meine Bestellungen</a>' +
         '<a href="#" class="auth-link auth-logout" id="auth-logout-link">Abmelden</a>';
+      document.getElementById("auth-logout-link").addEventListener("click", (e) => {
+        e.preventDefault();
+        logout();
+      });
+    } else if (user) {
+      el.innerHTML =
+        '<a href="#" class="auth-link" id="auth-verify-link">E-Mail bestätigen</a>' +
+        '<a href="#" class="auth-link auth-logout" id="auth-logout-link">Abmelden</a>';
+      document.getElementById("auth-verify-link").addEventListener("click", (e) => {
+        e.preventDefault();
+        openModal("verify");
+      });
       document.getElementById("auth-logout-link").addEventListener("click", (e) => {
         e.preventDefault();
         logout();
@@ -483,7 +405,8 @@ const SFAuth = (function () {
 
   document.addEventListener("DOMContentLoaded", () => {
     injectModal();
-    updateHeaderStatus();
+    SFDB.ready.then(updateHeaderStatus);
+    SFDB.onAuthChange(updateHeaderStatus);
   });
 
   return {

@@ -8,56 +8,76 @@ Diese Datei wird nicht mit veröffentlicht (siehe `.github/workflows/pages.yml`)
 - `index.html` – Startseite
 - `shop.html` – Shop mit Warenkorb und Bestellung
 - `spezialbestellungen.html` – Wunschbestellungen (Telefonnummer ist Pflicht)
-- `bewertungen.html` – Feedback und Bewertungen
+- `bewertungen.html` – Bewertungen (eine pro Konto, nur mit bestätigter E-Mail)
 - `meine-bestellungen.html` – eigene Bestellungen ansehen, Konto löschen
 - `impressum.html`, `datenschutz.html`, `agb.html` – Rechtliches
-  (gelb markierte Felder `[…]` müssen noch ausgefüllt werden)
 - `admin.html` – Admin-Bereich (Zugang ganz unten im Footer)
 
-## Admin-Bereich
+## Wie die Website funktioniert
 
-Beim allerersten Login gilt das Startpasswort aus dem Code. Direkt danach muss
-ein eigenes Passwort (mindestens 8 Zeichen) festgelegt werden. Nach 5 falschen
-Versuchen wird der Login kurz gesperrt, nach 30 Minuten ohne Aktivität wird man
-automatisch abgemeldet.
+Die Seiten sind statisch (GitHub Pages). Alle Daten liegen in **Google Firebase**
+(Projekt `schuelerfirma-siebdruck`, Datenbank in Europa):
 
-## Lokal ansehen
+- **Firebase Authentication** – Konten mit E-Mail + Passwort. Beim Registrieren schickt
+  Firebase einen Bestätigungslink. Ohne bestätigte E-Mail kann man weder bestellen noch bewerten.
+- **Cloud Firestore** – Produkte, Bestellungen, Spezialbestellungen, Bewertungen, Kundenprofile.
+
+Wer was darf, steht in `../firestore.rules` und wird **auf Googles Servern** durchgesetzt
+(nicht im Browser). Kurz: Produkte und Bewertungen sind öffentlich lesbar, jede:r sieht nur die
+eigenen Bestellungen, nur der Admin sieht und ändert alles. Der Lagerbestand wird beim Bestellen
+in einer Transaktion mitgezählt – es kann nicht mehr verkauft werden als vorrätig ist.
+
+## Admin
+
+Admin ist, wer sich mit einer in `firestore.rules` (Funktion `isAdmin`) eingetragenen,
+**bestätigten** E-Mail-Adresse anmeldet (aktuell `erdkinderkollektiv@gmail.com`). Das Konto entsteht
+ganz normal über „Registrieren“ auf der Website (oder in der Firebase-Konsole unter Authentication)
+und muss per Link bestätigt werden. Das Passwort ändert man über „Passwort vergessen?“ bzw.
+im Admin-Bereich unter „Einstellungen“. Nach 30 Minuten ohne Aktivität wird man abgemeldet.
+
+Weitere Admins: Adresse in `firestore.rules` eintragen und die Regeln neu veröffentlichen
+(und in `js/firebase-config.js` bei `SF_ADMIN_EMAILS` ergänzen).
+
+## Einmalige Einrichtung in der Firebase-Konsole
+
+1. **Authentication → Sign-in method:** „E-Mail/Passwort“ aktivieren (bereits erledigt).
+2. **Authentication → Einstellungen → Autorisierte Domains:** `nikoatonchev-debug.github.io` hinzufügen.
+3. **Authentication → Vorlagen:** Sprache auf Deutsch stellen, Absendernamen auf „Erdkinderkollektiv“,
+   Betreff/Text nach Wunsch (E-Mail-Adressbestätigung und Passwort zurücksetzen).
+4. **Firestore Database → Regeln:** den Inhalt von `../firestore.rules` einfügen und **Veröffentlichen**.
+   Ohne diesen Schritt bleibt die Datenbank komplett gesperrt.
+5. Optional, empfohlen: In der Google Cloud Console (APIs & Dienste → Anmeldedaten) den
+   API-Schlüssel auf die Referrer `https://nikoatonchev-debug.github.io/*` beschränken.
+6. Kostenlos bleiben: Im Spark-Tarif (ohne Kreditkarte) kostet nichts etwas; bei Überschreiten der
+   Gratis-Grenzen wird nur gedrosselt.
+
+## Lokal ansehen und testen
 
 ```
 cd schuelerfirma
-python3 -m http.server 8080
+python3 -m http.server 8080      # dann http://localhost:8080 öffnen
 ```
 
-Danach `http://localhost:8080/index.html` öffnen.
+Das spricht mit der echten Datenbank. Zum gefahrlosen Ausprobieren gibt es den Firebase-Emulator
+(`firebase emulators:start --only auth,firestore`, Konfiguration in `../firebase.json`); die Seiten
+verbinden sich damit, wenn vor dem Laden `window.__SF_EMULATOR = true` gesetzt ist.
 
-## Wichtig: Wo die Daten liegen
+## Firebase-SDK neu bauen
 
-Es gibt noch keinen Server/keine Datenbank. Produkte, Bestellungen,
-Spezialbestellungen, Bewertungen und Konten werden **nur im Browser des
-jeweiligen Geräts (localStorage)** gespeichert. Bestellungen von Kund:innen
-tauchen deshalb **nicht** im Admin-Bereich auf einem anderen Gerät auf, und
-Änderungen an Produkten im Admin-Bereich sehen nur Besucher:innen auf demselben
-Gerät. Für echten Betrieb braucht die Website eine Datenbank im Hintergrund.
+`js/vendor/firebase.bundle.js` ist das Firebase-SDK (Auth + Firestore) als eine Datei, damit nichts von
+fremden Servern nachgeladen wird. Neu bauen (z. B. für Updates):
 
-## E-Mail-Bestätigung (EmailJS)
+```
+cd tools/firebase-bundle
+npm install
+npm run build
+```
 
-Der Bestätigungscode wird über [EmailJS](https://www.emailjs.com) verschickt.
-Zugangsdaten stehen in `js/email-config.js`, das EmailJS-Skript liegt lokal in
-`js/vendor/` (Version 4.4.1, BSD-3-Lizenz), es wird also nichts von fremden
-Servern nachgeladen. Klappt der Versand nicht, bekommt man eine Fehlermeldung –
-der Code wird nie auf dem Bildschirm angezeigt.
+## Sicherheit in Kürze
 
-Empfohlen im EmailJS-Dashboard: unter „Account“ → „Security“ nur die eigene
-Domain (`nikoatonchev-debug.github.io`) erlauben.
-
-## Sicherheit
-
-- Passwörter werden mit PBKDF2 (SHA-256, 150.000 Runden, zufälliges Salt)
-  gespeichert; alte Einträge werden beim nächsten Login automatisch umgestellt.
-- Content-Security-Policy per `<meta>`-Tag auf jeder Seite (GitHub Pages kann
-  keine eigenen HTTP-Header setzen).
-- Login-Sperre nach Fehlversuchen, 30 Sekunden Wartezeit zwischen Code-E-Mails,
-  Codes laufen nach 15 Minuten bzw. 5 Fehlversuchen ab.
-- Achtung: Ohne Server läuft alles im Browser. Wer sich auskennt, kann über die
-  Entwicklerwerkzeuge die eigenen lokal gespeicherten Daten ansehen und ändern.
-  Echte Zugriffskontrolle gibt es erst mit einem Backend.
+- Passwörter verwaltet Firebase (gesalzen, verschlüsselt); die Website sieht sie nie.
+- Content-Security-Policy per `<meta>`-Tag auf jeder Seite, keine Inline-Skripte, Ausgaben werden maskiert.
+- Bild-Uploads (Admin): nur JPG/PNG/WebP/GIF, werden neu als JPEG gezeichnet (entfernt Standort-Metadaten),
+  alle Bilder eines Produkts zusammen höchstens ca. 800 KB.
+- Der Firebase-API-Schlüssel in `js/firebase-config.js` ist absichtlich öffentlich – geschützt wird über
+  die Regeln, nicht über Verstecken.

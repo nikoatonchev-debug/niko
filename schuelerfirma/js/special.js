@@ -30,37 +30,27 @@
         return;
       }
 
-      SFAuth.requireLogin(() => {
-        const user = SFAuth.getCurrentUser();
-
-        const saved = SF.addSpecialOrder({
-          name,
-          phone,
-          klasse,
-          groesse,
-          menge,
-          wunsch,
-          userId: user ? user.id : null,
-          username: user ? user.username : null,
-        });
-        if (!saved) {
+      SFAuth.requireLogin(async () => {
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        btn.textContent = "Wird gesendet …";
+        try {
+          await SFDB.addSpecialOrder({ name, phone, klasse, groesse, menge, wunsch });
+          form.reset();
+          renderMenge();
           SFUI.showMessage(
             msg,
-            "Deine Anfrage konnte nicht gespeichert werden (Speicher deines Browsers ist voll oder gesperrt).",
-            "error"
+            "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben. Du findest sie auch unter „Meine Bestellungen“.",
+            "success"
           );
-          return;
+          msg.setAttribute("tabindex", "-1");
+          msg.focus();
+        } catch (err) {
+          SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Spezialbestellung senden";
         }
-
-        form.reset();
-        renderMenge();
-        SFUI.showMessage(
-          msg,
-          "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben.",
-          "success"
-        );
-        msg.setAttribute("tabindex", "-1");
-        msg.focus();
       });
     });
   }

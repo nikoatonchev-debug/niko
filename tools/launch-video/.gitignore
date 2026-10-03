@@ -1,2 +1,9 @@
 frames/
+stills/
+cues.json
 *.mp4
+*.wav
+*.jpg
+audio/models/*
+!audio/models/.gitkeep
+audio/durations.json

@@ -1,0 +1,26 @@
+[
+ {
+  "id": "hook",
+  "say": "Von Hand gedruckt. Von uns."
+ },
+ {
+  "id": "reveal",
+  "say": "Die Siebdruck-Schüler-Firma der Montessohri-Schule Dietramszell ist jetzt online!"
+ },
+ {
+  "id": "shop",
+  "say": "Such dir deinen Pulli aus, wähl die Größe, und bestell ihn online."
+ },
+ {
+  "id": "pickup",
+  "say": "Abholen kannst du freitags ab elf Uhr, an der alten Apotheke. Du zahlst einfach bar."
+ },
+ {
+  "id": "special",
+  "say": "Eigenes Motiv für die ganze Klasse? Schreib uns einfach."
+ },
+ {
+  "id": "end",
+  "say": "Schau jetzt rein!"
+ }
+]

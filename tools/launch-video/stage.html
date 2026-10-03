@@ -94,12 +94,20 @@
 
   /* ---------- Schluss ---------- */
   #end { z-index: 9; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 30px; color: var(--cream); }
-  #end .logo { width: 132px; height: 132px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 36px rgba(0,0,0,0.28); }
-  #end .logo img { width: 104px; }
-  #end h2 { margin-top: 40px; font-size: 82px; text-shadow: 5px 4px 0 rgba(242,183,5,0.95); }
+  #end .logo { width: 104px; height: 104px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 36px rgba(0,0,0,0.28); }
+  #end .logo img { width: 82px; }
+  #end h2 { margin-top: 26px; font-size: 56px; text-shadow: 5px 4px 0 rgba(242,183,5,0.95); }
   #end .url { margin-top: 48px; background: #fff; color: var(--orange); font: 800 25px "Bricolage", sans-serif; letter-spacing: -0.01em; white-space: nowrap;
     padding: 18px 24px 20px; border-radius: 22px; box-shadow: 0 18px 40px rgba(0,0,0,0.3); }
-  #end .facts { margin-top: 44px; font-size: 21px; font-weight: 500; line-height: 1.6; opacity: 0.95; }
+  #end .qr-card { margin-top: 30px; background: #fff; border-radius: 26px; padding: 18px 18px 14px; box-shadow: 0 18px 40px rgba(0,0,0,0.3); }
+  #end .qr-box { width: 260px; height: 260px; position: relative; }
+  #end .qr-box img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; }
+  #end .qr-missing { display: none; position: absolute; inset: 0; border: 4px dashed #b9ad97; border-radius: 14px; color: #8a7f6a;
+    font: 700 22px "DM Sans", sans-serif; align-items: center; justify-content: center; text-align: center; line-height: 1.3; }
+  #end .qr-box.missing img { display: none; }
+  #end .qr-box.missing .qr-missing { display: flex; }
+  #end .qr-label { margin-top: 10px; color: var(--teal); font: 800 22px "Bricolage", sans-serif; }
+  #end .facts { margin-top: 30px; font-size: 21px; font-weight: 500; line-height: 1.6; opacity: 0.95; }
   #end .facts b { color: var(--yellow); font-weight: 700; }
   #end-dots { color: rgba(242,183,5,0.5); width: 600px; height: 600px; left: -260px; top: -240px; }
   #end-dots2 { color: rgba(250,245,234,0.16); width: 520px; height: 520px; right: -250px; bottom: -200px; }
@@ -149,21 +157,22 @@
     <div class="kicker" data-a="fade" data-in="12.35">Abholung</div>
     <div class="display big">
       <span class="line"><span class="w" data-a="rise" data-in="12.45">Freitags</span></span>
-      <span class="line o"><span class="w" data-a="rise" data-in="13.20">ab 11 Uhr.</span></span>
+      <span class="line o"><span class="w" data-a="rise" data-in="13.60">ab 11 Uhr.</span></span>
     </div>
   </div>
   <div class="layer head" id="head-special">
-    <div class="kicker" data-a="fade" data-in="16.95">Spezialbestellung</div>
+    <div class="kicker" data-a="fade" data-in="17.70">Spezialbestellung</div>
     <div class="display big">
-      <span class="line"><span class="w" data-a="rise" data-in="17.05">Eigenes</span> <span class="w" data-a="rise" data-in="17.20">Motiv?</span></span>
-      <span class="line o"><span class="w" data-a="rise" data-in="17.85">Für die ganze Klasse.</span></span>
+      <span class="line"><span class="w" data-a="rise" data-in="17.80">Eigenes</span> <span class="w" data-a="rise" data-in="17.95">Motiv?</span></span>
+      <span class="line"><span class="w" data-a="rise" data-in="18.80">Klassenpullis?</span></span>
+      <span class="line o"><span class="w" data-a="rise" data-in="20.30">Sonderwunsch?</span></span>
     </div>
   </div>
 
   <div class="layer" style="z-index:8">
-    <div class="sticker s-teal" id="st-apo" data-a="slap" data-in="14.35" style="left:22px; top:560px; --r:-6deg"><small>Treffpunkt</small>Alte Apotheke</div>
-    <div class="sticker s-yellow" id="st-bar" data-a="slap" data-in="15.55" style="right:20px; top:700px; --r:5deg"><small>Bezahlen</small>Einfach bar</div>
-    <div class="sticker s-orange" id="st-write" data-a="slap" data-in="19.05" style="right:22px; top:770px; --r:-4deg">Schreib uns!</div>
+    <div class="sticker s-teal" id="st-apo" data-a="slap" data-in="14.75" style="left:22px; top:560px; --r:-6deg"><small>Treffpunkt</small>Alte Apotheke</div>
+    <div class="sticker s-yellow" id="st-bar" data-a="slap" data-in="16.15" style="right:20px; top:700px; --r:5deg"><small>Bezahlen</small>Einfach bar</div>
+    <div class="sticker s-orange" id="st-write" data-a="slap" data-in="21.55" style="right:22px; top:770px; --r:-4deg">Schreib uns!</div>
   </div>
 
   <!-- Handy -->
@@ -184,10 +193,13 @@
   <div class="layer" id="end">
     <div class="dots" id="end-dots"></div>
     <div class="dots" id="end-dots2"></div>
-    <div class="logo" data-a="pop" data-in="21.65"><img src="logo.png" alt=""></div>
-    <h2 class="display"><span class="w" data-a="stamp" data-in="21.85">Schau</span> <span class="w" data-a="stamp" data-in="22.00">jetzt</span><br><span class="w" data-a="stamp" data-in="22.15">rein!</span></h2>
-    <div class="url" data-a="pop" data-in="22.60">schuelerfirma-siebdruck.web.app</div>
-    <div class="facts" data-a="rise" data-in="23.10">Handgedruckte Pullis &middot; Spezialbestellungen<br>Abholung <b>freitags ab 11 Uhr</b> &middot; bar bezahlen</div>
+    <div class="logo" data-a="pop" data-in="23.10"><img src="logo.png" alt=""></div>
+    <h2 class="display"><span class="w" data-a="stamp" data-in="23.25">Schau</span> <span class="w" data-a="stamp" data-in="23.40">jetzt</span> <span class="w" data-a="stamp" data-in="23.55">rein!</span></h2>
+    <div class="qr-card" data-a="pop" data-in="23.85">
+      <div class="qr-box"><img id="qr" src="qr.png" alt=""><div class="qr-missing">Hier kommt<br>euer QR-Code hin</div></div>
+      <div class="qr-label">Scannen &amp; reinschauen</div>
+    </div>
+    <div class="facts" data-a="rise" data-in="24.50">Handgedruckte Pullis &middot; Spezialbestellungen<br>Abholung <b>freitags ab 11 Uhr</b> &middot; bar bezahlen</div>
   </div>
 
   <div class="layer" id="grain"></div>
@@ -203,7 +215,7 @@
   const lerp = (a, b, k) => a + (b - a) * k;
 
   // Zeitfenster der Szenen (müssen zu record.js passen)
-  const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 16.85, end: 21.46 };
+  const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 17.6, end: 22.95 };
 
   // Einblend-Animationen; jedes Element mit data-a/data-in wird pro Bild neu berechnet
   const ANIM = {
@@ -306,6 +318,9 @@
     $('draft').textContent = s.draft ? 'Entwurf' : '';
     $('draft').style.color = t >= T.reveal && t < T.shop || t >= T.end ? 'rgba(250,245,234,0.45)' : 'rgba(43,38,32,0.35)';
   };
+  const qr = $('qr');
+  const markQr = () => { if (!qr.naturalWidth) qr.parentElement.classList.add('missing'); };
+  qr.addEventListener('error', markQr); if (qr.complete) markQr();
   window.stageReady = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; }))));
 </script>
 </body>

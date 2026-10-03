@@ -5,10 +5,10 @@ import numpy as np, soundfile as sf
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 SR = 44100
-DUR = 25.0
+DUR = 28.5
 N = int(SR * DUR)
 # Wann welcher Satz beginnt (Sekunden, passend zu stage.html)
-VO_AT = {'hook': 0.45, 'reveal': 3.15, 'shop': 7.75, 'pickup': 12.4, 'special': 17.0, 'end': 21.9}
+VO_AT = {'hook': 0.45, 'reveal': 3.15, 'shop': 7.75, 'pickup': 12.35, 'special': 17.75, 'end': 23.3}
 SFX = {  # Datei, Lautstärke in dB
     'click': ('sfx/click2.ogg', -17), 'swish': ('sfx/card-slide-1.ogg', -15),
     'stamp': ('sfx/impactSoft_medium_001.ogg', -10), 'pop': ('sfx/select_008.ogg', -19),

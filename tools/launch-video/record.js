@@ -11,12 +11,12 @@ const OUT = path.join(__dirname, 'frames');
 const DRAFT = process.argv.includes('--draft');
 const arg = (name) => { const i = process.argv.indexOf(name); return i > -1 ? parseFloat(process.argv[i + 1]) : null; };
 const FROM = arg('--from') || 0;
-const DURATION = 25.0;
+const DURATION = 28.5;
 const STILLS = (() => { const i = process.argv.indexOf('--stills'); return i > -1 ? process.argv[i + 1].split(',').map(Number) : null; })();
 const UNTIL = arg('--until') || (STILLS ? Math.max(...STILLS) + 0.05 : DURATION);
 
 // Szenenwechsel (gleich wie T in stage.html)
-const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 16.85, end: 21.46 };
+const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 17.6, end: 22.95 };
 const WISH = 'Klassenpulli mit unserem eigenen Logo – 24 Stück für die 8b';
 
 const ease = (x) => { x = Math.max(0, Math.min(1, x)); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -37,7 +37,7 @@ const lerp = (a, b, k) => a + (b - a) * k;
 
   const cues = [
     { t: T.reveal - 0.2, sfx: 'swish' }, { t: T.shop - 0.35, sfx: 'swish' }, { t: T.end - 0.2, sfx: 'swish' },
-    { t: 6.05, sfx: 'stamp' }, { t: 14.35, sfx: 'pop' }, { t: 15.55, sfx: 'pop' }, { t: 19.05, sfx: 'pop' }, { t: 22.6, sfx: 'pop' },
+    { t: 6.05, sfx: 'stamp' }, { t: 14.75, sfx: 'pop' }, { t: 16.15, sfx: 'pop' }, { t: 21.55, sfx: 'pop' }, { t: 23.85, sfx: 'pop' },
   ];
   let tap = null;
   const done = new Set();
@@ -127,10 +127,10 @@ const lerp = (a, b, k) => a + (b - a) * k;
     }
     if (want === 'special') {
       await scrollTo(lerp(0, info.formY, ease((t - (T.special + 0.25)) / 0.8)));
-      await once('tWish', t, 18.0, () => showTap('#sp-wunsch', t));
-      await once('focus', t, 18.1, () => frame.focus('#sp-wunsch'));
-      if (t >= 18.2) {
-        const n = Math.round(WISH.length * Math.min(1, (t - 18.2) / 2.3));
+      await once('tWish', t, 19.0, () => showTap('#sp-wunsch', t));
+      await once('focus', t, 19.1, () => frame.focus('#sp-wunsch'));
+      if (t >= 19.2) {
+        const n = Math.round(WISH.length * Math.min(1, (t - 19.2) / 2.4));
         await frame.evaluate((v) => { const el = document.getElementById('sp-wunsch'); if (el.value !== v) el.value = v; }, WISH.slice(0, n));
       }
     }

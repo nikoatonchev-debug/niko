@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Launch-Video Bühne</title>
+<style>
+  :root {
+    --teal: #2c6e6b; --teal-dark: #1d4a48; --orange: #bf4f1f; --yellow: #f2b705;
+    --cream: #faf5ea; --ink: #2b2620;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 540px; height: 960px; overflow: hidden; }
+  body {
+    font-family: "Trebuchet MS", "DejaVu Sans", system-ui, sans-serif;
+    background: linear-gradient(160deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color: #fff; position: relative;
+  }
+  /* dezentes Punktmuster wie Siebdruck-Raster */
+  body::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.07) 1.4px, transparent 1.6px);
+    background-size: 22px 22px;
+  }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  #site { pointer-events: auto; }
+
+  /* ---------- Titel ---------- */
+  #title { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  #title .logo-wrap { width: 190px; height: 190px; border-radius: 50%; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 18px 40px rgba(0,0,0,0.25); }
+  #title .logo-wrap img { width: 150px; height: auto; }
+  #title h1 { font-size: 44px; line-height: 1.08; margin-top: 34px; letter-spacing: -0.5px; }
+  #title .sub { font-size: 20px; opacity: 0.9; margin-top: 12px; }
+  .pill { display: inline-block; margin-top: 30px; background: var(--yellow); color: #3a2c00;
+    font-weight: 800; font-size: 24px; padding: 12px 28px; border-radius: 999px; box-shadow: 0 10px 24px rgba(0,0,0,0.2); }
+
+  /* ---------- Handy-Szenen ---------- */
+  #caption { position: absolute; left: 30px; right: 30px; top: 34px; height: 130px;
+    display: flex; flex-direction: column; justify-content: center; }
+  #caption .kicker { font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--yellow); }
+  #caption .text { font-size: 30px; font-weight: 800; line-height: 1.15; margin-top: 6px; }
+  #phone { position: absolute; left: 50%; top: 178px; width: 396px; height: 760px; margin-left: -198px;
+    background: #111; border-radius: 52px; padding: 11px; box-shadow: 0 30px 60px rgba(0,0,0,0.35), inset 0 0 0 2px #333; }
+  #screen { position: relative; width: 374px; height: 738px; border-radius: 42px; overflow: hidden; background: var(--cream); }
+  #screen .status { height: 46px; background: #fff; position: relative; font: 700 15px system-ui, sans-serif; color: #111; }
+  #screen .status .time { position: absolute; left: 34px; top: 15px; }
+  #screen .status .bat { position: absolute; right: 30px; top: 17px; width: 25px; height: 12px; border: 1.5px solid #111; border-radius: 4px; }
+  #screen .status .bat::after { content: ""; position: absolute; inset: 1.5px; right: 5px; background: #111; border-radius: 1.5px; }
+  #screen iframe { width: 374px; height: 692px; border: 0; display: block; }
+  #screen .island { position: absolute; top: 9px; left: 50%; width: 110px; height: 30px; margin-left: -55px;
+    background: #111; border-radius: 20px; z-index: 5; }
+  #cover { pointer-events: none; position: absolute; inset: 46px 0 0 0; background: var(--cream); z-index: 4; }
+  #tap { pointer-events: none; position: absolute; width: 46px; height: 46px; border-radius: 50%; z-index: 6;
+    background: rgba(242,183,5,0.55); border: 3px solid rgba(255,255,255,0.9); transform: translate(-50%,-50%) scale(0); }
+
+  /* ---------- Schluss ---------- */
+  #end { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 36px; }
+  #end .logo-wrap { width: 130px; height: 130px; border-radius: 50%; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; }
+  #end .logo-wrap img { width: 104px; }
+  #end h2 { font-size: 40px; margin-top: 28px; line-height: 1.1; }
+  #end .url { margin-top: 26px; background: #fff; color: var(--teal-dark); font-weight: 800;
+    font-size: 25px; padding: 16px 22px; border-radius: 18px; box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
+  #end .facts { margin-top: 30px; font-size: 19px; line-height: 1.6; opacity: 0.95; }
+  #end .facts b { color: var(--yellow); }
+  #draft { pointer-events: none; position: absolute; right: 14px; bottom: 12px; font-size: 13px; font-weight: 800; letter-spacing: 1px;
+    color: rgba(255,255,255,0.55); text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="layer" id="title">
+    <div class="logo-wrap"><img src="logo.png" alt=""></div>
+    <h1>Siebdruck-<br>Schülerfirma</h1>
+    <div class="sub">Montessori-Schule Dietramszell</div>
+    <div class="pill">Unsere Website ist online!</div>
+  </div>
+
+  <div class="layer" id="scenes">
+    <div id="caption"><div class="kicker" id="kicker"></div><div class="text" id="captext"></div></div>
+    <div id="phone">
+      <div id="screen">
+        <div class="island"></div>
+        <div class="status"><span class="time">9:41</span><span class="bat"></span></div>
+        <iframe id="site" src="about:blank" title="Website"></iframe>
+        <div id="cover"></div>
+        <div id="tap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layer" id="end">
+    <div class="logo-wrap"><img src="logo.png" alt=""></div>
+    <h2>Jetzt<br>reinschauen!</h2>
+    <div class="url" id="endurl">schuelerfirma-siebdruck.web.app</div>
+    <div class="facts">
+      Handgedruckte Pullis &middot; Spezialbestellungen<br>
+      Abholung <b>freitags ab 11 Uhr</b><br>bei der alten Apotheke &middot; bar bezahlen
+    </div>
+  </div>
+  <div id="draft"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const outBack = (x) => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+
+  // Wird vom Aufnahme-Skript für jedes Bild aufgerufen. s = Zustand der Szene.
+  window.render = function (s) {
+    // Titel
+    const tt = s.t;
+    const titleOut = clamp((tt - s.titleEnd + 0.45) / 0.45);
+    $('title').style.opacity = s.scene === 'title' ? String(1 - titleOut) : '0';
+    const logo = $('title').querySelector('.logo-wrap');
+    logo.style.transform = `scale(${0.4 + 0.6 * outBack(tt / 0.7)})`;
+    $('title').querySelector('h1').style.transform = `translateY(${30 * (1 - ease((tt - 0.35) / 0.6))}px)`;
+    $('title').querySelector('h1').style.opacity = String(ease((tt - 0.35) / 0.6));
+    $('title').querySelector('.sub').style.opacity = String(ease((tt - 0.7) / 0.6));
+    const pill = $('title').querySelector('.pill');
+    pill.style.transform = `scale(${outBack((tt - 1.2) / 0.5)})`;
+
+    // Handy-Szenen
+    const inScenes = s.scene !== 'title' && s.scene !== 'end';
+    const sceneIn = ease((tt - s.sceneStart) / 0.45);
+    const sceneOut = clamp((tt - (s.sceneEnd - 0.35)) / 0.35);
+    $('scenes').style.opacity = inScenes ? '1' : '0';
+    $('phone').style.transform = `translateY(${s.firstPhoneScene ? 80 * (1 - sceneIn) : 0}px)`;
+    $('kicker').textContent = s.kicker || '';
+    $('captext').textContent = s.caption || '';
+    const capIn = ease((tt - s.sceneStart - 0.1) / 0.45);
+    $('caption').style.opacity = String(capIn * (1 - sceneOut));
+    $('caption').style.transform = `translateY(${18 * (1 - capIn)}px)`;
+    // Bildschirm aus-/einblenden beim Seitenwechsel
+    $('cover').style.opacity = String(Math.max(1 - ease((tt - s.sceneStart) / 0.35), sceneOut));
+    // Tipp-Kreis
+    const tap = $('tap');
+    if (s.tap) {
+      const k = clamp((tt - s.tap.at) / 0.5);
+      tap.style.left = s.tap.x + 'px'; tap.style.top = s.tap.y + 'px';
+      tap.style.opacity = String(k < 1 ? 1 - k * 0.8 : 0);
+      tap.style.transform = `translate(-50%,-50%) scale(${k <= 0 ? 0 : 0.6 + 0.6 * k})`;
+      if (tt < s.tap.at) tap.style.opacity = '0';
+    } else {
+      tap.style.opacity = '0';
+    }
+
+    // Schluss
+    const endIn = s.scene === 'end' ? ease((tt - s.sceneStart) / 0.6) : 0;
+    $('end').style.opacity = String(endIn);
+    $('end').querySelector('.logo-wrap').style.transform = `scale(${s.scene === 'end' ? outBack((tt - s.sceneStart) / 0.6) : 0})`;
+    $('end').querySelector('h2').style.transform = `translateY(${24 * (1 - ease((tt - s.sceneStart - 0.2) / 0.5))}px)`;
+    $('endurl').style.transform = `scale(${s.scene === 'end' ? outBack((tt - s.sceneStart - 0.5) / 0.5) : 0})`;
+    $('end').querySelector('.facts').style.opacity = String(s.scene === 'end' ? ease((tt - s.sceneStart - 0.9) / 0.6) : 0);
+
+    $('draft').textContent = s.draft ? 'Entwurf' : '';
+  };
+</script>
+</body>
+</html>

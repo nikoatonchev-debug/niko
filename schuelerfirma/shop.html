@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Shop &ndash; Siebdruck-Schülerfirma</title>
+  <meta name="description" content="Siebdruck-Pullis der Schülerfirma der Montessori-Schule Dietramszell – online bestellen, freitags abholen und bar bezahlen.">
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="shop">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main">
+    <section class="pb-24">
+      <div class="container">
+        <h1 class="section-title">Unser Shop</h1>
+        <p class="section-subtitle">Alle Pullis sind von uns selbst im Siebdruck bedruckt. Größe wählen, in den Warenkorb legen, bestellen.</p>
+        <div class="pickup-banner mb-32">
+          <div class="icon" data-icon="cash"></div>
+          <div class="pickup-banner-text">
+            <strong>Abholung: jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>
+            Bezahlung ausschließlich bar bei Abholung &ndash; kein PayPal, keine Online-Zahlung.
+            Alle Preise sind Endpreise, es fallen keine Versandkosten an.
+          </div>
+          <button type="button" class="btn video-btn" data-video-trigger>
+            <span class="icon-camera"></span> Video ansehen
+          </button>
+        </div>
+        <h2 class="sr-only">Produkte</h2>
+        <div class="grid grid-3" id="product-grid"></div>
+        <p class="sr-only" id="shop-live" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <!-- Warenkorb-Button -->
+  <div class="cart-panel">
+    <button type="button" class="cart-button" id="cart-open-btn" aria-label="Warenkorb öffnen, 0 Artikel">
+      <span data-icon="cart"></span>
+      Warenkorb
+      <span class="cart-count" id="cart-count">0</span>
+    </button>
+  </div>
+
+  <!-- Warenkorb-Modal -->
+  <div class="modal-backdrop hidden" id="cart-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+      <button type="button" class="modal-close" id="cart-close-btn" aria-label="Warenkorb schließen">&times;</button>
+      <h2 id="cart-title">Dein Warenkorb</h2>
+      <div id="cart-lines"></div>
+      <div class="cart-total">
+        <span>Gesamt (Endpreis)</span>
+        <span id="cart-total">0,00 €</span>
+      </div>
+      <p class="hint mt-6">Bezahlung bar bei Abholung, freitags ab 11 Uhr bei der alten Apotheke.</p>
+      <p class="hint">Zum Bestellen musst du angemeldet sein &ndash; falls nicht, fragen wir dich beim Klick auf &bdquo;Zur Kasse&ldquo;.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="checkout-btn" disabled>Zur Kasse</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout-Modal -->
+  <div class="modal-backdrop hidden" id="checkout-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+      <button type="button" class="modal-close" id="checkout-close-btn" aria-label="Bestellung schließen">&times;</button>
+      <h2 id="checkout-title">Bestellung abschließen</h2>
+      <form id="checkout-form" novalidate>
+        <div class="field">
+          <label for="co-name">Dein Name</label>
+          <input type="text" id="co-name" autocomplete="name" maxlength="60" required>
+        </div>
+        <div class="field">
+          <label for="co-klasse">Klassenname</label>
+          <input type="text" id="co-klasse" placeholder="z. B. 8b" maxlength="20" required>
+        </div>
+        <div class="field">
+          <label for="co-phone">Telefonnummer</label>
+          <input type="tel" id="co-phone" autocomplete="tel" maxlength="25" required>
+        </div>
+
+        <section class="order-summary" aria-labelledby="co-summary-title">
+          <h3 id="co-summary-title">Deine Bestellung</h3>
+          <div id="co-summary-lines"></div>
+          <div class="cart-total">
+            <span>Gesamtsumme (Endpreis)</span>
+            <span id="co-summary-total">0,00 €</span>
+          </div>
+          <p class="hint">Abholung freitags ab 11 Uhr bei der alten Apotheke, Bezahlung bar bei Abholung. Keine Versandkosten.</p>
+        </section>
+
+        <p class="hint">
+          Es gelten unsere <a href="agb.html" target="_blank" rel="noopener">AGB</a>
+          (inkl. <a href="agb.html#rueckgabe" target="_blank" rel="noopener">Rückgabe &amp; Umtausch</a>).
+          Deine Angaben nutzen wir nur, um deine Bestellung zu bearbeiten &ndash; mehr in der
+          <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.
+        </p>
+        <button type="submit" class="btn btn-primary btn-block">Zahlungspflichtig bestellen</button>
+        <div id="checkout-message" class="form-message hidden"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Produkt-Detailansicht -->
+  <div class="modal-backdrop hidden" id="product-detail-modal">
+    <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="pd-name">
+      <button type="button" class="modal-close" id="pd-close-btn" aria-label="Produktansicht schließen">&times;</button>
+      <div id="pd-gallery" class="mb-16"></div>
+      <h2 id="pd-name" class="mb-6"></h2>
+      <p id="pd-desc" class="product-desc mb-10"></p>
+      <p id="pd-stock-hint" class="hint"></p>
+      <div class="grid grid-2 mb-12">
+        <div class="field mb-0">
+          <label for="pd-size">Größe</label>
+          <select id="pd-size"></select>
+        </div>
+        <div class="field mb-0">
+          <label for="pd-qty">Menge</label>
+          <div id="pd-qty-wrap"></div>
+        </div>
+      </div>
+      <div class="product-meta">
+        <span class="price" id="pd-price"></span>
+        <button type="button" class="btn btn-primary" id="pd-add">In den Warenkorb</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bestätigungs-Modal -->
+  <div class="modal-backdrop hidden" id="confirmation-modal">
+    <div class="modal text-center" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+      <button type="button" class="modal-close" id="confirmation-close-btn" aria-label="Schließen">&times;</button>
+      <h2 id="confirmation-title">Danke für deine Bestellung!</h2>
+      <p>Deine Bestellnummer: <strong id="order-confirmation-id"></strong></p>
+      <p>Abholung &amp; Bezahlung: <strong>jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>, bar.</p>
+      <p class="hint">Deine Bestellungen findest du jederzeit unter <a href="meine-bestellungen.html">Meine Bestellungen</a>.</p>
+      <button type="button" class="btn btn-primary" id="confirmation-ok-btn">OK</button>
+    </div>
+  </div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/video.js"></script>
+  <script src="js/shop.js"></script>
+</body>
+</html>

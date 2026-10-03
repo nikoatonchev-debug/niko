@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Launch-Video Bühne</title>
+<style>
+  @font-face { font-family: "Bricolage"; font-weight: 600; src: url(fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Bricolage"; font-weight: 800; src: url(fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2"); }
+  @font-face { font-family: "DM Sans"; font-weight: 500; src: url(fonts/dm-sans-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "DM Sans"; font-weight: 700; src: url(fonts/dm-sans-latin-700-normal.woff2) format("woff2"); }
+  /* Farben der Website (css/style.css) */
+  :root {
+    --teal: #2c6e6b; --teal-dark: #1d4a48; --orange: #bf4f1f; --yellow: #f2b705;
+    --cream: #faf5ea; --cream-2: #f1e7d3; --ink: #2b2620;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 540px; height: 960px; overflow: hidden; background: var(--cream); }
+  body { font-family: "DM Sans", sans-serif; color: var(--ink); position: relative; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  #site { pointer-events: auto; }
+
+  /* Papier-Körnung über allem */
+  #grain { z-index: 50; opacity: 0.07; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* Farbflächen, die wie ein Rakel-Zug über das Bild wischen */
+  .wipe { z-index: 4; }
+  .wipe .squeegee { position: absolute; left: -20px; right: -20px; height: 22px; border-radius: 11px;
+    background: linear-gradient(#3a332b, #1d1915); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+  .wipe .squeegee::after { content: ""; position: absolute; left: 30px; right: 30px; bottom: -7px; height: 8px;
+    background: #4b6b8a; border-radius: 0 0 4px 4px; }
+  #wipe-teal { background: var(--teal); }
+  #wipe-cream { background: var(--cream); }
+  #wipe-end { background: var(--teal); }
+
+  /* Raster-Punkte (Halbton) als Deko */
+  .dots { position: absolute; border-radius: 50%;
+    background-image: radial-gradient(currentColor 34%, transparent 36%); background-size: 16px 16px;
+    -webkit-mask-image: radial-gradient(circle, #000 35%, transparent 70%); mask-image: radial-gradient(circle, #000 35%, transparent 70%); }
+
+  .display { font-family: "Bricolage", sans-serif; font-weight: 800; letter-spacing: -0.02em; line-height: 0.95; }
+  .w { display: inline-block; will-change: transform; }
+
+  /* ---------- Hook ---------- */
+  #hook { z-index: 3; display: flex; flex-direction: column; justify-content: center; padding: 0 44px; }
+  #hook .l1, #hook .l2 { font-size: 104px; color: var(--teal); text-shadow: 5px 4px 0 rgba(191,79,31,0.9); }
+  #hook .l2 { color: var(--orange); text-shadow: 5px 4px 0 rgba(44,110,107,0.85); }
+  #hook .l3 { margin-top: 26px; font-size: 76px; color: var(--ink); position: relative; align-self: flex-start; padding: 2px 16px 10px; }
+  #hook .l3 .band { position: absolute; inset: 10px -6px 0; background: var(--yellow); z-index: -1; transform-origin: left center; border-radius: 6px; }
+  #hook-dots { color: var(--yellow); width: 560px; height: 560px; right: -170px; top: 40px; }
+  #hook-dots2 { color: rgba(44,110,107,0.35); width: 380px; height: 380px; left: -150px; bottom: 30px; }
+
+  /* ---------- Reveal ---------- */
+  #reveal { z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 40px; color: var(--cream); }
+  #reveal .logo { width: 150px; height: 150px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.28); }
+  #reveal .logo img { width: 118px; }
+  #reveal .name { margin-top: 34px; font-size: 70px; text-shadow: 4px 4px 0 rgba(242,183,5,0.9); }
+  #reveal .school { margin-top: 20px; font-size: 23px; font-weight: 500; opacity: 0.92; }
+  #reveal .stamp { margin-top: 46px; font-family: "Bricolage"; font-weight: 800; font-size: 46px; color: var(--yellow);
+    border: 5px solid var(--yellow); border-radius: 14px; padding: 6px 22px 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* ---------- Handy ---------- */
+  #phone-wrap { z-index: 6; position: absolute; left: 50%; top: 300px; width: 396px; height: 760px; margin-left: -198px; transform-origin: 50% 0; }
+  #phone { width: 396px; height: 760px; background: #15120f; border-radius: 54px; padding: 11px;
+    box-shadow: 0 40px 70px rgba(43,38,32,0.32), 0 8px 18px rgba(43,38,32,0.2), inset 0 0 0 2px #3b352e; }
+  #screen { position: relative; width: 374px; height: 738px; border-radius: 44px; overflow: hidden; background: var(--cream); }
+  #screen .island { position: absolute; top: 10px; left: 50%; width: 108px; height: 30px; margin-left: -54px; background: #000; border-radius: 20px; z-index: 5; }
+  #screen .status { height: 46px; background: #fff; position: relative; font: 700 15px "DM Sans", sans-serif; color: #111; }
+  #screen .status .time { position: absolute; left: 36px; top: 15px; }
+  #screen .status .bat { position: absolute; right: 30px; top: 17px; width: 25px; height: 12px; border: 1.5px solid #111; border-radius: 4px; }
+  #screen .status .bat::after { content: ""; position: absolute; inset: 1.5px; right: 5px; background: #111; border-radius: 1.5px; }
+  #screen iframe { width: 374px; height: 692px; border: 0; display: block; }
+  #cover { pointer-events: none; position: absolute; inset: 46px 0 0 0; background: var(--cream); z-index: 4; }
+  #tap { pointer-events: none; position: absolute; width: 54px; height: 54px; border-radius: 50%; z-index: 6;
+    background: rgba(242,183,5,0.5); border: 3px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+
+  /* ---------- Überschriften der Handy-Szenen ---------- */
+  .head { z-index: 7; padding: 70px 40px 0; }
+  .head .kicker { font: 700 17px "DM Sans", sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange); margin-bottom: 12px; }
+  .head .big { font-size: 54px; color: var(--teal); text-shadow: 3px 3px 0 rgba(191,79,31,0.55); }
+  .head .big .o { color: var(--orange); text-shadow: 3px 3px 0 rgba(44,110,107,0.45); }
+  .head .line { display: block; }
+  #deco-dots1 { color: rgba(242,183,5,0.9); width: 520px; height: 520px; right: -230px; top: 360px; z-index: 2; }
+  #deco-dots2 { color: rgba(44,110,107,0.28); width: 420px; height: 420px; left: -220px; top: 620px; z-index: 2; }
+
+  /* Sticker, die neben dem Handy auftauchen */
+  .sticker { position: absolute; z-index: 8; font-family: "Bricolage"; font-weight: 800; font-size: 27px; line-height: 1.05;
+    padding: 14px 20px 16px; border-radius: 18px; box-shadow: 0 14px 30px rgba(43,38,32,0.28); }
+  .sticker small { display: block; font: 700 14px "DM Sans", sans-serif; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; margin-bottom: 4px; }
+  .s-yellow { background: var(--yellow); color: #3a2c00; }
+  .s-teal { background: var(--teal); color: var(--cream); }
+  .s-orange { background: var(--orange); color: #fff; }
+
+  /* ---------- Schluss ---------- */
+  #end { z-index: 9; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 30px; color: var(--cream); }
+  #end .logo { width: 104px; height: 104px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 36px rgba(0,0,0,0.28); }
+  #end .logo img { width: 82px; }
+  #end h2 { margin-top: 26px; font-size: 56px; text-shadow: 5px 4px 0 rgba(242,183,5,0.95); }
+  #end .url { margin-top: 48px; background: #fff; color: var(--orange); font: 800 25px "Bricolage", sans-serif; letter-spacing: -0.01em; white-space: nowrap;
+    padding: 18px 24px 20px; border-radius: 22px; box-shadow: 0 18px 40px rgba(0,0,0,0.3); }
+  #end .qr-card { margin-top: 30px; background: #fff; border-radius: 26px; padding: 18px 18px 14px; box-shadow: 0 18px 40px rgba(0,0,0,0.3); }
+  #end .qr-box { width: 260px; height: 260px; position: relative; }
+  #end .qr-box img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; }
+  #end .qr-missing { display: none; position: absolute; inset: 0; border: 4px dashed #b9ad97; border-radius: 14px; color: #8a7f6a;
+    font: 700 22px "DM Sans", sans-serif; align-items: center; justify-content: center; text-align: center; line-height: 1.3; }
+  #end .qr-box.missing img { display: none; }
+  #end .qr-box.missing .qr-missing { display: flex; }
+  #end .qr-label { margin-top: 10px; color: var(--teal); font: 800 22px "Bricolage", sans-serif; }
+  #end .facts { margin-top: 30px; font-size: 21px; font-weight: 500; line-height: 1.6; opacity: 0.95; }
+  #end .facts b { color: var(--yellow); font-weight: 700; }
+  #end-dots { color: rgba(242,183,5,0.5); width: 600px; height: 600px; left: -260px; top: -240px; }
+  #end-dots2 { color: rgba(250,245,234,0.16); width: 520px; height: 520px; right: -250px; bottom: -200px; }
+
+  #draft { pointer-events: none; z-index: 60; position: absolute; right: 16px; bottom: 12px; font: 700 12px "DM Sans", sans-serif; letter-spacing: 0.12em;
+    color: rgba(43,38,32,0.35); text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <!-- Hintergrund-Deko für die Handy-Szenen -->
+  <div class="layer" id="deco" style="z-index:5">
+    <div class="dots" id="deco-dots1"></div>
+    <div class="dots" id="deco-dots2"></div>
+  </div>
+
+  <!-- 1 Hook -->
+  <div class="layer" id="hook">
+    <div class="dots" id="hook-dots"></div>
+    <div class="dots" id="hook-dots2"></div>
+    <div class="display l1"><span class="w" data-a="stamp" data-in="0.30">Von</span> <span class="w" data-a="stamp" data-in="0.48">Hand</span></div>
+    <div class="display l2"><span class="w" data-a="wipe" data-in="0.80" data-d="0.45">gedruckt.</span></div>
+    <div class="display l3"><span class="band" data-a="band" data-in="1.30"></span><span class="w" data-a="pop" data-in="1.42">Von uns.</span></div>
+  </div>
+
+  <!-- Rakel-Wischer -->
+  <div class="layer wipe" id="wipe-teal"><div class="squeegee"></div></div>
+  <div class="layer wipe" id="wipe-cream"><div class="squeegee"></div></div>
+
+  <!-- 2 Enthüllung -->
+  <div class="layer" id="reveal">
+    <div class="logo" data-a="pop" data-in="3.20"><img src="logo.png" alt=""></div>
+    <div class="display name"><span class="w" data-a="rise" data-in="3.40">Siebdruck-</span><br><span class="w" data-a="rise" data-in="3.58">Schülerfirma</span></div>
+    <div class="school" data-a="rise" data-in="4.30">Montessori-Schule Dietramszell</div>
+    <div class="stamp" data-a="rubber" data-in="6.05">Jetzt online</div>
+  </div>
+
+  <!-- 3–5 Überschriften der Handy-Szenen -->
+  <div class="layer head" id="head-shop">
+    <div class="kicker" data-a="fade" data-in="7.70">Der Shop</div>
+    <div class="display big">
+      <span class="line"><span class="w" data-a="rise" data-in="7.85">Pulli</span> <span class="w" data-a="rise" data-in="8.00">aussuchen.</span></span>
+      <span class="line"><span class="w" data-a="rise" data-in="9.00">Größe</span> <span class="w" data-a="rise" data-in="9.15">wählen.</span></span>
+      <span class="line o"><span class="w" data-a="rise" data-in="10.05">Online</span> <span class="w" data-a="rise" data-in="10.20">bestellen.</span></span>
+    </div>
+  </div>
+  <div class="layer head" id="head-pickup">
+    <div class="kicker" data-a="fade" data-in="12.35">Abholung</div>
+    <div class="display big">
+      <span class="line"><span class="w" data-a="rise" data-in="12.45">Freitags</span></span>
+      <span class="line o"><span class="w" data-a="rise" data-in="13.60">ab 11 Uhr.</span></span>
+    </div>
+  </div>
+  <div class="layer head" id="head-special">
+    <div class="kicker" data-a="fade" data-in="17.70">Spezialbestellung</div>
+    <div class="display big">
+      <span class="line"><span class="w" data-a="rise" data-in="17.80">Eigenes</span> <span class="w" data-a="rise" data-in="17.95">Motiv?</span></span>
+      <span class="line"><span class="w" data-a="rise" data-in="18.80">Klassenpullis?</span></span>
+      <span class="line o"><span class="w" data-a="rise" data-in="20.30">Sonderwunsch?</span></span>
+    </div>
+  </div>
+
+  <div class="layer" style="z-index:8">
+    <div class="sticker s-teal" id="st-apo" data-a="slap" data-in="14.50" style="left:22px; top:560px; --r:-6deg"><small>Treffpunkt</small>Alte Apotheke</div>
+    <div class="sticker s-yellow" id="st-bar" data-a="slap" data-in="15.75" style="right:20px; top:700px; --r:5deg"><small>Bezahlen</small>Einfach bar</div>
+    <div class="sticker s-orange" id="st-write" data-a="slap" data-in="21.55" style="right:22px; top:770px; --r:-4deg">Schreib uns!</div>
+  </div>
+
+  <!-- Handy -->
+  <div id="phone-wrap">
+    <div id="phone">
+      <div id="screen">
+        <div class="island"></div>
+        <div class="status"><span class="time">9:41</span><span class="bat"></span></div>
+        <iframe id="site" src="about:blank" title="Website"></iframe>
+        <div id="cover"></div>
+        <div id="tap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 Schluss -->
+  <div class="layer wipe" id="wipe-end" style="z-index:9"><div class="squeegee"></div></div>
+  <div class="layer" id="end">
+    <div class="dots" id="end-dots"></div>
+    <div class="dots" id="end-dots2"></div>
+    <div class="logo" data-a="pop" data-in="23.10"><img src="logo.png" alt=""></div>
+    <h2 class="display"><span class="w" data-a="stamp" data-in="23.25">Schau</span> <span class="w" data-a="stamp" data-in="23.40">jetzt</span> <span class="w" data-a="stamp" data-in="23.55">rein!</span></h2>
+    <div class="qr-card" data-a="pop" data-in="23.85">
+      <div class="qr-box"><img id="qr" src="qr.png" alt=""><div class="qr-missing">Hier kommt<br>euer QR-Code hin</div></div>
+      <div class="qr-label">Scannen &amp; reinschauen</div>
+    </div>
+    <div class="facts" data-a="rise" data-in="24.50">Handgedruckte Pullis &middot; Spezialbestellungen<br>Abholung <b>freitags ab 11 Uhr</b> &middot; bar bezahlen</div>
+  </div>
+
+  <div class="layer" id="grain"></div>
+  <div id="draft"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const outCubic = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const outExpo = (x) => { x = clamp(x); return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); };
+  const outBack = (x, s = 1.7) => { x = clamp(x); const c3 = s + 1; return 1 + c3 * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); };
+  const lerp = (a, b, k) => a + (b - a) * k;
+
+  // Zeitfenster der Szenen (müssen zu record.js passen)
+  const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 17.6, end: 22.95 };
+
+  // Einblend-Animationen; jedes Element mit data-a/data-in wird pro Bild neu berechnet
+  const ANIM = {
+    stamp(el, p) { const k = outBack(p / 0.32, 2.2); el.style.opacity = clamp(p / 0.08);
+      el.style.transform = `scale(${lerp(1.9, 1, clamp(k))}) rotate(${lerp(-8, 0, outCubic(p / 0.32))}deg)`; },
+    wipe(el, p, d) { el.style.clipPath = `inset(-20% ${100 - 100 * outCubic(p / d)}% -20% -5%)`; el.style.opacity = 1; },
+    band(el, p) { el.style.transform = `scaleX(${outExpo(p / 0.35)})`; },
+    pop(el, p) { el.style.opacity = clamp(p / 0.1); el.style.transform = `scale(${outBack(p / 0.45, 2.0)})`; },
+    rise(el, p) { const k = outExpo(p / 0.55); el.style.opacity = clamp(p / 0.18);
+      el.style.transform = `translateY(${lerp(46, 0, k)}px)`; el.style.filter = `blur(${lerp(10, 0, clamp(p / 0.3))}px)`; },
+    fade(el, p) { el.style.opacity = clamp(p / 0.3); el.style.transform = `translateY(${lerp(10, 0, outCubic(p / 0.4))}px)`; },
+    rubber(el, p) { const k = outBack(p / 0.3, 2.5); el.style.opacity = clamp(p / 0.06);
+      el.style.transform = `scale(${lerp(2.4, 1, clamp(k))}) rotate(${lerp(-18, -7, outCubic(p / 0.3))}deg)`; },
+    slap(el, p) { const k = outBack(p / 0.4, 2.2); el.style.opacity = clamp(p / 0.08);
+      el.style.transform = `scale(${lerp(0.3, 1, clamp(k))}) rotate(var(--r))`; },
+  };
+  const animated = [...document.querySelectorAll('[data-a]')];
+
+  function wipeAt(el, t, start, dur, fromBottom) {
+    const k = ease((t - start) / dur);
+    const edge = 100 * (1 - k);
+    el.style.clipPath = fromBottom ? `inset(${edge}% -5% -5% -5%)` : `inset(-5% -5% ${edge}% -5%)`;
+    el.style.visibility = t >= start ? 'visible' : 'hidden';
+    const sq = el.querySelector('.squeegee');
+    sq.style.top = fromBottom ? `calc(${edge}% - 14px)` : `calc(${100 - edge}% - 10px)`;
+    sq.style.opacity = k > 0 && k < 1 ? '1' : '0';
+  }
+  // Szene sichtbar mit sanftem Aus (stagger: erst raus, dann rein)
+  function show(el, t, from, to, outDur = 0.3) {
+    const o = t < from ? 0 : 1 - clamp((t - (to - outDur)) / outDur);
+    el.style.opacity = o; el.style.visibility = o > 0 ? 'visible' : 'hidden';
+    return o;
+  }
+
+  window.render = function (s) {
+    const t = s.t;
+    for (const el of animated) {
+      const p = t - parseFloat(el.dataset.in);
+      if (p < 0) { el.style.opacity = 0; if (el.dataset.a === 'band') el.style.transform = 'scaleX(0)'; if (el.dataset.a === 'wipe') el.style.clipPath = 'inset(0 100% 0 0)'; continue; }
+      ANIM[el.dataset.a](el, p, parseFloat(el.dataset.d || '0.5'));
+    }
+
+    // Hook
+    show($('hook'), t, 0, T.reveal + 0.15, 0.2);
+    $('hook-dots').style.transform = `scale(${lerp(0.4, 1.08, outCubic(t / 1.4)) + 0.04 * Math.sin(t * 2)}) rotate(${t * 6}deg)`;
+    $('hook-dots2').style.transform = `scale(${lerp(0.5, 1, outCubic((t - 0.6) / 1.2))})`;
+    $('hook').style.transform = `scale(${1 + 0.025 * t})`;
+
+    // Wischer: teal hoch (Enthüllung), creme runter (Handy-Szenen), teal hoch (Schluss)
+    wipeAt($('wipe-teal'), t, T.reveal - 0.2, 0.5, true);
+    $('wipe-teal').style.visibility = t >= T.reveal - 0.2 && t < T.shop + 0.4 ? 'visible' : 'hidden';
+    wipeAt($('wipe-cream'), t, T.shop - 0.35, 0.55, false);
+    $('wipe-cream').style.visibility = t >= T.shop - 0.35 && t < T.shop + 0.4 ? 'visible' : 'hidden';
+    wipeAt($('wipe-end'), t, T.end - 0.2, 0.5, true);
+
+    // Enthüllung
+    const rv = show($('reveal'), t, T.reveal - 0.05, T.shop - 0.25, 0.4);
+    $('reveal').style.transform = `translateY(${-60 * ease((t - (T.shop - 0.9)) / 0.7)}px)`;
+
+    // Deko hinter dem Handy
+    $('deco').style.opacity = clamp((t - (T.shop - 0.1)) / 0.5) * (t < T.end + 0.4 ? 1 : 0);
+    $('deco-dots1').style.transform = `scale(${lerp(0.6, 1, outCubic((t - T.shop + 0.2) / 1))}) rotate(${t * 4}deg)`;
+    $('deco-dots2').style.transform = `scale(${lerp(0.6, 1, outCubic((t - T.shop) / 1))}) rotate(${-t * 3}deg)`;
+
+    // Überschriften
+    show($('head-shop'), t, T.shop - 0.1, T.pickup, 0.3);
+    show($('head-pickup'), t, T.pickup - 0.05, T.special, 0.3);
+    show($('head-special'), t, T.special - 0.05, T.end, 0.25);
+    for (const id of ['st-apo', 'st-bar']) if (t >= T.special - 0.3) $(id).style.opacity = 1 - clamp((t - (T.special - 0.3)) / 0.3);
+    if (t >= T.end - 0.3) $('st-write').style.opacity = 1 - clamp((t - (T.end - 0.3)) / 0.3);
+
+    // Handy: steigt am Ende der Enthüllung auf, leichte Kamerafahrten
+    const pw = $('phone-wrap');
+    const rise = outExpo((t - (T.shop - 0.75)) / 0.9);
+    let y = lerp(1000, 0, rise), sc = 0.84, rot = lerp(-7, 0, ease((t - (T.shop - 0.6)) / 1.2));
+    sc += 0.05 * ease((t - (T.shop + 1.0)) / 1.2) - 0.05 * ease((t - (T.pickup - 0.5)) / 0.6);   // Shop: näher ran
+    sc += 0.04 * ease((t - (T.pickup + 0.8)) / 1.5) - 0.04 * ease((t - (T.special - 0.4)) / 0.5); // Abholung
+    sc += 0.04 * ease((t - (T.special + 0.8)) / 1.6);                                          // Spezial
+    y += lerp(0, 1100, ease((t - (T.end - 0.45)) / 0.55));                                      // fällt raus
+    y += 8 * Math.sin(t * 1.3);                                                                 // schwebt leicht
+    pw.style.transform = `translateY(${y}px) scale(${sc}) rotate(${rot}deg)`;
+    pw.style.visibility = t > T.shop - 0.8 && t < T.end + 0.3 ? 'visible' : 'hidden';
+
+    // Bildschirm-Abblende beim Seitenwechsel + Tipp-Kreis
+    $('cover').style.opacity = String(s.cover);
+    const tap = $('tap');
+    if (s.tap && t >= s.tap.at) {
+      const k = clamp((t - s.tap.at) / 0.45);
+      tap.style.left = (s.tap.x - 27) + 'px'; tap.style.top = (s.tap.y - 27) + 'px';
+      tap.style.opacity = k < 1 ? String(k < 0.25 ? 1 : 1 - (k - 0.25) / 0.75) : '0';
+      tap.style.transform = `scale(${k < 0.25 ? lerp(1.3, 0.75, k / 0.25) : lerp(0.75, 1.5, (k - 0.25) / 0.75)})`;
+    } else tap.style.opacity = '0';
+
+    // Schluss
+    show($('end'), t, T.end, 99);
+    $('end-dots').style.transform = `scale(${lerp(0.4, 1, outCubic((t - T.end) / 1.2))}) rotate(${t * 5}deg)`;
+    $('end-dots2').style.transform = `scale(${lerp(0.4, 1, outCubic((t - T.end - 0.3) / 1.2))})`;
+    $('end').style.transform = `scale(${1 + 0.012 * Math.max(0, t - T.end)})`;
+
+    $('draft').textContent = s.draft ? 'Entwurf' : '';
+    $('draft').style.color = t >= T.reveal && t < T.shop || t >= T.end ? 'rgba(250,245,234,0.45)' : 'rgba(43,38,32,0.35)';
+  };
+  const qr = $('qr');
+  const markQr = () => { if (!qr.naturalWidth) qr.parentElement.classList.add('missing'); };
+  qr.addEventListener('error', markQr); if (qr.complete) markQr();
+  window.stageReady = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; }))));
+</script>
+</body>
+</html>

@@ -2,10 +2,13 @@
 # Whisper-Modell da ist, wird die Aufnahme genommen, die die Spracherkennung am besten versteht.
 #   python3 tts.py                 Stimme „Thorsten“ (Piper thorsten-high, CC0) – Standard
 #   python3 tts.py supertonic 2    Supertonic 3 (OpenRAIL-M), Stimme 0–4 weiblich, 5–9 männlich
+#   --only end                      nur diesen Satz neu aufnehmen (die anderen bleiben)
 import difflib, json, os, re, sys
 import numpy as np, sherpa_onnx as so, soundfile as sf
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+ONLY = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else None
+if ONLY: del sys.argv[sys.argv.index('--only'):sys.argv.index('--only') + 2]
 ENGINE = sys.argv[1] if len(sys.argv) > 1 else 'thorsten'
 WHISPER = 'models/sherpa-onnx-whisper-small'
 
@@ -42,8 +45,11 @@ def score(samples, sr, expect):
     heard = st.result.text
     return difflib.SequenceMatcher(None, letters(heard), letters(expect)).ratio(), heard
 
+old = {d['id']: d for d in json.load(open('durations.json'))} if ONLY and os.path.exists('durations.json') else {}
 out, total = [], 0
 for i, l in enumerate(json.load(open('lines.json'))):
+    if ONLY and l['id'] != ONLY:
+        out.append(old[l['id']]); continue
     say = l.get(ENGINE, l['say'])              # optionale Aussprache-Hilfe je Stimme
     best = None
     for k in range(TAKES if asr else 1):
@@ -59,5 +65,5 @@ for i, l in enumerate(json.load(open('lines.json'))):
     out.append({'id': l['id'], 'dur': round(len(best[1]) / a.sample_rate, 3)})
     total += best[0]
     print(f"{l['id']:8s} {out[-1]['dur']:.2f}s  Treffer {best[0]:.2f}  gehört: {best[2]}")
-print(f'{ENGINE}: Durchschnitt {total / len(out):.3f}')
+print(f'{ENGINE}: Durchschnitt {total / (1 if ONLY else len(out)):.3f}')
 json.dump(out, open('durations.json', 'w'), indent=1)

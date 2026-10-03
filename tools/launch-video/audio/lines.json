@@ -23,6 +23,7 @@
  },
  {
   "id": "end",
-  "say": "Scanne den QR-Code und schau rein!"
+  "say": "Scan den QR-Code und schau rein!",
+  "thorsten": "Skänn den QR-Code und schau rein!"
  }
 ]

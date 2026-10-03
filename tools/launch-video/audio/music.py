@@ -56,17 +56,19 @@ def snap():
 # F – C – Dm – Bb
 CHORDS = [(53, [65, 69, 72]), (48, [64, 67, 72]), (50, [65, 69, 74]), (46, [65, 70, 74])]
 ARP = [0, 1, 2, 1, 0, 2, 1, 2]
-bars = int(round(FIN / BAR))
+bars = int(np.ceil(FIN / BAR - 0.05))
 for b in range(bars):
     t0 = b * BAR
+    part = (FIN - t0) < BAR - 0.05      # letzter, angeschnittener Takt
     root, ch = CHORDS[b % 4]
-    add(pad([root + 12] + ch, BAR + 0.6), t0, 0, 1.0)
+    add(pad([root + 12] + ch, min(BAR, FIN - t0) + 0.6), t0, 0, 1.0)
     full = b >= 2  # Beat setzt mit der Enthüllung ein
     for k in range(8):  # Achtel-Arpeggio, leicht links/rechts
         vel = 0.75 if k % 2 else 1.0
         if not full and k % 2: continue
+        if t0 + k * BEAT / 2 > FIN - 0.15: continue
         add(epiano(ch[ARP[k]] + (12 if k in (3, 7) else 0), BEAT * 1.2, vel), t0 + k * BEAT / 2, -0.3 if k % 2 else 0.3)
-    if full:
+    if full and not part:
         for k in range(4):
             add(bass(root - 12 if k % 2 == 0 else root, BEAT * 0.9), t0 + k * BEAT)
             if k in (0, 2): add(kick(), t0 + k * BEAT)

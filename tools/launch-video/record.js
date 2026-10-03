@@ -11,12 +11,12 @@ const OUT = path.join(__dirname, 'frames');
 const DRAFT = process.argv.includes('--draft');
 const arg = (name) => { const i = process.argv.indexOf(name); return i > -1 ? parseFloat(process.argv[i + 1]) : null; };
 const FROM = arg('--from') || 0;
-const DURATION = 28.5;
+const DURATION = 30.5;
 const STILLS = (() => { const i = process.argv.indexOf('--stills'); return i > -1 ? process.argv[i + 1].split(',').map(Number) : null; })();
 const UNTIL = arg('--until') || (STILLS ? Math.max(...STILLS) + 0.05 : DURATION);
 
 // Szenenwechsel (gleich wie T in stage.html)
-const T = { reveal: 3.0, shop: 7.62, pickup: 12.23, special: 17.6, end: 22.95 };
+const T = { reveal: 3.0, shop: 8.3, pickup: 13.0, special: 18.75, end: 24.85 };
 const WISH = 'Klassenpulli mit unserem eigenen Logo – 24 Stück für die 8b';
 
 const ease = (x) => { x = Math.max(0, Math.min(1, x)); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -37,7 +37,7 @@ const lerp = (a, b, k) => a + (b - a) * k;
 
   const cues = [
     { t: T.reveal - 0.2, sfx: 'swish' }, { t: T.shop - 0.35, sfx: 'swish' }, { t: T.end - 0.2, sfx: 'swish' },
-    { t: 6.05, sfx: 'stamp' }, { t: 14.75, sfx: 'pop' }, { t: 16.15, sfx: 'pop' }, { t: 21.55, sfx: 'pop' }, { t: 23.85, sfx: 'pop' },
+    { t: 6.85, sfx: 'stamp' }, { t: 15.6, sfx: 'pop' }, { t: 17.1, sfx: 'pop' }, { t: 23.4, sfx: 'pop' }, { t: 25.75, sfx: 'pop' },
   ];
   let tap = null;
   const done = new Set();
@@ -106,31 +106,31 @@ const lerp = (a, b, k) => a + (b - a) * k;
 
     // ---------- Handlung im Handy ----------
     if (want === 'shop') {
-      if (t < 8.6) await scrollTo(lerp(0, info.cardY, ease((t - 7.85) / 0.75)));
-      await once('tTitle', t, 8.45, () => showTap('.product-card h3 .link-btn', t));
-      await once('title', t, 8.6, () => frame.click('.product-card h3 .link-btn'));
-      await once('tSize', t, 9.1, () => showTap('#pd-size', t));
-      await once('size', t, 9.3, () => frame.evaluate(() => {
+      if (t < 9.3) await scrollTo(lerp(0, info.cardY, ease((t - 8.5) / 0.75)));
+      await once('tTitle', t, 9.15, () => showTap('.product-card h3 .link-btn', t));
+      await once('title', t, 9.3, () => frame.click('.product-card h3 .link-btn'));
+      await once('tSize', t, 9.85, () => showTap('#pd-size', t));
+      await once('size', t, 10.05, () => frame.evaluate(() => {
         const s = document.getElementById('pd-size'); if ([...s.options].some((o) => o.value === 'M')) s.value = 'M';
         s.dispatchEvent(new Event('change', { bubbles: true })); s.blur();
       }));
-      await once('tAdd', t, 10.05, () => showTap('#pd-add', t));
-      await once('add', t, 10.2, () => frame.click('#pd-add'));
-      await once('tCart', t, 10.75, () => showTap('#cart-open-btn', t));
-      await once('cart', t, 10.9, () => frame.click('#cart-open-btn'));
+      await once('tAdd', t, 10.85, () => showTap('#pd-add', t));
+      await once('add', t, 11.0, () => frame.click('#pd-add'));
+      await once('tCart', t, 11.5, () => showTap('#cart-open-btn', t));
+      await once('cart', t, 11.65, () => frame.click('#cart-open-btn'));
     }
     if (want === 'pickup') {
       await scrollTo(lerp(0, info.bannerY, ease((t - (T.pickup + 0.25)) / 0.7)));
-      await once('tVideo', t, 13.15, () => showTap('.pickup-banner [data-video-trigger]', t));
-      await once('video', t, 13.3, () => frame.click('.pickup-banner [data-video-trigger]'));
-      if (t > 13.4) await seekVideo(t - 13.4);
+      await once('tVideo', t, 13.9, () => showTap('.pickup-banner [data-video-trigger]', t));
+      await once('video', t, 14.05, () => frame.click('.pickup-banner [data-video-trigger]'));
+      if (t > 14.15) await seekVideo(t - 14.15);
     }
     if (want === 'special') {
       await scrollTo(lerp(0, info.formY, ease((t - (T.special + 0.25)) / 0.8)));
-      await once('tWish', t, 19.0, () => showTap('#sp-wunsch', t));
-      await once('focus', t, 19.1, () => frame.focus('#sp-wunsch'));
-      if (t >= 19.2) {
-        const n = Math.round(WISH.length * Math.min(1, (t - 19.2) / 2.4));
+      await once('tWish', t, 20.2, () => showTap('#sp-wunsch', t));
+      await once('focus', t, 20.3, () => frame.focus('#sp-wunsch'));
+      if (t >= 20.4) {
+        const n = Math.round(WISH.length * Math.min(1, (t - 20.4) / 2.5));
         await frame.evaluate((v) => { const el = document.getElementById('sp-wunsch'); if (el.value !== v) el.value = v; }, WISH.slice(0, n));
       }
     }

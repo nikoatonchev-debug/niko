@@ -1,9 +1,26 @@
 [
- {"id": "hook",    "say": "Von Hand gedruckt. Von uns!"},
- {"id": "reveal",  "say": "Die Siebdruck-Schülerfirma der Montessohri-Schule Dietramszell ist jetzt online!",
-                   "expect": "Die Siebdruck-Schülerfirma der Montessori-Schule Dietramszell ist jetzt online!"},
- {"id": "shop",    "say": "Such dir deinen Pulli aus, wähl die Größe, und bestell ihn online."},
- {"id": "pickup",  "say": "Abholen kannst du freitags ab elf Uhr, an der alten Apotheke. Du zahlst einfach bar."},
- {"id": "special", "say": "Eigenes Motiv, Pullis für die ganze Klasse, oder ein anderer Sonderwunsch? Schreib uns einfach!"},
- {"id": "end",     "say": "Scanne den QR-Code und schau rein!"}
+ {
+  "id": "hook",
+  "say": "Von Hand gedruckt – von uns!"
+ },
+ {
+  "id": "reveal",
+  "say": "Die Siebdruck-Schülerfirma der Montessori-Schule Dietramszell ist jetzt online!"
+ },
+ {
+  "id": "shop",
+  "say": "Such dir deinen Pulli aus, wähl die Größe, und bestell ihn online."
+ },
+ {
+  "id": "pickup",
+  "say": "Abholen kannst du freitags ab elf Uhr, an der alten Apotheke. Du zahlst einfach bar."
+ },
+ {
+  "id": "special",
+  "say": "Eigenes Motiv, Pullis für die ganze Klasse, oder ein anderer Sonderwunsch? Schreib uns einfach!"
+ },
+ {
+  "id": "end",
+  "say": "Scanne den QR-Code und schau rein!"
+ }
 ]

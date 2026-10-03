@@ -7,3 +7,4 @@ cues.json
 audio/models/*
 !audio/models/.gitkeep
 audio/durations.json
+audio/durations*.json

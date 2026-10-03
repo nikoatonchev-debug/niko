@@ -1,6 +1,6 @@
 # Launch-Video
 
-Hochformat-Video (1080×1920, 30 fps, 28,5 s) mit Sprecherstimme, leiser Musik und Klick-Geräuschen,
+Hochformat-Video (1080×1920, 30 fps, 30,5 s) mit Sprecherstimme, leiser Musik und Klick-Geräuschen,
 im Stil von [/brag](https://github.com/latent-spaces/brag).
 
 - `stage.html` – die Bühne: Texte, Rakel-Wischer, Handy-Rahmen. Jedes Bild ist eine reine Funktion der Zeit.
@@ -10,6 +10,9 @@ im Stil von [/brag](https://github.com/latent-spaces/brag).
 - `audio/tts.py` + `lines.json` – Sprechertexte, Stimme „Thorsten“ (Piper thorsten-high, CC0) über sherpa-onnx.
   Alternativ `python3 audio/tts.py supertonic 2` (Supertonic 3, OpenRAIL-M; Stimme 0–4 weiblich, 5–9 männlich).
   Pro Satz mehrere Aufnahmen; die Spracherkennung (Whisper) wählt die verständlichste.
+- `audio/aufnahme/stimme.flac` + `audio/cut_recording.py` – **aktuelle Stimme**: eigene Aufnahme (ElevenLabs),
+  in die 6 Sätze geschnitten: `python3 audio/cut_recording.py aufnahme/stimme.flac 0.30-2.20 2.40-7.17 7.46-11.39 11.63-16.84 17.15-23.15 23.42-26.15`
+  (statt `tts.py`).
 - `qr.png` – QR-Code für den Schluss (fehlt er, steht dort ein Platzhalter).
 - `audio/music.py` – eigene Musik (selbst erzeugt, keine Lizenzfragen). `audio/mix.py` mischt alles.
 - Schriften: Bricolage Grotesque und DM Sans (SIL OFL), Geräusche: Kenney (CC0).
@@ -27,9 +30,9 @@ firebase emulators:start --only auth,firestore     # im Repo-Hauptordner
 node tools/launch-video/server.js                   # http://127.0.0.1:8935
 node tools/launch-video/record.js
 python3 tools/launch-video/audio/tts.py
-python3 tools/launch-video/audio/music.py 3.0 23.77 28.5   # Beat-Einsatz, Schlussakkord, Länge
+python3 tools/launch-video/audio/music.py 3.0 24.85 30.5   # Beat-Einsatz, Schlussakkord, Länge
 python3 tools/launch-video/audio/mix.py
-cp tools/launch-video/frames/00200.jpg tools/launch-video/frames/00000.jpg   # Vorschaubild als erstes Bild
+cp tools/launch-video/frames/00219.jpg tools/launch-video/frames/00000.jpg   # Vorschaubild als erstes Bild
 ffmpeg -framerate 30 -i tools/launch-video/frames/%05d.jpg -i tools/launch-video/audio/mix.wav \
   -c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 192k -shortest -movflags +faststart launch-video.mp4
 ```

@@ -404,17 +404,12 @@
           const id = btn.getAttribute("data-id");
           const status = btn.getAttribute("data-set-status");
           const o = orders.find((x) => x.id === id);
+          SFUI.hideMessage(document.getElementById("orders-notice"));
           await SFDB.updateOrderStatus(id, status);
           await renderOrders();
           renderStats();
           if (status === "abholbereit" && o) {
-            await notifyReady("orders-notice", {
-              userId: o.userId,
-              name: o.customerName || o.username,
-              orderNumber: String(o.id).slice(-6).toUpperCase(),
-              items: (o.items || []).map((i) => `${Number(i.qty)}x ${i.name} (${i.size})`).join(", "),
-              total: SF.formatPrice(o.total),
-            });
+            await notifyReady("orders-notice", { collection: "orders", orderId: o.id });
           }
         })
       )
@@ -443,7 +438,14 @@
     SFUI.showMessage(box, "Als abholbereit markiert – E-Mail wird gesendet …", "success");
     try {
       const r = await SFDB.sendReadyEmail(data);
-      SFUI.showMessage(box, `Als abholbereit markiert und E-Mail an ${r.email} gesendet.`, "success");
+      const rest = typeof r.heuteNochMoeglich === "number" ? ` (heute noch ${r.heuteNochMoeglich} E-Mails möglich)` : "";
+      SFUI.showMessage(
+        box,
+        r.already
+          ? `Als abholbereit markiert. Die E-Mail an ${r.email} wurde gerade eben schon gesendet.`
+          : `Als abholbereit markiert und E-Mail an ${r.email} gesendet${rest}.`,
+        "success"
+      );
     } catch (err) {
       const why = SFDB.errorMessage(err).replace(/[.!]?\s*$/, ".");
       SFUI.showMessage(box, "Als abholbereit markiert, aber die E-Mail konnte nicht gesendet werden: " + why + " Die Kundschaft sieht es trotzdem auf der Website.", "error");
@@ -505,17 +507,12 @@
           const id = btn.getAttribute("data-id");
           const status = btn.getAttribute("data-set-status");
           const o = specials.find((x) => x.id === id);
+          SFUI.hideMessage(document.getElementById("special-notice"));
           await SFDB.updateSpecialOrderStatus(id, status);
           await renderSpecial();
           renderStats();
           if (status === "abholbereit" && o) {
-            await notifyReady("special-notice", {
-              userId: o.userId,
-              name: o.name || o.username,
-              orderNumber: String(o.id).slice(-6).toUpperCase(),
-              items: `Spezialbestellung: ${o.wunsch} (Größe ${o.groesse}, ${Number(o.menge) || 1}x)`,
-              total: "Den Preis haben wir mit dir am Telefon besprochen.",
-            });
+            await notifyReady("special-notice", { collection: "specialOrders", orderId: o.id });
           }
         })
       )

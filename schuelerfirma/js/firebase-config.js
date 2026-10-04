@@ -20,12 +20,9 @@ window.SF_FIREBASE_CONFIG = {
 window.SF_ADMIN_EMAILS = ["erdkinderkollektiv@gmail.com"];
 
 /* E-Mail an die Kundschaft, sobald eine Bestellung im Admin-Bereich auf
- * „Abholbereit“ gesetzt wird. Verschickt über EmailJS (emailjs.com) aus dem
- * Gmail-Konto der Schülerfirma. Auch diese drei Werte sind öffentlich gedacht
- * (stehen bei jeder EmailJS-Website im Code). Leer = keine E-Mails.
+ * „Abholbereit“ gesetzt wird. Verschickt aus dem Gmail-Konto der Schülerfirma
+ * über ein kleines Google-Apps-Script (tools/email-apps-script/Code.gs).
+ * Hier steht nur dessen Web-App-Adresse – die ist nicht geheim, denn das Skript
+ * verschickt nur, wenn der angemeldete Admin es auslöst. Leer = keine E-Mails.
  * Einrichtung: siehe README. */
-window.SF_EMAILJS = {
-  serviceId: "",
-  templateId: "",
-  publicKey: "",
-};
+window.SF_MAIL_URL = "";

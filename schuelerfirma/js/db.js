@@ -450,45 +450,39 @@ const SFDB = (function () {
     return s.docs.map(withId);
   }
 
-  // ---------- E-Mail „abholbereit“ (über EmailJS, nur Admin) ----------
-  // Die Adresse kommt aus dem Profil users/{uid}; die Regeln sorgen dafür, dass
-  // dort nur die bestätigte Login-Adresse stehen kann.
+  // ---------- E-Mail „abholbereit“ (Gmail über Google Apps Script, nur Admin) ----------
+  // Geschickt wird nur, welche Bestellung es ist, plus der Login-Nachweis des Admins.
+  // Empfänger und Text bestimmt das Skript selbst aus der Datenbank.
+  const MAIL_URL_PATTERN = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
   function readyEmailEnabled() {
-    const c = window.SF_EMAILJS || {};
-    return !!(c.serviceId && c.templateId && c.publicKey);
+    return MAIL_URL_PATTERN.test(String(window.SF_MAIL_URL || ""));
   }
-  async function sendReadyEmail({ userId, name, orderNumber, items, total }) {
-    const c = window.SF_EMAILJS || {};
+  async function sendReadyEmail({ collection, orderId }) {
     if (!readyEmailEnabled()) return { skipped: true };
-    const snap = await F.getDoc(F.doc(requireDb(), "users", String(userId || "-")));
-    const email = snap.exists() ? snap.data().email : "";
-    if (!email) throw withMessage("Für dieses Konto ist keine E-Mail-Adresse gespeichert.");
+    const u = auth && auth.currentUser;
+    if (!u) throw withMessage("Bitte melde dich neu an.");
+    const idToken = await u.getIdToken();
     let res;
     try {
-      res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      // text/plain: so braucht der Browser keine Vorab-Anfrage, die Apps Script nicht beantworten kann
+      res = await fetch(window.SF_MAIL_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          service_id: c.serviceId,
-          template_id: c.templateId,
-          user_id: c.publicKey,
-          template_params: {
-            to_email: email,
-            to_name: SF.clampText(name || "", 60),
-            order_number: orderNumber,
-            order_items: SF.clampText(items || "", 500),
-            order_total: total || "",
-          },
-        }),
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ idToken, collection, orderId }),
       });
     } catch (e) {
       throw withMessage("Keine Verbindung zum E-Mail-Dienst.");
     }
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw withMessage("Der E-Mail-Dienst hat abgelehnt" + (detail ? ": " + SF.clampText(detail, 160) : "."));
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (e) {
+      /* keine JSON-Antwort */
     }
-    return { email };
+    if (!res.ok || !data || !data.ok) {
+      throw withMessage((data && data.error) || "Der E-Mail-Dienst hat nicht richtig geantwortet.");
+    }
+    return data;
   }
 
   init();

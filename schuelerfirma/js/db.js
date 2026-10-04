@@ -450,6 +450,47 @@ const SFDB = (function () {
     return s.docs.map(withId);
   }
 
+  // ---------- E-Mail „abholbereit“ (über EmailJS, nur Admin) ----------
+  // Die Adresse kommt aus dem Profil users/{uid}; die Regeln sorgen dafür, dass
+  // dort nur die bestätigte Login-Adresse stehen kann.
+  function readyEmailEnabled() {
+    const c = window.SF_EMAILJS || {};
+    return !!(c.serviceId && c.templateId && c.publicKey);
+  }
+  async function sendReadyEmail({ userId, name, orderNumber, items, total }) {
+    const c = window.SF_EMAILJS || {};
+    if (!readyEmailEnabled()) return { skipped: true };
+    const snap = await F.getDoc(F.doc(requireDb(), "users", String(userId || "-")));
+    const email = snap.exists() ? snap.data().email : "";
+    if (!email) throw withMessage("Für dieses Konto ist keine E-Mail-Adresse gespeichert.");
+    let res;
+    try {
+      res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_id: c.serviceId,
+          template_id: c.templateId,
+          user_id: c.publicKey,
+          template_params: {
+            to_email: email,
+            to_name: SF.clampText(name || "", 60),
+            order_number: orderNumber,
+            order_items: SF.clampText(items || "", 500),
+            order_total: total || "",
+          },
+        }),
+      });
+    } catch (e) {
+      throw withMessage("Keine Verbindung zum E-Mail-Dienst.");
+    }
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw withMessage("Der E-Mail-Dienst hat abgelehnt" + (detail ? ": " + SF.clampText(detail, 160) : "."));
+    }
+    return { email };
+  }
+
   init();
 
   return {
@@ -484,6 +525,8 @@ const SFDB = (function () {
     saveMyReview,
     deleteReview,
     getUsers,
+    readyEmailEnabled,
+    sendReadyEmail,
     MAX_CART_PRODUCTS,
   };
 })();

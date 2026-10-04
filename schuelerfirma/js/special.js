@@ -40,7 +40,8 @@
           renderMenge();
           SFUI.showMessage(
             msg,
-            "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben. Unter „Meine Bestellungen“ siehst du jederzeit den Stand – und sobald sie abholbereit ist, steht dort „Abholbereit“.",
+            "Danke! Deine Spezialbestellung ist bei uns eingegangen. Wir melden uns telefonisch bei dir, sobald wir sie angenommen haben. Unter „Meine Bestellungen“ siehst du jederzeit den Stand – und sobald sie abholbereit ist, steht dort „Abholbereit“." +
+              (SFDB.readyEmailEnabled() ? " Außerdem bekommst du dann eine E-Mail." : ""),
             "success"
           );
           msg.setAttribute("tabindex", "-1");

@@ -18,3 +18,14 @@ window.SF_FIREBASE_CONFIG = {
 /* Nur fuer die Anzeige im Admin-Bereich. Wer wirklich Admin ist, entscheiden
  * allein die Regeln in firestore.rules (isAdmin). */
 window.SF_ADMIN_EMAILS = ["erdkinderkollektiv@gmail.com"];
+
+/* E-Mail an die Kundschaft, sobald eine Bestellung im Admin-Bereich auf
+ * „Abholbereit“ gesetzt wird. Verschickt über EmailJS (emailjs.com) aus dem
+ * Gmail-Konto der Schülerfirma. Auch diese drei Werte sind öffentlich gedacht
+ * (stehen bei jeder EmailJS-Website im Code). Leer = keine E-Mails.
+ * Einrichtung: siehe README. */
+window.SF_EMAILJS = {
+  serviceId: "",
+  templateId: "",
+  publicKey: "",
+};

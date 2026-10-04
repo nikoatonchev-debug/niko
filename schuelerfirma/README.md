@@ -51,6 +51,40 @@ Weitere Admins: Adresse in `firestore.rules` eintragen und die Regeln neu veröf
 6. Kostenlos bleiben: Im Spark-Tarif (ohne Kreditkarte) kostet nichts etwas; bei Überschreiten der
    Gratis-Grenzen wird nur gedrosselt.
 
+## E-Mail „Deine Bestellung ist abholbereit“ (EmailJS)
+
+Wenn im Admin-Bereich bei einer Bestellung **„Abholbereit“** geklickt wird, schickt der Browser über
+[EmailJS](https://www.emailjs.com) eine E-Mail an die (bestätigte) Adresse des Kundenkontos – verschickt aus dem
+Gmail-Konto der Schülerfirma. Kostenlos bis 200 E-Mails im Monat, ohne Kreditkarte. Solange in
+`js/firebase-config.js` bei `SF_EMAILJS` nichts eingetragen ist, werden keine E-Mails verschickt (die Website zeigt
+„Abholbereit“ trotzdem an).
+
+Einrichtung:
+
+1. Auf emailjs.com mit `erdkinderkollektiv@gmail.com` registrieren.
+2. **Email Services → Add New Service → Gmail** → mit dem Gmail-Konto verbinden → *Create Service*.
+   Die **Service ID** notieren.
+3. **Email Templates → Create New Template**:
+   - *Subject*: `Deine Bestellung #{{order_number}} ist abholbereit!`
+   - *To Email*: `{{to_email}}` · *From Name*: `Siebdruck-Schülerfirma` · *Reply To*: `erdkinderkollektiv@gmail.com`
+   - *Content* (Text):
+     ```
+     Hallo {{to_name}},
+
+     deine Bestellung #{{order_number}} ist fertig und liegt für dich bereit:
+     {{order_items}}
+     Betrag: {{order_total}}
+
+     Abholung: freitags ab 11 Uhr bei der alten Apotheke. Bitte bring deine
+     Bestellnummer mit, bezahlt wird bar.
+
+     Viele Grüße
+     deine Siebdruck-Schülerfirma der Montessori-Schule Dietramszell
+     ```
+   - Speichern, die **Template ID** notieren.
+4. **Account → General → Public Key** kopieren.
+5. Die drei Werte in `js/firebase-config.js` bei `SF_EMAILJS` eintragen (sie sind öffentlich gedacht).
+
 ## Lokal ansehen und testen
 
 ```

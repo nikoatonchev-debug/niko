@@ -401,9 +401,21 @@
     el.querySelectorAll("[data-set-status]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          await SFDB.updateOrderStatus(btn.getAttribute("data-id"), btn.getAttribute("data-set-status"));
+          const id = btn.getAttribute("data-id");
+          const status = btn.getAttribute("data-set-status");
+          const o = orders.find((x) => x.id === id);
+          await SFDB.updateOrderStatus(id, status);
           await renderOrders();
           renderStats();
+          if (status === "abholbereit" && o) {
+            await notifyReady("orders-notice", {
+              userId: o.userId,
+              name: o.customerName || o.username,
+              orderNumber: String(o.id).slice(-6).toUpperCase(),
+              items: (o.items || []).map((i) => `${Number(i.qty)}x ${i.name} (${i.size})`).join(", "),
+              total: SF.formatPrice(o.total),
+            });
+          }
         })
       )
     );
@@ -417,6 +429,25 @@
         })
       )
     );
+  }
+
+  // E-Mail „Deine Bestellung ist abholbereit“ an die Kundschaft. Der Status ist
+  // zu diesem Zeitpunkt schon gespeichert; klappt die E-Mail nicht, steht es
+  // trotzdem auf der Website – das sagen wir hier deutlich dazu.
+  async function notifyReady(noticeId, data) {
+    const box = document.getElementById(noticeId);
+    if (!SFDB.readyEmailEnabled()) {
+      SFUI.showMessage(box, "Als abholbereit markiert. (E-Mail-Benachrichtigung ist noch nicht eingerichtet – die Kundschaft sieht es auf der Website.)", "success");
+      return;
+    }
+    SFUI.showMessage(box, "Als abholbereit markiert – E-Mail wird gesendet …", "success");
+    try {
+      const r = await SFDB.sendReadyEmail(data);
+      SFUI.showMessage(box, `Als abholbereit markiert und E-Mail an ${r.email} gesendet.`, "success");
+    } catch (err) {
+      const why = SFDB.errorMessage(err).replace(/[.!]?\s*$/, ".");
+      SFUI.showMessage(box, "Als abholbereit markiert, aber die E-Mail konnte nicht gesendet werden: " + why + " Die Kundschaft sieht es trotzdem auf der Website.", "error");
+    }
   }
 
   // Knöpfe für den Abhol-Status. notReady = Status, zu dem „Nicht abholbereit“
@@ -471,9 +502,21 @@
     el.querySelectorAll("[data-set-status]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          await SFDB.updateSpecialOrderStatus(btn.getAttribute("data-id"), btn.getAttribute("data-set-status"));
+          const id = btn.getAttribute("data-id");
+          const status = btn.getAttribute("data-set-status");
+          const o = specials.find((x) => x.id === id);
+          await SFDB.updateSpecialOrderStatus(id, status);
           await renderSpecial();
           renderStats();
+          if (status === "abholbereit" && o) {
+            await notifyReady("special-notice", {
+              userId: o.userId,
+              name: o.name || o.username,
+              orderNumber: String(o.id).slice(-6).toUpperCase(),
+              items: `Spezialbestellung: ${o.wunsch} (Größe ${o.groesse}, ${Number(o.menge) || 1}x)`,
+              total: "Den Preis haben wir mit dir am Telefon besprochen.",
+            });
+          }
         })
       )
     );

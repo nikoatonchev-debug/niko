@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="robots" content="noindex">
+  <title>Meine Bestellungen &ndash; Siebdruck-Schülerfirma</title>
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="orders">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main">
+    <section class="pb-16">
+      <div class="container">
+        <h1 class="section-title">Meine Bestellungen</h1>
+        <p class="section-subtitle">Hier siehst du alle Bestellungen, die du mit deinem Konto aufgegeben hast.</p>
+      </div>
+    </section>
+
+    <section class="pt-0">
+      <div class="container">
+
+        <div id="orders-login-hint" class="card hidden narrow-card text-center">
+          <p>Bitte melde dich an, um deine Bestellungen zu sehen.</p>
+          <button type="button" class="btn btn-primary" id="orders-login-btn">Anmelden</button>
+        </div>
+
+        <div id="orders-content" class="hidden">
+          <p class="info-box mb-24">
+            Hier siehst du bei jeder Bestellung, ob sie schon <strong>abholbereit</strong> ist.
+            Sobald wir sie fertig gedruckt haben, steht dort &bdquo;Abholbereit&ldquo; &ndash; dann kannst du sie
+            freitags ab 11 Uhr bei der alten Apotheke abholen.<span data-if-email hidden> Zusätzlich schicken wir dir eine E-Mail.</span>
+          </p>
+          <h2>Shop-Bestellungen</h2>
+          <div id="shop-orders-list" class="stack-14 mb-36"></div>
+
+          <h2>Spezialbestellungen</h2>
+          <div id="special-orders-list" class="stack-14 mb-36"></div>
+
+          <div class="card danger-zone">
+            <h2 class="h3">Konto löschen</h2>
+            <p class="hint">
+              Löscht dein Kundenkonto (Benutzername, E-Mail-Adresse, Passwort) und deine Bewertung und meldet dich ab.
+              Bereits aufgegebene Bestellungen bleiben für die Abwicklung bei uns gespeichert.
+            </p>
+            <button type="button" class="btn btn-danger btn-small" id="delete-account-btn">Mein Konto löschen</button>
+            <form id="delete-account-form" class="hidden" novalidate>
+              <div class="field">
+                <label for="delete-account-password">Zur Sicherheit: dein Passwort</label>
+                <input type="password" id="delete-account-password" autocomplete="current-password" maxlength="128">
+              </div>
+              <div class="button-row">
+                <button type="submit" class="btn btn-danger btn-small">Konto endgültig löschen</button>
+                <button type="button" class="btn btn-outline btn-small" id="delete-account-cancel">Abbrechen</button>
+              </div>
+              <div id="delete-account-message" class="form-message hidden"></div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/orders.js"></script>
+</body>
+</html>

@@ -25,4 +25,4 @@ window.SF_ADMIN_EMAILS = ["erdkinderkollektiv@gmail.com"];
  * Hier steht nur dessen Web-App-Adresse – die ist nicht geheim, denn das Skript
  * verschickt nur, wenn der angemeldete Admin es auslöst. Leer = keine E-Mails.
  * Einrichtung: siehe README. */
-window.SF_MAIL_URL = "";
+window.SF_MAIL_URL = "https://script.google.com/macros/s/AKfycbxCgCsB5X2CrKmnud0ZUHWNnhiuBA_5gxkxm1Xn95SkRO1XoL6MoNg0V1V8zM_5RaUZ/exec";

@@ -170,12 +170,13 @@
         const id = esc(p.id);
         const remaining = SF.getProductRemaining(p);
         const soldOut = remaining !== null && remaining <= 0;
+        const soldInfo = `<br><span class="hint">${Number(p.sold) || 0} verkauft</span>`;
         const stockBadge =
-          remaining === null
-            ? `unbegrenzt<br><span class="hint">${p.sold} verkauft</span>`
+          (remaining === null
+            ? "unbegrenzt"
             : soldOut
             ? `<span class="badge badge-declined">ausverkauft</span>`
-            : `${remaining} / ${Number(p.stock)} übrig`;
+            : `${remaining} übrig`) + soldInfo;
         const thumb =
           p.images && p.images[0]
             ? `<img src="${esc(p.images[0])}" alt="" class="admin-thumb">`
@@ -254,7 +255,12 @@
     document.getElementById("pf-price").value = p.price;
     document.getElementById("pf-color").value = SF.safeColor(p.color);
     document.getElementById("pf-sizes").value = (p.sizes || []).join(", ");
-    document.getElementById("pf-stock").value = p.stock === null || p.stock === undefined ? "" : p.stock;
+    // Angezeigt wird, wie viele Stück NOCH DA sind (nicht der ursprüngliche Bestand)
+    const remaining = SF.getProductRemaining(p);
+    document.getElementById("pf-stock").value = remaining === null ? "" : remaining;
+    const info = document.getElementById("pf-stock-info");
+    info.textContent = `Bisher verkauft: ${Number(p.sold) || 0} Stück. Trag hier ein, wie viele ab jetzt noch zu haben sind.`;
+    info.classList.remove("hidden");
     pendingImages = (p.images || []).slice();
     renderImagePreview();
     document.getElementById("product-form-title").textContent = "Produkt bearbeiten: " + p.name;
@@ -273,6 +279,7 @@
     document.getElementById("product-form-title").textContent = "Produkt hinzufügen";
     document.getElementById("product-form-submit").textContent = "Produkt hinzufügen";
     document.getElementById("product-form-cancel").classList.add("hidden");
+    document.getElementById("pf-stock-info").classList.add("hidden");
   }
 
   function totalImageBytes() {
@@ -327,7 +334,7 @@
       const price = Math.round(parseFloat(document.getElementById("pf-price").value) * 100) / 100;
       const color = SF.safeColor(document.getElementById("pf-color").value);
       const stockRaw = document.getElementById("pf-stock").value;
-      const stock = stockRaw === "" ? null : Math.max(0, parseInt(stockRaw, 10) || 0);
+      const available = stockRaw === "" ? null : Math.max(0, parseInt(stockRaw, 10) || 0);
       const sizes = SF.clampText(document.getElementById("pf-sizes").value, 120)
         .split(",")
         .map((s) => s.trim().slice(0, 10))
@@ -346,7 +353,7 @@
       const submit = document.getElementById("product-form-submit");
       submit.disabled = true;
       submit.textContent = "Wird gespeichert …";
-      const payload = { name, description, price, color, sizes, stock, images: pendingImages.slice() };
+      const payload = { name, description, price, color, sizes, available, images: pendingImages.slice() };
       try {
         if (editingProductId) await SFDB.updateProduct(editingProductId, payload);
         else await SFDB.addProduct(Object.assign({ active: true }, payload));

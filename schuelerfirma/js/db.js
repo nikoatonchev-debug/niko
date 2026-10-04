@@ -250,19 +250,36 @@ const SFDB = (function () {
       color: p.color,
       sizes: p.sizes,
       images: p.images || [],
-      stock: p.stock === null || p.stock === undefined ? null : p.stock,
     };
+  }
+  // „available“ = wie viele Stück ab jetzt noch zu haben sind (null = unbegrenzt).
+  // Gespeichert wird der Gesamtbestand stock = bisher verkauft + noch verfügbar.
+  function availableToStock(available, sold) {
+    return available === null || available === undefined ? null : (Number(sold) || 0) + Math.max(0, Number(available) || 0);
   }
   async function addProduct(p) {
     const ref = F.doc(F.collection(requireDb(), "products"));
     await F.setDoc(
       ref,
-      Object.assign(cleanProduct(p), { active: p.active !== false, sold: 0, createdAt: F.serverTimestamp() })
+      Object.assign(cleanProduct(p), {
+        stock: availableToStock(p.available, 0),
+        active: p.active !== false,
+        sold: 0,
+        createdAt: F.serverTimestamp(),
+      })
     );
     return ref.id;
   }
   async function updateProduct(id, p) {
-    await F.updateDoc(F.doc(requireDb(), "products", id), cleanProduct(p));
+    // In einer Transaktion, damit eine Bestellung genau in diesem Moment nicht verloren geht
+    const db = requireDb();
+    const ref = F.doc(db, "products", id);
+    await F.runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw withMessage("Dieses Produkt gibt es nicht mehr.");
+      const sold = Number(snap.data().sold) || 0;
+      tx.update(ref, Object.assign(cleanProduct(p), { stock: availableToStock(p.available, sold) }));
+    });
   }
   async function setProductActive(id, active) {
     await F.updateDoc(F.doc(requireDb(), "products", id), { active: !!active });

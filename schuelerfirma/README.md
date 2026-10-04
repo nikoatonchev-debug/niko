@@ -15,7 +15,9 @@ Diese Datei wird nicht mit veröffentlicht (siehe `.github/workflows/pages.yml`)
 
 ## Wie die Website funktioniert
 
-Die Seiten sind statisch (GitHub Pages). Alle Daten liegen in **Google Firebase**
+Die Seiten sind statisch und laufen auf **Firebase Hosting** unter https://schuelerfirma-siebdruck.web.app
+(GitHub Action `.github/workflows/firebase-hosting.yml`, Secret `FIREBASE_SERVICE_ACCOUNT`). Die alte Adresse
+`nikoatonchev-debug.github.io/niko` leitet nur noch weiter (`.github/workflows/pages.yml`). Alle Daten liegen in **Google Firebase**
 (Projekt `schuelerfirma-siebdruck`, Datenbank in Europa):
 
 - **Firebase Authentication** – Konten mit E-Mail + Passwort. Beim Registrieren schickt
@@ -41,13 +43,13 @@ Weitere Admins: Adresse in `firestore.rules` eintragen und die Regeln neu veröf
 ## Einmalige Einrichtung in der Firebase-Konsole
 
 1. **Authentication → Sign-in method:** „E-Mail/Passwort“ aktivieren (bereits erledigt).
-2. **Authentication → Einstellungen → Autorisierte Domains:** `nikoatonchev-debug.github.io` hinzufügen.
+2. **Authentication → Einstellungen → Autorisierte Domains:** `schuelerfirma-siebdruck.web.app` ist automatisch erlaubt.
 3. **Authentication → Vorlagen:** Sprache auf Deutsch stellen, Absendernamen auf „Erdkinderkollektiv“,
    Betreff/Text nach Wunsch (E-Mail-Adressbestätigung und Passwort zurücksetzen).
 4. **Firestore Database → Regeln:** den Inhalt von `../firestore.rules` einfügen und **Veröffentlichen**.
    Ohne diesen Schritt bleibt die Datenbank komplett gesperrt.
 5. Optional, empfohlen: In der Google Cloud Console (APIs & Dienste → Anmeldedaten) den
-   API-Schlüssel auf die Referrer `https://nikoatonchev-debug.github.io/*` beschränken.
+   API-Schlüssel auf die Referrer `https://schuelerfirma-siebdruck.web.app/*` und `https://schuelerfirma-siebdruck.firebaseapp.com/*` beschränken.
 6. Kostenlos bleiben: Im Spark-Tarif (ohne Kreditkarte) kostet nichts etwas; bei Überschreiten der
    Gratis-Grenzen wird nur gedrosselt.
 

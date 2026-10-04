@@ -29,8 +29,37 @@ jobs:
         uses: actions/checkout@v4
       - name: GitHub Pages vorbereiten
         uses: actions/configure-pages@v5
-      - name: Nur die Website-Dateien zusammenstellen (ohne Doku)
-        run: rsync -a --exclude 'README.md' --exclude '.*' schuelerfirma/ _site/
+      # Die Website ist nach https://schuelerfirma-siebdruck.web.app umgezogen.
+      # Hier liegen nur noch Weiterleitungen: jede alte Seite schickt zur gleichen
+      # Seite auf der neuen Adresse (inkl. ?… und #…, z. B. Links aus alten E-Mails).
+      - name: Weiterleitungen zur neuen Adresse erzeugen
+        env:
+          NEW: https://schuelerfirma-siebdruck.web.app
+        run: |
+          mkdir -p _site
+          page() {
+            target="$NEW/$1"
+            cat > "_site/$2" <<HTML
+          <!doctype html>
+          <html lang="de"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="robots" content="noindex">
+          <title>Umgezogen – Siebdruck-Schülerfirma</title>
+          <link rel="canonical" href="$target">
+          <script>location.replace("$target" + location.search + location.hash);</script>
+          <meta http-equiv="refresh" content="0; url=$target">
+          </head><body style="font-family:sans-serif;padding:24px">
+          <p>Die Website der Siebdruck-Schülerfirma ist umgezogen:<br><a href="$target">schuelerfirma-siebdruck.web.app</a></p>
+          </body></html>
+          HTML
+          }
+          for f in schuelerfirma/*.html; do
+            name=$(basename "$f")
+            if [ "$name" = "index.html" ]; then page "" "$name"; else page "$name" "$name"; fi
+          done
+          # Unbekannte alte Adressen: zur Startseite
+          page "" "404.html"
+          ls -la _site
       - name: Website-Ordner hochladen
         uses: actions/upload-pages-artifact@v3
         with:

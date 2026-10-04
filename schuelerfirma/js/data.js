@@ -103,12 +103,30 @@ const SF = (() => {
     update();
   }
 
-  // Anzeigetext für den Shop-Bestellstatus (gespeichert wird
-  // "offen"/"abgeholt", nur die Anzeige ist freundlicher).
-  function orderStatusLabel(status) {
-    if (status === "offen") return "Noch nicht abgeholt";
-    if (status === "abgeholt") return "Abgeholt";
-    return status;
+  // Abhol-Status einer Bestellung (Shop und Spezial). Gespeichert wird
+  // "offen"/"akzeptiert"/"abholbereit"/"abgeholt"/"abgelehnt"; für die
+  // Kundschaft zählt nur: noch nicht abholbereit, abholbereit oder abgeholt.
+  // Abgelehnte Spezialbestellungen haben keinen Abhol-Status (null).
+  function pickupStatus(status) {
+    if (status === "abgelehnt") return null;
+    if (status === "abholbereit") return { label: "Abholbereit", badge: "badge-ready" };
+    if (status === "abgeholt") return { label: "Abgeholt", badge: "badge-done" };
+    return { label: "Nicht abholbereit", badge: "badge-open" };
+  }
+  function pickupBadgeHtml(status) {
+    const p = pickupStatus(status);
+    return p ? `<span class="badge ${p.badge}">${p.label}</span>` : "";
+  }
+
+  // Entscheidung bei Spezialbestellungen (angenommen ja/nein).
+  function specialDecision(status) {
+    if (status === "offen") return { label: "In Prüfung", badge: "badge-open" };
+    if (status === "abgelehnt") return { label: "Abgelehnt", badge: "badge-declined" };
+    return { label: "Angenommen", badge: "badge-accepted" };
+  }
+  function specialDecisionBadgeHtml(status) {
+    const d = specialDecision(status);
+    return `<span class="badge ${d.badge}">${d.label}</span>`;
   }
 
   // Wie viele Stück eines Produkts noch verfügbar sind, oder null wenn die
@@ -195,7 +213,10 @@ const SF = (() => {
     clampText,
     qtyStepperHtml,
     wireQtyStepper,
-    orderStatusLabel,
+    pickupStatus,
+    pickupBadgeHtml,
+    specialDecision,
+    specialDecisionBadgeHtml,
     getProductRemaining,
     resizeImageFile,
     dataUrlBytes,

@@ -383,26 +383,25 @@
         const items = (o.items || [])
           .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)})`)
           .join("<br>");
-        const badgeClass = o.status === "abgeholt" ? "badge-accepted" : "badge-open";
         return `
         <tr>
           <td>${SF.formatDate(o.date)}<br><span class="hint">#${esc(String(o.id).slice(-6).toUpperCase())}</span></td>
           <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}${o.phone ? "<br><span class='hint'>Tel: " + esc(o.phone) + "</span>" : ""}${o.username ? "<br><span class='hint'>Konto: " + esc(o.username) + "</span>" : ""}</td>
           <td>${items}</td>
           <td>${SF.formatPrice(o.total)}</td>
-          <td><span class="badge ${badgeClass}">${esc(SF.orderStatusLabel(o.status))}</span></td>
+          <td>${SF.pickupBadgeHtml(o.status)}</td>
           <td class="actions-cell">
-            ${o.status !== "abgeholt" ? `<button class="btn btn-secondary btn-small" data-collect="${id}">Als abgeholt markieren</button>` : ""}
+            ${pickupButtons(o.status, id, "offen")}
             <button class="btn btn-danger btn-small" data-delete-order="${id}" aria-label="Bestellung #${esc(String(o.id).slice(-6).toUpperCase())} löschen">Löschen</button>
           </td>
         </tr>`;
       })
       .join("");
 
-    el.querySelectorAll("[data-collect]").forEach((btn) =>
+    el.querySelectorAll("[data-set-status]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          await SFDB.updateOrderStatus(btn.getAttribute("data-collect"), "abgeholt");
+          await SFDB.updateOrderStatus(btn.getAttribute("data-id"), btn.getAttribute("data-set-status"));
           await renderOrders();
           renderStats();
         })
@@ -420,12 +419,21 @@
     );
   }
 
+  // Knöpfe für den Abhol-Status. notReady = Status, zu dem „Nicht abholbereit“
+  // zurückkehrt („offen“ bei Shop-, „akzeptiert“ bei Spezialbestellungen).
+  function pickupButtons(status, id, notReady) {
+    if (status === "abholbereit") {
+      return `<button class="btn btn-secondary btn-small" data-set-status="abgeholt" data-id="${id}">Als abgeholt markieren</button>
+        <button class="btn btn-outline btn-small" data-set-status="${notReady}" data-id="${id}">Doch nicht abholbereit</button>`;
+    }
+    if (status === "abgeholt") {
+      return `<button class="btn btn-outline btn-small" data-set-status="abholbereit" data-id="${id}">Doch nicht abgeholt</button>`;
+    }
+    return `<button class="btn btn-secondary btn-small" data-set-status="abholbereit" data-id="${id}">Abholbereit</button>`;
+  }
+
   // ---------- Spezialbestellungen ----------
   let specials = [];
-  function statusBadge(status) {
-    const map = { offen: "badge-open", akzeptiert: "badge-accepted", abgelehnt: "badge-declined" };
-    return `<span class="badge ${map[status] || ""}">${esc(status)}</span>`;
-  }
 
   async function renderSpecial() {
     const el = document.getElementById("special-table-body");
@@ -449,28 +457,26 @@
         <td><strong>${esc(s.phone)}</strong></td>
         <td>${esc(s.groesse)} &middot; ${Number(s.menge) || 1}x</td>
         <td>${esc(s.wunsch)}</td>
-        <td>${statusBadge(s.status)}</td>
+        <td><div class="badge-row">${SF.specialDecisionBadgeHtml(s.status)} ${SF.pickupBadgeHtml(s.status)}</div></td>
         <td class="actions-cell">
-          ${s.status !== "akzeptiert" ? `<button class="btn btn-secondary btn-small" data-accept="${id}">Annehmen</button>` : ""}
-          ${s.status !== "abgelehnt" ? `<button class="btn btn-outline btn-small" data-decline="${id}">Ablehnen</button>` : ""}
+          ${s.status === "offen" || s.status === "abgelehnt" ? `<button class="btn btn-secondary btn-small" data-set-status="akzeptiert" data-id="${id}">Annehmen</button>` : ""}
+          ${s.status === "offen" || s.status === "akzeptiert" ? `<button class="btn btn-outline btn-small" data-set-status="abgelehnt" data-id="${id}">Ablehnen</button>` : ""}
+          ${s.status === "offen" || s.status === "abgelehnt" ? "" : pickupButtons(s.status, id, "akzeptiert")}
           <button class="btn btn-danger btn-small" data-delete-special="${id}">Löschen</button>
         </td>
       </tr>`;
       })
       .join("");
 
-    const setStatus = (attr, status) =>
-      el.querySelectorAll(`[${attr}]`).forEach((btn) =>
-        btn.addEventListener("click", () =>
-          guarded(async () => {
-            await SFDB.updateSpecialOrderStatus(btn.getAttribute(attr), status);
-            await renderSpecial();
-            renderStats();
-          })
-        )
-      );
-    setStatus("data-accept", "akzeptiert");
-    setStatus("data-decline", "abgelehnt");
+    el.querySelectorAll("[data-set-status]").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          await SFDB.updateSpecialOrderStatus(btn.getAttribute("data-id"), btn.getAttribute("data-set-status"));
+          await renderSpecial();
+          renderStats();
+        })
+      )
+    );
     el.querySelectorAll("[data-delete-special]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {

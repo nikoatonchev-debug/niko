@@ -687,6 +687,7 @@ section {
   padding: 3px 10px;
   font-size: 0.75rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .badge-open {
@@ -702,6 +703,74 @@ section {
 .badge-declined {
   background: #f6dcdc;
   color: #8a1e1e;
+}
+
+/* Abhol-Status: abholbereit fällt deutlich auf, abgeholt tritt zurück */
+.badge-ready {
+  background: #1e6b1e;
+  color: #fff;
+}
+
+.badge-done {
+  background: var(--color-bg-alt);
+  color: var(--color-muted);
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.order-ready {
+  border: 2px solid #1e6b1e;
+}
+
+.ready-note {
+  margin-top: 12px;
+  margin-bottom: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #dcf3dc;
+  color: #164f16;
+  font-size: 0.9rem;
+}
+
+.info-box {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-alt);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+/* Hinweis-Leiste unter dem Kopf, wenn eine eigene Bestellung abholbereit ist */
+.ready-banner {
+  background: #1e6b1e;
+  color: #fff;
+}
+
+.ready-banner .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.ready-banner a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ready-banner a:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 /* ---------- Forms ---------- */
@@ -1437,5 +1506,7 @@ th {
     padding-top: 10px;
     margin-top: 6px;
     justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 }

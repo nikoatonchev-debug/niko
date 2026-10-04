@@ -1,12 +1,8 @@
 (function () {
   const esc = (s) => SF.escapeHtml(s);
 
-  function statusBadge(status, map, label) {
-    return `<span class="badge ${map[status] || ""}">${esc(label || status)}</span>`;
-  }
-
-  const ORDER_STATUS_MAP = { offen: "badge-open", abgeholt: "badge-accepted" };
-  const SPECIAL_STATUS_MAP = { offen: "badge-open", akzeptiert: "badge-accepted", abgelehnt: "badge-declined" };
+  // Hinweis direkt an einer abholbereiten Bestellung
+  const READY_NOTE = `<p class="ready-note"><strong>Deine Bestellung ist abholbereit!</strong> Hol sie freitags ab 11 Uhr bei der alten Apotheke ab und bring deine Bestellnummer mit. Bezahlt wird bar.</p>`;
 
   function orderNumber(id) {
     return esc(String(id || "").slice(-6).toUpperCase());
@@ -23,8 +19,9 @@
         const items = (o.items || [])
           .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)})`)
           .join("<br>");
+        const ready = o.status === "abholbereit";
         return `
-        <article class="review-card">
+        <article class="review-card${ready ? " order-ready" : ""}">
           <div class="review-head">
             <h3 class="review-name">Bestellung #${orderNumber(o.id)}</h3>
             <span class="review-date">${SF.formatDate(o.date)}</span>
@@ -32,8 +29,9 @@
           <p>${items}</p>
           <div class="product-meta">
             <span class="price">${SF.formatPrice(o.total)}</span>
-            ${statusBadge(o.status, ORDER_STATUS_MAP, SF.orderStatusLabel(o.status))}
+            ${SF.pickupBadgeHtml(o.status)}
           </div>
+          ${ready ? READY_NOTE : ""}
         </article>`;
       })
       .join("");
@@ -46,18 +44,20 @@
       return;
     }
     el.innerHTML = list
-      .map(
-        (o) => `
-      <article class="review-card">
+      .map((o) => {
+        const ready = o.status === "abholbereit";
+        return `
+      <article class="review-card${ready ? " order-ready" : ""}">
         <div class="review-head">
           <h3 class="review-name">Bestellung #${orderNumber(o.id)}</h3>
           <span class="review-date">${SF.formatDate(o.date)}</span>
         </div>
         <p>${esc(o.wunsch)}</p>
         <p class="hint">Größe ${esc(o.groesse)} &middot; ${Number(o.menge) || 1}x</p>
-        ${statusBadge(o.status, SPECIAL_STATUS_MAP)}
-      </article>`
-      )
+        <div class="badge-row">${SF.specialDecisionBadgeHtml(o.status)} ${SF.pickupBadgeHtml(o.status)}</div>
+        ${ready ? READY_NOTE : ""}
+      </article>`;
+      })
       .join("");
   }
 

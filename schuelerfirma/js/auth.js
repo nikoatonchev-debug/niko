@@ -403,10 +403,51 @@ const SFAuth = (function () {
     }
   }
 
+  // Hinweis-Leiste auf jeder Seite, sobald eine eigene Bestellung abholbereit ist.
+  // Auf "Meine Bestellungen" (dort steht es direkt dran) und im Admin-Bereich nicht.
+  let readyCheckedFor = null;
+  async function updateReadyBanner() {
+    const user = SFDB.currentUser();
+    const page = document.body.getAttribute("data-page");
+    const old = document.getElementById("ready-banner");
+    if (!user || !user.emailVerified || page === "orders" || page === "admin") {
+      if (old) old.remove();
+      readyCheckedFor = null;
+      return;
+    }
+    if (readyCheckedFor === user.uid) return;
+    readyCheckedFor = user.uid;
+    let count = 0;
+    try {
+      const [shop, special] = await Promise.all([SFDB.getMyOrders(), SFDB.getMySpecialOrders()]);
+      count = shop.concat(special).filter((o) => o.status === "abholbereit").length;
+    } catch (e) {
+      return; // Hinweis ist nur ein Extra – bei Fehlern einfach weglassen
+    }
+    if (count === 0 || document.getElementById("ready-banner")) return;
+    const header = document.getElementById("site-header");
+    if (!header) return;
+    const banner = document.createElement("div");
+    banner.id = "ready-banner";
+    banner.className = "ready-banner";
+    banner.setAttribute("role", "status");
+    banner.innerHTML =
+      '<div class="container"><span><strong>' +
+      (count === 1 ? "Deine Bestellung ist abholbereit!" : count + " deiner Bestellungen sind abholbereit!") +
+      "</strong> Hol sie freitags ab 11 Uhr bei der alten Apotheke ab.</span>" +
+      '<a href="meine-bestellungen.html">Zu meinen Bestellungen</a></div>';
+    header.insertAdjacentElement("afterend", banner);
+  }
+
+  function onAuth() {
+    updateHeaderStatus();
+    updateReadyBanner();
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectModal();
-    SFDB.ready.then(updateHeaderStatus);
-    SFDB.onAuthChange(updateHeaderStatus);
+    SFDB.ready.then(onAuth);
+    SFDB.onAuthChange(onAuth);
   });
 
   return {

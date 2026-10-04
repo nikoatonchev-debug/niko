@@ -68,7 +68,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && request.resource.data.status in ['offen', 'abgeholt'];
+        && request.resource.data.status in ['offen', 'abholbereit', 'abgeholt'];
       allow delete: if isAdmin();
 
       function validOrder() {
@@ -94,7 +94,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && request.resource.data.status in ['offen', 'akzeptiert', 'abgelehnt'];
+        && request.resource.data.status in ['offen', 'akzeptiert', 'abgelehnt', 'abholbereit', 'abgeholt'];
       allow delete: if isAdmin();
 
       function validSpecial() {

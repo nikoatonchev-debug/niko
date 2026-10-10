@@ -172,6 +172,8 @@
           <option value="4K">4K (maximal scharf, teurer)</option>
         </select>
         <p class="hint">Höhere Auflösung hält Stickerei und Etikett-Text scharf. Unterstützt ein Modell das nicht, wird automatisch ohne Angabe bearbeitet.</p>
+        <label class="check" for="matchColors"><input id="matchColors" type="checkbox" checked> Farbintensität bei Nahaufnahmen automatisch ans Original angleichen</label>
+        <p class="hint">Wird das KI-Bild kräftiger als dein Foto, wird die Sättigung wieder auf das Original zurückgesetzt. Farbton und Helligkeit bleiben unverändert.</p>
       </div>
     </div>
   </section>
@@ -246,42 +248,45 @@
   // Farbregel: Die echten Stofffarben dürfen sich nie ändern (z. B. lila Shirt wird blau).
   // Licht und Schatten korrigieren ist ausdrücklich erlaubt, sonst ändert das Modell bei
   // Nahaufnahmen gar nichts mehr.
-  const COLOR_LOCK_START = "ABSOLUTE RULE - NEVER CHANGE THE ITEM'S COLORS: The actual colors of the garment, the logo, the embroidery thread, and the tags must stay 100% identical to the original - the exact same hue and shade. A purple item must stay exactly that purple (never turn it blue, pink, or violet-grey), a red item stays exactly that red, a navy item stays exactly that navy, a white item stays exactly that white, and so on for every color. Do NOT recolor, do NOT shift the hue, do NOT change the white balance or the overall color temperature, do NOT oversaturate or desaturate, and do NOT 'fix' colors even if they look unusual, faded, or washed out - they are the real colors of the item. Faded or sun-bleached areas stay exactly as faded as they are. IMPORTANT: removing shadows, evening out uneven lighting, and brightening areas that are only darker because they are in shadow is NOT a color change - it is allowed and wanted, as long as the fabric then shows the same true color as its well-lit parts in the original.";
-  const COLOR_LOCK_END = "FINAL CHECK BEFORE OUTPUT: compare the color of the item in your result with the well-lit parts of the original photo - if the hue or shade of the fabric, logo, or tag has shifted even slightly, correct it back so it matches the original exactly. NEVER CHANGE THE ITEM'S COLORS.";
+  const COLOR_LOCK_START = "ABSOLUTE RULE - NEVER CHANGE THE ITEM'S COLORS: The actual colors of the garment, the logo, the embroidery thread, and the tags must stay 100% identical to the original - the exact same hue and shade. A purple item must stay exactly that purple (never turn it blue, pink, or violet-grey), a red item stays exactly that red, a navy item stays exactly that navy, a white item stays exactly that white, and so on for every color. Do NOT recolor, do NOT shift the hue, do NOT change the white balance or the overall color temperature, do NOT oversaturate or desaturate, and do NOT 'fix' colors even if they look unusual, faded, or washed out - they are the real colors of the item. Faded or sun-bleached areas stay exactly as faded as they are. KEEP THE ORIGINAL COLOR INTENSITY: do NOT increase saturation, vibrance, contrast, or clarity of the colors, no HDR, no 'pop', no punchy or glossy look - vintage items have soft, slightly muted, naturally aged colors, and they must stay exactly as soft and muted as in the original photo. IMPORTANT: removing shadows, evening out uneven lighting, and brightening areas that are only darker because they are in shadow is NOT a color change - it is allowed and wanted, as long as the fabric then shows the same true color as its well-lit parts in the original.";
+  const COLOR_LOCK_END = "FINAL CHECK BEFORE OUTPUT: compare the color of the item in your result with the well-lit parts of the original photo - if the hue, shade, or color intensity of the fabric, logo, or tag has shifted even slightly (including colors that became more saturated or vivid), correct it back so it matches the original exactly. NEVER CHANGE THE ITEM'S COLORS.";
 
   // Vintage-Regel: das Teil soll gepflegt, aber weiterhin echt vintage aussehen, nicht wie neu.
-  const VINTAGE_LOCK = "KEEP IT LOOKING VINTAGE: This is a genuine vintage / second-hand item and it must still look like one after editing. Keep its authentic vintage character: the natural worn-in softness of the fabric, the real fabric texture and knit structure, gentle natural fading and wash wear exactly as it is, slightly worn edges, the aged look of tags and labels, and the overall lived-in feel. Make it tidy and well presented, but do NOT make it look brand new, freshly manufactured, glossy, plastic, artificially over-processed, or like a sterile catalog / stock photo (logos and tags must still be perfectly crisp). The photo should feel like an honest, attractive vintage resale photo, with a natural, slightly warm, authentic vintage mood - achieved through the setting and presentation only, never by changing the item's colors.";
+  const VINTAGE_LOCK = "KEEP IT LOOKING VINTAGE: This is a genuine vintage / second-hand item and it must still look like one after editing. Keep its authentic vintage character: the natural worn-in softness of the fabric, the real fabric texture and knit structure, gentle natural fading and wash wear exactly as it is, slightly worn edges, the aged look of tags and labels, and the overall lived-in feel. Make it tidy and well presented, but do NOT make it look brand new, freshly manufactured, glossy, plastic, artificially over-processed, or like a sterile catalog / stock photo (logos and tags must still be perfectly crisp). The photo should feel like an honest, attractive vintage resale photo, with a soft, natural, slightly muted, authentic vintage mood - achieved through the setting and presentation only, never by changing the item's colors or making them more intense.";
 
   // Schärferegel: Logo und Etikett wurden oft weichgezeichnet / verschwommen.
-  const SHARP_LOCK = "ABSOLUTE RULE - LOGOS AND LABELS MUST STAY RAZOR SHARP: The logo / embroidery (e.g. the polo pony) and every label, tag, and piece of text must be at least as sharp and detailed as in the original photo - ideally sharper. NEVER blur, soften, smear, smudge, melt, wash out, or smooth over the logo or the label, and never make them look painted, plastic, waxy, or low-resolution. Every individual stitch of the embroidery and every letter and number on the label must stay crisp, with clean, well-defined edges and fine detail. Wrinkle smoothing, denoising, and retouching apply ONLY to plain fabric - never to the logo, the embroidery, or the label. Do not redraw or re-generate the logo or the text from scratch; keep the real details of the original and only make them cleaner and clearer. If the logo or label would get even slightly blurrier than in the original, leave that area as it is in the original instead. Output a high-resolution, sharp image.";
-  const SHARP_CHECK = "FINAL SHARPNESS CHECK: zoom in on the logo and the label in your result - they must be crisp and at least as sharp as in the original, with every stitch and letter clearly defined. If they are blurrier, fix it before output.";
+  const SHARP_LOCK = "ABSOLUTE RULE - LOGOS AND LABELS MUST STAY RAZOR SHARP: Any logo / embroidery (e.g. the polo pony) and any label or text that is ALREADY in the original photo must be at least as sharp and detailed as in the original photo - ideally sharper. NEVER blur, soften, smear, smudge, melt, wash out, or smooth over the logo or the label, and never make them look painted, plastic, waxy, or low-resolution. Every individual stitch of the embroidery and every letter and number on the label must stay crisp, with clean, well-defined edges and fine detail. Wrinkle smoothing, denoising, and retouching apply ONLY to plain fabric - never to the logo, the embroidery, or the label. Do not redraw or re-generate the logo or the text from scratch; keep the real details of the original and only make them cleaner and clearer. If the logo or label would get even slightly blurrier than in the original, leave that area as it is in the original instead. Output a high-resolution, sharp image. This rule NEVER means adding a label, tag, or text that is not in the original.";
+  const SHARP_CHECK = "FINAL SHARPNESS CHECK: zoom in on the logo and the label in your result - they must be crisp and at least as sharp as in the original, with every stitch and letter clearly defined. If they are blurrier, fix it before output. Also check that you did not add anything that is not in the original (no hang tag, price tag, sticker, label, or text).";
+
+  // Nichts-hinzufügen-Regel: das Modell hat z. B. ein Kauf-/Preisetikett erfunden.
+  const NO_ADD_LOCK = "ABSOLUTE RULE - ADD NOTHING: Do not add any object or detail that is not already in the original photo. NEVER add hang tags, swing tags, price tags, paper or cardboard tags, tags on strings or plastic fasteners, stickers, new labels, extra logos, text, buttons, hangers, props, or accessories. If the original photo shows no tag or label, the result must not show one either. Only improve what is already there.";
 
   // Ganzes Teil: Farb- und Schärferegel zuerst, dann Vintage, dann die Aufgabe.
-  const buildFull = (task) => [COLOR_LOCK_START, SHARP_LOCK, VINTAGE_LOCK, task, SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
+  const buildFull = (task) => [COLOR_LOCK_START, NO_ADD_LOCK, SHARP_LOCK, VINTAGE_LOCK, task, SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
   // Nahaufnahmen: Die Aufgabe steht zuerst und ist sehr deutlich, sonst gibt das Modell
   // aus Vorsicht ein fast unverändertes Bild zurück.
-  const buildCloseup = (task) => [task, SHARP_LOCK, COLOR_LOCK_START, "Vintage character: keep the real fabric texture, the natural worn-in look, and genuine fading or wash wear - it should look like a beautifully photographed vintage item, not a brand-new one. This does NOT mean leaving the photo unedited: the shadow removal, lighting, smoothing, and cleanup above must still be clearly visible.", SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
+  const buildCloseup = (task) => [task, NO_ADD_LOCK, SHARP_LOCK, COLOR_LOCK_START, "Vintage character: keep the real fabric texture, the natural worn-in look, and genuine fading or wash wear - it should look like a beautifully photographed vintage item with soft, naturally muted colors, not a brand-new one. This does NOT mean leaving the photo unedited: the shadow removal, lighting, smoothing, and cleanup above must still be clearly visible.", SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
 
   const PRESETS = [
     {
       id: 'wood',
       name: 'Holzboden-Hintergrund',
-      prompt: buildFull("This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, warm-toned light hardwood wood floor, diagonal planks, evenly lit. Keep any tags, labels, or size stickers sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking.")
+      prompt: buildFull("This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, warm-toned light hardwood wood floor, diagonal planks, evenly lit. Keep any tags, labels, or size stickers that are already in the photo sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking.")
     },
     {
       id: 'stone',
       name: 'Stein/Beton-Hintergrund',
-      prompt: buildFull("This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, light, mottled stone/concrete surface, evenly lit, natural indoor look. Keep any tags, labels, or size stickers sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking.")
+      prompt: buildFull("This is a product photo of a vintage clothing item for online resale on Vinted. Smooth the fabric wrinkles noticeably more - the item should look tidy and mostly smooth, similar to a well-presented resale photo, but not perfectly ironed or catalog-flat; a few soft natural folds are fine. Keep the small embroidered pony logo (or any other logo) fully visible, sharp, and unobscured - do not blur, shrink, cover, or lose it, it must look exactly like the original. Background: clean, light, mottled stone/concrete surface, evenly lit, natural indoor look. Keep any tags, labels, or size stickers that are already in the photo sharp and clearly readable. Do NOT alter the garment's color, logo design, size, print, cut, or any real stains, holes, or damage - keep the actual garment exactly as it is. Photorealistic, well-lit, presentable but still natural, not AI-generated looking.")
     },
     {
       id: 'closeup_logo',
       name: 'Nahaufnahme Logo',
-      prompt: buildCloseup("TASK: Professionally retouch this close-up photo of the embroidered logo (e.g. the Ralph Lauren polo pony) on a vintage garment for a Vinted listing. The result MUST look clearly and obviously better than the original at first glance - like the same logo re-photographed by a professional product photographer with a softbox. Returning an image that looks almost the same as the input is a failed result. Do ALL of the following, clearly visibly: 1) REMOVE ALL SHADOWS - every shadow falling on the logo or on the fabric (from a phone, a hand, a fold, or the room) must be completely gone. 2) RELIGHT the whole photo with bright, soft, perfectly even studio light, so the logo and the fabric around it are evenly lit from edge to edge with no dark corners, no hot spots, and no gloomy areas. 3) MAKE THE LOGO STAND OUT: crisp, clean, clearly defined embroidery with visible individual stitches and clean outlines, a subtle natural 3D raised look of the stitching, noticeably sharper and clearer than in the original. 4) SMOOTH THE FABRIC around the logo clearly: remove creases, puckering, and wrinkles so the logo sits on a neat, flat, even surface, while the knit / pique texture stays visible. 5) CLEAN UP: remove lint, fuzz, dust, hairs, pills, and loose threads on and around the logo. Keep the logo in the same place, the same size, and the same design - same shape, same proportions, same thread colors - and keep the same crop. Do not add any background, text, tags, or extra logos. Photorealistic, not AI-generated looking.")
+      prompt: buildCloseup("TASK: Professionally retouch this close-up photo of the embroidered logo (e.g. the Ralph Lauren polo pony) on a vintage garment for a Vinted listing. The result MUST look clearly and obviously better than the original at first glance - like the same logo re-photographed by a professional product photographer with soft natural light. Returning an image that looks almost the same as the input is a failed result. Do ALL of the following, clearly visibly: 1) REMOVE ALL SHADOWS - every shadow falling on the logo or on the fabric (from a phone, a hand, a fold, or the room) must be completely gone. 2) RELIGHT the whole photo with soft, natural, even daylight-like light (gentle, not punchy or high-contrast), so the logo and the fabric around it are evenly lit from edge to edge with no dark corners, no hot spots, and no gloomy areas. 3) MAKE THE LOGO CLEAR: crisp, clean, clearly defined embroidery with visible individual stitches and clean outlines, a subtle natural 3D raised look of the stitching, noticeably sharper and clearer than in the original. 4) SMOOTH THE FABRIC around the logo clearly: remove creases, puckering, and wrinkles so the logo sits on a neat, flat, even surface, while the knit / pique texture stays visible. 5) CLEAN UP: remove lint, fuzz, dust, hairs, pills, and loose threads on and around the logo. Keep the logo in the same place, the same size, and the same design - same shape, same proportions, same thread colors - and keep the same crop. Do not add any background, text, tags, or extra logos. Photorealistic, not AI-generated looking.")
     },
     {
       id: 'closeup_tag',
       name: 'Nahaufnahme Etikett',
-      prompt: buildCloseup("TASK: Professionally retouch this close-up photo of the label/tag (brand label, size tag, or care label) of a vintage garment for a Vinted listing. The result MUST look clearly and obviously better than the original at first glance - like the same label re-photographed by a professional product photographer with a softbox. Returning an image that looks almost the same as the input is a failed result. Do ALL of the following, clearly visibly: 1) REMOVE ALL SHADOWS - every shadow falling on the label or the fabric around it must be completely gone. 2) RELIGHT the whole photo with bright, soft, perfectly even studio light, with no dark corners, no hot spots, and no gloomy areas. 3) FLATTEN THE LABEL: remove curls, bends, creases, and wrinkles in the label and in the fabric directly around it, so it lies neat and flat. 4) MAKE ALL TEXT CRISP: every letter, number, and symbol on the label must be perfectly sharp and easy to read - but exactly the same characters as in the original; never change, invent, translate, or remove any text, sizes, or symbols. 5) CLEAN UP: remove lint, fuzz, dust, hairs, and loose threads. 6) BACKGROUND EDGE: if a small area outside the garment is visible (for example a strip at the top edge or a corner of the frame), replace only that small area with a clean, light, subtly mottled stone/concrete surface, evenly lit. Do not extend it, do not zoom out; if no background is visible, add none. Keep the label in the same place, the same size, and the same design, and keep the same crop. Do NOT add anything that is not in the original photo - no logos, no embroidered pony, no extra tags, no text, no other parts of the garment. Photorealistic, not AI-generated looking.")
+      prompt: buildCloseup("TASK: Professionally retouch this close-up photo of the label/tag (brand label, size tag, or care label) of a vintage garment for a Vinted listing. The result MUST look clearly and obviously better than the original at first glance - like the same label re-photographed by a professional product photographer with soft natural light. Returning an image that looks almost the same as the input is a failed result. Do ALL of the following, clearly visibly: 1) REMOVE ALL SHADOWS - every shadow falling on the label or the fabric around it must be completely gone. 2) RELIGHT the whole photo with soft, natural, even daylight-like light (gentle, not punchy or high-contrast), with no dark corners, no hot spots, and no gloomy areas. 3) FLATTEN THE LABEL: remove curls, bends, creases, and wrinkles in the label and in the fabric directly around it, so it lies neat and flat. 4) MAKE ALL TEXT CRISP: every letter, number, and symbol on the label must be perfectly sharp and easy to read - but exactly the same characters as in the original; never change, invent, translate, or remove any text, sizes, or symbols. 5) CLEAN UP: remove lint, fuzz, dust, hairs, and loose threads. 6) BACKGROUND EDGE: if a small area outside the garment is visible (for example a strip at the top edge or a corner of the frame), replace only that small area with a clean, light, subtly mottled stone/concrete surface, evenly lit. Do not extend it, do not zoom out; if no background is visible, add none. Keep the label in the same place, the same size, and the same design, and keep the same crop. Do NOT add anything that is not in the original photo - no logos, no embroidered pony, no extra tags, no text, no other parts of the garment. Photorealistic, not AI-generated looking.")
     }
   ];
 
@@ -335,6 +340,10 @@
   if ([...resolutionEl.options].some(o => o.value === savedRes)) resolutionEl.value = savedRes;
   resolutionEl.addEventListener('change', () => store.set('vfe_resolution', resolutionEl.value));
   const noResolutionModels = new Set(); // Modelle, die den Parameter "resolution" ablehnen
+
+  const matchColorsEl = $('matchColors');
+  matchColorsEl.checked = store.get('vfe_match_colors', '1') === '1';
+  matchColorsEl.addEventListener('change', () => store.set('vfe_match_colors', matchColorsEl.checked ? '1' : '0'));
 
   // ---------- Prompt-Voreinstellungen ----------
   const promptEl = $('prompt');
@@ -473,6 +482,7 @@
     const parts = [];
     if (item.usedModel) parts.push(item.usedModel);
     if (item.presetName) parts.push(item.presetName);
+    if (item.status === 'done' && item.satReduced) parts.push(`Farbintensität −${item.satReduced} % ans Original angeglichen`);
     if (item.status === 'done') parts.push(item.cost != null ? 'Kosten: ' + fmt(item.cost) : 'Kosten: nicht gemeldet');
     if (item.seconds) parts.push(item.seconds + ' s');
     meta.textContent = parts.join(' · ');
@@ -547,11 +557,13 @@
     if (!apiKeyEl.value.trim()) { apiKeyEl.focus(); updateButtons(); return; }
     const prompt = promptEl.value.trim();
     const preset = PRESETS.find(p => p.id === activePreset);
-    const presetName = preset && preset.prompt === prompt ? preset.name : 'Eigener Prompt';
+    const presetMatches = !!preset && preset.prompt === prompt;
+    const presetName = presetMatches ? preset.name : 'Eigener Prompt';
+    const presetId = presetMatches ? preset.id : null;
     const model = currentModel();
     list.forEach(item => {
       if (item.status === 'run' || queue.includes(item)) return;
-      item.job = { prompt, model, presetName };
+      item.job = { prompt, model, presetName, presetId };
       item.status = 'wait';
       item.error = null;
       queue.push(item);
@@ -599,7 +611,16 @@
         }
       }
       if (!json) json = await postJSON(API_URL, body);
-      const blob = await extractImage(json);
+      let blob = await extractImage(json);
+      item.satReduced = 0;
+      // Nahaufnahmen haben denselben Bildausschnitt wie das Original -> Farbintensität vergleichbar
+      if (matchColorsEl.checked && item.job.presetId && item.job.presetId.startsWith('closeup')) {
+        try {
+          const m = await matchSaturation(item.file, blob);
+          blob = m.blob;
+          item.satReduced = m.reduced;
+        } catch {}
+      }
       const cost = extractCost(json);
       if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
       item.resultBlob = blob;
@@ -703,6 +724,45 @@
     ctx.drawImage(img, 0, 0, cw, ch);
     return { dataUrl: canvas.toDataURL('image/jpeg', quality), width: cw, height: ch };
   }
+  // Mittlere Farbintensität (Chroma) eines Bildes, auf kleiner Kopie gemessen
+  function meanChroma(img) {
+    const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+    const sc = Math.min(1, 256 / Math.max(w0, h0));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w0 * sc)); c.height = Math.max(1, Math.round(h0 * sc));
+    const x = c.getContext('2d');
+    x.drawImage(img, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]);
+    return sum / (d.length / 4);
+  }
+
+  // Ist das Ergebnis kräftiger als das Original, Sättigung um die Helligkeit herum zurückskalieren.
+  // Nie verstärken – nur abschwächen.
+  async function matchSaturation(origFile, resultBlob) {
+    const [orig, res] = await Promise.all([loadImage(origFile), loadImage(resultBlob)]);
+    const co = meanChroma(orig), cr = meanChroma(res);
+    if (!cr) return { blob: resultBlob, reduced: 0 };
+    const k = Math.max(0.5, co / cr);
+    if (k >= 0.97) return { blob: resultBlob, reduced: 0 };
+    const w = res.naturalWidth || res.width, h = res.naturalHeight || res.height;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d');
+    x.drawImage(res, 0, 0);
+    const id = x.getImageData(0, 0, w, h), d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const L = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      d[i] = L + (d[i] - L) * k;
+      d[i + 1] = L + (d[i + 1] - L) * k;
+      d[i + 2] = L + (d[i + 2] - L) * k;
+    }
+    x.putImageData(id, 0, 0);
+    const blob = await new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/jpeg', 0.96));
+    return { blob, reduced: Math.round((1 - k) * 100) };
+  }
+
   function loadImage(file) {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);

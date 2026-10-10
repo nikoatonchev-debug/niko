@@ -116,6 +116,18 @@
   .meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 8px; }
   details summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 12px; cursor: pointer; }
+  label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+  .fields { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .fields { grid-template-columns: 1fr 1fr; } .field.wide { grid-column: 1 / -1; } }
+  .field { display: grid; gap: 4px; }
+  .field-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .field-head span { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  .field textarea { min-height: 44px; font-size: 15px; }
+  .field.big textarea { min-height: 220px; }
+  .checks { margin-top: 12px; border: 1px solid var(--warn); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; }
+  .checks strong { color: var(--warn); display: block; margin-bottom: 4px; }
+  .checks ul { margin: 0; padding-left: 18px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -153,6 +165,13 @@
         </select>
         <input id="customModel" type="text" placeholder="z. B. openai/gpt-5-image-mini" autocapitalize="off" spellcheck="false" hidden style="margin-top:8px">
         <p class="hint">Standard: google/gemini-3.1-flash-lite-image</p>
+        <label for="resolution" style="margin-top:12px">Ausgabe-Auflösung</label>
+        <select id="resolution">
+          <option value="1K">1K (am günstigsten, Logo kann weicher wirken)</option>
+          <option value="2K" selected>2K (Standard, scharfe Logos und Etiketten)</option>
+          <option value="4K">4K (maximal scharf, teurer)</option>
+        </select>
+        <p class="hint">Höhere Auflösung hält Stickerei und Etikett-Text scharf. Unterstützt ein Modell das nicht, wird automatisch ohne Angabe bearbeitet.</p>
       </div>
     </div>
   </section>
@@ -183,6 +202,36 @@
   </section>
 
   <div class="list" id="list"><p class="empty" id="empty">Noch keine Fotos hinzugefügt.</p></div>
+
+  <section class="panel" id="listingPanel">
+    <h2>Inserat-Text</h2>
+    <p class="hint" style="margin-top:0">Alle Fotos in der Liste gelten als <strong>ein Artikel</strong>. Der Text wird aus den <strong>Originalfotos</strong> erstellt, damit Logo und Etikett exakt abgelesen werden. Für den nächsten Artikel einfach „Liste leeren“.</p>
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label for="textModel">Text-Modell</label>
+        <select id="textModel">
+          <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Standard, günstig)</option>
+          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (liest Etiketten genauer, teurer)</option>
+          <option value="__custom">Anderes Modell (ID eingeben)…</option>
+        </select>
+        <input id="customTextModel" type="text" placeholder="z. B. openai/gpt-5-mini" autocapitalize="off" spellcheck="false" hidden style="margin-top:8px">
+        <label class="check" for="autoListing"><input id="autoListing" type="checkbox" checked> Automatisch erstellen, wenn alle Fotos bearbeitet sind</label>
+      </div>
+      <div>
+        <label for="listingNotes">Zusatzinfos (optional)</label>
+        <textarea id="listingNotes" placeholder="z. B. Maße: Achsel zu Achsel 56 cm, Länge 72 cm · kleiner Fleck am Ärmel · Preis-Idee" style="min-height:96px"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="makeListing" type="button" disabled>Inserat-Text erstellen</button>
+      <button id="copyListing" type="button" hidden>Alles kopieren</button>
+    </div>
+    <p class="hint" id="listingStatus" aria-live="polite"></p>
+    <div id="listingOut" hidden>
+      <div class="checks" id="listingChecks" hidden></div>
+      <div class="fields" id="listingFields"></div>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -201,13 +250,17 @@
   const COLOR_LOCK_END = "FINAL CHECK BEFORE OUTPUT: compare the color of the item in your result with the well-lit parts of the original photo - if the hue or shade of the fabric, logo, or tag has shifted even slightly, correct it back so it matches the original exactly. NEVER CHANGE THE ITEM'S COLORS.";
 
   // Vintage-Regel: das Teil soll gepflegt, aber weiterhin echt vintage aussehen, nicht wie neu.
-  const VINTAGE_LOCK = "KEEP IT LOOKING VINTAGE: This is a genuine vintage / second-hand item and it must still look like one after editing. Keep its authentic vintage character: the natural worn-in softness of the fabric, the real fabric texture and knit structure, gentle natural fading and wash wear exactly as it is, slightly worn edges, the aged look of tags and labels, and the overall lived-in feel. Make it tidy and well presented, but do NOT make it look brand new, freshly manufactured, glossy, plastic, over-sharpened, or like a sterile catalog / stock photo. The photo should feel like an honest, attractive vintage resale photo, with a natural, slightly warm, authentic vintage mood - achieved through the setting and presentation only, never by changing the item's colors.";
+  const VINTAGE_LOCK = "KEEP IT LOOKING VINTAGE: This is a genuine vintage / second-hand item and it must still look like one after editing. Keep its authentic vintage character: the natural worn-in softness of the fabric, the real fabric texture and knit structure, gentle natural fading and wash wear exactly as it is, slightly worn edges, the aged look of tags and labels, and the overall lived-in feel. Make it tidy and well presented, but do NOT make it look brand new, freshly manufactured, glossy, plastic, artificially over-processed, or like a sterile catalog / stock photo (logos and tags must still be perfectly crisp). The photo should feel like an honest, attractive vintage resale photo, with a natural, slightly warm, authentic vintage mood - achieved through the setting and presentation only, never by changing the item's colors.";
 
-  // Ganzes Teil: Farbregel zuerst, dann Vintage, dann die Aufgabe.
-  const buildFull = (task) => [COLOR_LOCK_START, VINTAGE_LOCK, task, COLOR_LOCK_END].join("\n\n");
+  // Schärferegel: Logo und Etikett wurden oft weichgezeichnet / verschwommen.
+  const SHARP_LOCK = "ABSOLUTE RULE - LOGOS AND LABELS MUST STAY RAZOR SHARP: The logo / embroidery (e.g. the polo pony) and every label, tag, and piece of text must be at least as sharp and detailed as in the original photo - ideally sharper. NEVER blur, soften, smear, smudge, melt, wash out, or smooth over the logo or the label, and never make them look painted, plastic, waxy, or low-resolution. Every individual stitch of the embroidery and every letter and number on the label must stay crisp, with clean, well-defined edges and fine detail. Wrinkle smoothing, denoising, and retouching apply ONLY to plain fabric - never to the logo, the embroidery, or the label. Do not redraw or re-generate the logo or the text from scratch; keep the real details of the original and only make them cleaner and clearer. If the logo or label would get even slightly blurrier than in the original, leave that area as it is in the original instead. Output a high-resolution, sharp image.";
+  const SHARP_CHECK = "FINAL SHARPNESS CHECK: zoom in on the logo and the label in your result - they must be crisp and at least as sharp as in the original, with every stitch and letter clearly defined. If they are blurrier, fix it before output.";
+
+  // Ganzes Teil: Farb- und Schärferegel zuerst, dann Vintage, dann die Aufgabe.
+  const buildFull = (task) => [COLOR_LOCK_START, SHARP_LOCK, VINTAGE_LOCK, task, SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
   // Nahaufnahmen: Die Aufgabe steht zuerst und ist sehr deutlich, sonst gibt das Modell
   // aus Vorsicht ein fast unverändertes Bild zurück.
-  const buildCloseup = (task) => [task, COLOR_LOCK_START, "Vintage character: keep the real fabric texture, the natural worn-in look, and genuine fading or wash wear - it should look like a beautifully photographed vintage item, not a brand-new one. This does NOT mean leaving the photo unedited: the shadow removal, lighting, smoothing, and cleanup above must still be clearly visible.", COLOR_LOCK_END].join("\n\n");
+  const buildCloseup = (task) => [task, SHARP_LOCK, COLOR_LOCK_START, "Vintage character: keep the real fabric texture, the natural worn-in look, and genuine fading or wash wear - it should look like a beautifully photographed vintage item, not a brand-new one. This does NOT mean leaving the photo unedited: the shadow removal, lighting, smoothing, and cleanup above must still be clearly visible.", SHARP_CHECK, COLOR_LOCK_END].join("\n\n");
 
   const PRESETS = [
     {
@@ -276,6 +329,12 @@
   });
   const currentModel = () =>
     modelEl.value === '__custom' ? (customModelEl.value.trim() || DEFAULT_MODEL) : modelEl.value;
+
+  const resolutionEl = $('resolution');
+  const savedRes = store.get('vfe_resolution', '2K');
+  if ([...resolutionEl.options].some(o => o.value === savedRes)) resolutionEl.value = savedRes;
+  resolutionEl.addEventListener('change', () => store.set('vfe_resolution', resolutionEl.value));
+  const noResolutionModels = new Set(); // Modelle, die den Parameter "resolution" ablehnen
 
   // ---------- Prompt-Voreinstellungen ----------
   const promptEl = $('prompt');
@@ -453,6 +512,7 @@
 
   $('clearAll').addEventListener('click', () => {
     items.filter(i => i.status !== 'run').forEach(removeItem);
+    lastListingSig = '';
   });
   $('startAll').addEventListener('click', () => {
     enqueue(items.filter(i => i.status === 'wait' || i.status === 'fail'));
@@ -477,6 +537,7 @@
     if (!hasKey) info.push('Bitte zuerst oben den OpenRouter API-Key eintragen.');
     if (running || queue.length) info.push(`${running} in Bearbeitung, ${queue.length} in der Warteschlange.`);
     $('queueInfo').textContent = info.join(' ');
+    if (typeof updateListingButton === 'function') updateListingButton();
   }
 
   // ---------- Warteschlange ----------
@@ -503,7 +564,7 @@
     while (active < CONCURRENCY && queue.length) {
       const item = queue.shift();
       active++;
-      processItem(item).finally(() => { active--; updateButtons(); pump(); });
+      processItem(item).finally(() => { active--; updateButtons(); pump(); if (!active && !queue.length) maybeAutoListing(); });
     }
     updateButtons();
   }
@@ -518,7 +579,7 @@
     updateButtons();
     const t0 = Date.now();
     try {
-      const { dataUrl, width, height } = await prepareImage(item.file);
+      const { dataUrl, width, height } = await prepareImage(item.file, MAX_EDGE, 0.95);
       const body = {
         model,
         prompt,
@@ -526,23 +587,18 @@
         aspect_ratio: nearestRatio(width, height),
         n: 1
       };
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + apiKeyEl.value.trim(),
-          'Content-Type': 'application/json',
-          'X-Title': 'Vinted Fotoeditor'
-        },
-        body: JSON.stringify(body)
-      });
-      const text = await res.text();
-      let json = null;
-      try { json = JSON.parse(text); } catch {}
-      if (!res.ok) {
-        const msg = (json && json.error && (json.error.message || json.error)) || text || res.statusText;
-        throw new Error(`HTTP ${res.status}: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}`);
+      const resolution = resolutionEl.value;
+      let json;
+      if (resolution && !noResolutionModels.has(model)) {
+        try {
+          json = await postJSON(API_URL, { ...body, resolution });
+        } catch (e) {
+          // Modell kennt den Parameter nicht -> einmal ohne Auflösungsangabe versuchen
+          if (e.status !== 400) throw e;
+          noResolutionModels.add(model);
+        }
       }
-      if (!json) throw new Error('Unerwartete Antwort von OpenRouter: ' + text.slice(0, 300));
+      if (!json) json = await postJSON(API_URL, body);
       const blob = await extractImage(json);
       const cost = extractCost(json);
       if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
@@ -557,6 +613,29 @@
     }
     item.seconds = Math.round((Date.now() - t0) / 1000);
     updateItem(item);
+  }
+
+  async function postJSON(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKeyEl.value.trim(),
+        'Content-Type': 'application/json',
+        'X-Title': 'Vinted Fotoeditor'
+      },
+      body: JSON.stringify(body)
+    });
+    const text = await res.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch {}
+    if (!res.ok) {
+      const msg = (json && json.error && (json.error.message || json.error)) || text || res.statusText;
+      const err = new Error(`HTTP ${res.status}: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}`);
+      err.status = res.status;
+      throw err;
+    }
+    if (!json) throw new Error('Unerwartete Antwort von OpenRouter: ' + text.slice(0, 300));
+    return json;
   }
 
   function friendlyError(e) {
@@ -611,10 +690,10 @@
   }
 
   // Foto laden, Ausrichtung übernehmen, auf MAX_EDGE verkleinern, als JPEG-Data-URL
-  async function prepareImage(file) {
+  async function prepareImage(file, maxEdge = MAX_EDGE, quality = 0.92) {
     const img = await loadImage(file);
     let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-    const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+    const scale = Math.min(1, maxEdge / Math.max(w, h));
     const cw = Math.round(w * scale), ch = Math.round(h * scale);
     const canvas = document.createElement('canvas');
     canvas.width = cw; canvas.height = ch;
@@ -622,7 +701,7 @@
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, cw, ch);
     ctx.drawImage(img, 0, 0, cw, ch);
-    return { dataUrl: canvas.toDataURL('image/jpeg', 0.92), width: cw, height: ch };
+    return { dataUrl: canvas.toDataURL('image/jpeg', quality), width: cw, height: ch };
   }
   function loadImage(file) {
     return new Promise((resolve, reject) => {
@@ -663,6 +742,223 @@
     }
   }
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  // ---------- Inserat-Text (Titel, Beschreibung, …) ----------
+  const CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
+  const DEFAULT_TEXT_MODEL = 'google/gemini-2.5-flash';
+  const LISTING_MAX_PHOTOS = 8;
+  const LISTING_FIELDS = [
+    { key: 'titel', label: 'Titel', wide: true },
+    { key: 'beschreibung', label: 'Beschreibung', wide: true, big: true },
+    { key: 'marke', label: 'Marke' },
+    { key: 'groesse', label: 'Größe' },
+    { key: 'kategorie', label: 'Kategorie' },
+    { key: 'zustand', label: 'Zustand' },
+    { key: 'farbe', label: 'Farbe' },
+    { key: 'material', label: 'Material' },
+    { key: 'hashtags', label: 'Hashtags', wide: true }
+  ];
+  const LISTING_SYSTEM = `Du bist ein erfahrener Vinted-Verkäufer für Vintage-Kleidung (vor allem Ralph-Lauren-Poloshirts) und schreibst Inserate auf Deutsch.
+
+GANZ WICHTIG - LOGO UND ETIKETT EXAKT UND EHRLICH:
+- Verwende NUR Informationen, die auf den Fotos wirklich klar zu sehen sind. Erfinde nichts und rate nichts.
+- Marke, Größe, Material, Herstellungsland und Produktlinie NUR vom Etikett ablesen und exakt so übernehmen, wie es dort steht (z. B. Größe "L" bleibt "L", "M/M" bleibt "M"). Niemals die Größe aus dem Aussehen schätzen.
+- Ist etwas auf dem Etikett nicht eindeutig lesbar oder gar nicht fotografiert, setze das Feld auf "" und schreibe einen Punkt dazu in "pruefen".
+- Logo: beschreibe nur das Logo, das wirklich zu sehen ist (z. B. "kleines gesticktes Polo-Pony in Weiß"), mit der Farbe, die es auf dem Foto hat. Erfinde keine Logo-Varianten (z. B. "Big Pony", "Polo Bear", Nummern, Flaggen), wenn sie nicht klar zu sehen sind. Ist kein Logo zu sehen, erwähne keins.
+- Produktlinien wie "Polo Ralph Lauren", "Lauren", "Chaps", "RLX", "Polo Sport" oder "Custom Fit" / "Slim Fit" nur nennen, wenn sie auf dem Etikett lesbar sind.
+- Keine Jahrzehnte oder Jahre behaupten (z. B. "90er"), außer das Etikett belegt es eindeutig - sonst nur "Vintage".
+
+FARBEN:
+- Benenne die Farbe genau so, wie sie auf den Fotos aussieht. Lila bleibt "Lila" (nicht Blau), Marineblau bleibt "Marineblau" usw.
+- Nutze Vinted-Farbnamen: Schwarz, Braun, Grau, Beige, Pink, Lila, Rot, Gelb, Blau, Grün, Orange, Weiß, Silber, Gold, Mehrfarbig, Khaki, Türkis, Creme, Aprikose, Koralle, Burgunderrot, Rosa, Flieder, Hellblau, Marineblau, Dunkelgrün, Senf, Minze. Höchstens zwei Farben, durch " / " getrennt.
+
+ZUSTAND:
+- Wähle genau eine Vinted-Option: "Neu mit Etikett", "Neu ohne Etikett", "Sehr gut", "Gut", "Zufriedenstellend".
+- Sichtbare Mängel (Flecken, Löcher, Verfärbungen, Pilling, ausgeblichene Stellen) ehrlich in der Beschreibung erwähnen. Leichte Gebrauchsspuren als typisch für Vintage beschreiben.
+
+TEXT:
+- "titel": höchstens 60 Zeichen, Schema: Vintage + Marke + Artikel + Farbe + Größe, z. B. "Vintage Polo Ralph Lauren Poloshirt Lila Gr. L". Fehlt Marke oder Größe, weglassen statt raten.
+- "beschreibung": 5 bis 9 kurze Zeilen, freundlich und verkaufsstark, aber ehrlich. Marke, Artikel, Farbe, Größe, Material (falls bekannt), Logo, Zustand und Mängel. Wenn der Verkäufer Zusatzinfos (z. B. Maße) angibt, diese übernehmen; sonst die Zeile "Maße gerne auf Anfrage". Am Ende eine Zeile wie "Privatverkauf, keine Rücknahme." Keine Hashtags in der Beschreibung.
+- "kategorie": Vinted-Kategoriepfad, z. B. "Herren > Kleidung > Tops & T-Shirts > Poloshirts".
+- "hashtags": 6 bis 10 passende Hashtags in einer Zeile, z. B. "#vintage #ralphlauren #poloshirt".
+- "pruefen": Liste kurzer Hinweise auf Deutsch, was der Verkäufer selbst prüfen oder ergänzen sollte (z. B. "Größe auf dem Etikett nicht lesbar", "Material nicht fotografiert"). Leere Liste, wenn alles klar ist.
+
+Antworte ausschließlich mit einem JSON-Objekt mit genau diesen Schlüsseln: "titel", "beschreibung", "marke", "groesse", "kategorie", "zustand", "farbe", "material", "hashtags", "pruefen".`;
+
+  const textModelEl = $('textModel');
+  const customTextModelEl = $('customTextModel');
+  const autoListingEl = $('autoListing');
+  const listingNotesEl = $('listingNotes');
+  const savedTextModel = store.get('vfe_text_model', DEFAULT_TEXT_MODEL);
+  if ([...textModelEl.options].some(o => o.value === savedTextModel)) {
+    textModelEl.value = savedTextModel;
+  } else {
+    textModelEl.value = '__custom';
+    customTextModelEl.value = savedTextModel;
+  }
+  customTextModelEl.hidden = textModelEl.value !== '__custom';
+  textModelEl.addEventListener('change', () => {
+    customTextModelEl.hidden = textModelEl.value !== '__custom';
+    if (textModelEl.value !== '__custom') store.set('vfe_text_model', textModelEl.value);
+    else if (customTextModelEl.value.trim()) store.set('vfe_text_model', customTextModelEl.value.trim());
+  });
+  customTextModelEl.addEventListener('input', () => {
+    if (customTextModelEl.value.trim()) store.set('vfe_text_model', customTextModelEl.value.trim());
+  });
+  const currentTextModel = () =>
+    textModelEl.value === '__custom' ? (customTextModelEl.value.trim() || DEFAULT_TEXT_MODEL) : textModelEl.value;
+  autoListingEl.checked = store.get('vfe_auto_listing', '1') === '1';
+  autoListingEl.addEventListener('change', () => store.set('vfe_auto_listing', autoListingEl.checked ? '1' : '0'));
+
+  let listingBusy = false;
+  let lastListingSig = '';
+  let lastListing = null;
+  const listingSig = () => items.map(i => i.id).join(',');
+
+  function updateListingButton() {
+    const btn = $('makeListing');
+    btn.disabled = listingBusy || !items.length || !apiKeyEl.value.trim();
+    btn.textContent = listingBusy ? 'Text wird erstellt…' : (lastListing ? 'Inserat-Text neu erstellen' : 'Inserat-Text erstellen');
+  }
+
+  function maybeAutoListing() {
+    if (!autoListingEl.checked || listingBusy) return;
+    if (!items.some(i => i.status === 'done')) return;
+    if (listingSig() === lastListingSig) return;
+    generateListing();
+  }
+
+  $('makeListing').addEventListener('click', () => generateListing());
+
+  async function generateListing() {
+    if (listingBusy || !items.length) return;
+    if (!apiKeyEl.value.trim()) { apiKeyEl.focus(); return; }
+    listingBusy = true;
+    lastListingSig = listingSig();
+    updateListingButton();
+    const status = $('listingStatus');
+    status.textContent = 'Fotos werden vorbereitet…';
+    try {
+      const photos = items.slice(0, LISTING_MAX_PHOTOS);
+      const images = [];
+      for (const it of photos) images.push((await prepareImage(it.file, 1600, 0.9)).dataUrl);
+      const notes = listingNotesEl.value.trim();
+      const userText = `Hier sind ${images.length} Originalfotos EINES Kleidungsstücks (Gesamtansicht, Logo, Etikett usw.). Erstelle daraus das Vinted-Inserat. Lies Logo und Etikett besonders sorgfältig und übernimm nur, was eindeutig lesbar ist.` +
+        (notes ? `\n\nZusatzinfos vom Verkäufer (verbindlich übernehmen):\n${notes}` : '');
+      const body = {
+        model: currentTextModel(),
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        usage: { include: true },
+        messages: [
+          { role: 'system', content: LISTING_SYSTEM },
+          { role: 'user', content: [{ type: 'text', text: userText }, ...images.map(url => ({ type: 'image_url', image_url: { url } }))] }
+        ]
+      };
+      status.textContent = 'Fotos werden analysiert, Text wird geschrieben…';
+      let json;
+      try {
+        json = await postJSON(CHAT_URL, body);
+      } catch (e) {
+        if (e.status !== 400) throw e;
+        const { response_format, ...rest } = body; // manche Modelle kennen response_format nicht
+        json = await postJSON(CHAT_URL, rest);
+      }
+      const content = json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      const listing = parseListing(typeof content === 'string' ? content : JSON.stringify(content || ''));
+      const cost = extractCost(json);
+      if (cost != null) addCost(cost);
+      lastListing = listing;
+      renderListing(listing);
+      status.textContent = `Erstellt aus ${images.length} Originalfoto${images.length === 1 ? '' : 's'}` +
+        (items.length > LISTING_MAX_PHOTOS ? ` (die ersten ${LISTING_MAX_PHOTOS})` : '') +
+        (cost != null ? ` · Kosten: ${fmt(cost)}` : '') + '. Bitte vor dem Einstellen kurz gegenlesen.';
+    } catch (e) {
+      lastListingSig = '';
+      status.textContent = 'Fehler beim Erstellen des Textes: ' + friendlyError(e);
+    } finally {
+      listingBusy = false;
+      updateListingButton();
+    }
+  }
+
+  function parseListing(text) {
+    let t = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a >= 0 && b > a) t = t.slice(a, b + 1);
+    let obj;
+    try { obj = JSON.parse(t); } catch { throw new Error('Das Modell hat keinen lesbaren Text geliefert. Bitte nochmal versuchen.'); }
+    const out = {};
+    LISTING_FIELDS.forEach(f => {
+      const v = obj[f.key];
+      out[f.key] = Array.isArray(v) ? v.join(f.key === 'hashtags' ? ' ' : ', ') : (v == null ? '' : String(v)).trim();
+    });
+    out.pruefen = Array.isArray(obj.pruefen) ? obj.pruefen.map(String).filter(Boolean) : (obj.pruefen ? [String(obj.pruefen)] : []);
+    return out;
+  }
+
+  function renderListing(l) {
+    $('listingOut').hidden = false;
+    $('copyListing').hidden = false;
+    const checks = $('listingChecks');
+    checks.innerHTML = '';
+    const missing = LISTING_FIELDS.filter(f => ['marke', 'groesse', 'material'].includes(f.key) && !l[f.key]).map(f => `${f.label} nicht erkannt – bitte selbst eintragen`);
+    const notes = [...l.pruefen, ...missing.filter(m => !l.pruefen.some(p => p.toLowerCase().includes(m.split(' ')[0].toLowerCase())))];
+    checks.hidden = !notes.length;
+    if (notes.length) {
+      const strong = document.createElement('strong');
+      strong.textContent = 'Bitte prüfen';
+      const ul = document.createElement('ul');
+      notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+      checks.append(strong, ul);
+    }
+    const wrap = $('listingFields');
+    wrap.innerHTML = '';
+    LISTING_FIELDS.forEach(f => {
+      const field = document.createElement('div');
+      field.className = 'field' + (f.wide ? ' wide' : '') + (f.big ? ' big' : '');
+      const head = document.createElement('div');
+      head.className = 'field-head';
+      const lab = document.createElement('span');
+      lab.textContent = f.label;
+      const ta = document.createElement('textarea');
+      ta.id = 'listing-' + f.key;
+      ta.value = l[f.key];
+      ta.placeholder = 'nicht erkannt';
+      ta.setAttribute('aria-label', f.label);
+      ta.addEventListener('input', () => { l[f.key] = ta.value; });
+      const btn = makeBtn('Kopieren', 'small', () => copyText(ta.value, btn));
+      head.append(lab, btn);
+      field.append(head, ta);
+      wrap.appendChild(field);
+    });
+  }
+
+  $('copyListing').addEventListener('click', (e) => {
+    if (!lastListing) return;
+    const l = lastListing;
+    const text = [l.titel, '', l.beschreibung, '', l.hashtags, '',
+      `Marke: ${l.marke || '-'}`, `Größe: ${l.groesse || '-'}`, `Kategorie: ${l.kategorie || '-'}`,
+      `Zustand: ${l.zustand || '-'}`, `Farbe: ${l.farbe || '-'}`, `Material: ${l.material || '-'}`].join('\n');
+    copyText(text, e.currentTarget);
+  });
+
+  async function copyText(text, btn) {
+    const old = btn.textContent;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand('copy'); } catch {}
+      ta.remove();
+    }
+    btn.textContent = ok ? 'Kopiert ✓' : 'Kopieren fehlgeschlagen';
+    setTimeout(() => { btn.textContent = old; }, 1500);
+  }
 
   updateButtons();
 })();

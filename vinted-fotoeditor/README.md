@@ -3,7 +3,9 @@
 Eine einzelne statische Seite (`index.html`), auf der man Produktfotos hochlädt. Sie werden über die OpenRouter Unified Image API (`POST https://openrouter.ai/api/v1/images`) mit KI bearbeitet.
 
 - Standardmodell: `google/gemini-3.1-flash-lite-image`, dazu einige Alternativen und ein Feld für eine eigene Modell-ID
-- Vier Prompt-Voreinstellungen: Holzboden, Stein/Beton, Nahaufnahme Logo, Nahaufnahme Etikett
+- Vier Prompt-Voreinstellungen (Holzboden, Stein/Beton, Nahaufnahme Logo, Nahaufnahme Etikett), jeweils mit festen Regeln: Farben nie ändern, Logo und Etikett gestochen scharf, Vintage-Look erhalten
+- Ausgabe-Auflösung wählbar (1K / 2K / 4K, Standard 2K)
+- Automatischer Inserat-Text (Titel, Beschreibung, Marke, Größe, Kategorie, Zustand, Farbe, Material, Hashtags) aus den Originalfotos über `POST /api/v1/chat/completions`, mit „Bitte prüfen“-Hinweisen, wenn etwas auf dem Etikett nicht lesbar ist
 - Mehrere Fotos auf einmal (Drag & Drop oder Auswahl), pro Foto Status und Download-Button (auf dem iPhone zusätzlich „In Fotos sichern / Teilen“)
 - Laufende Kostenanzeige aus `usage.cost` der API-Antwort
 - Der API-Key liegt nur im `localStorage` des Browsers und wird nur an openrouter.ai gesendet

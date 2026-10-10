@@ -1040,30 +1040,6 @@
     return (sxy / P.n) / (P.sd * Math.sqrt(varR));
   }
 
-  function boxBlur(src, w, h, r) {
-    const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
-    for (let pass = 0; pass < 2; pass++) {
-      const a = pass === 0 ? src : out;
-      for (let y = 0; y < h; y++) {           // horizontal
-        let acc = 0; const row = y * w;
-        for (let x = -r; x <= r; x++) acc += a[row + Math.min(w - 1, Math.max(0, x))];
-        for (let x = 0; x < w; x++) {
-          tmp[row + x] = acc / (2 * r + 1);
-          acc += a[row + Math.min(w - 1, x + r + 1)] - a[row + Math.max(0, x - r)];
-        }
-      }
-      for (let x = 0; x < w; x++) {           // vertikal
-        let acc = 0;
-        for (let y = -r; y <= r; y++) acc += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
-        for (let y = 0; y < h; y++) {
-          out[y * w + x] = acc / (2 * r + 1);
-          acc += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x];
-        }
-      }
-    }
-    return out;
-  }
-
   // Beste Abbildung r = s*o + t suchen. Skalierung um die Mitte (co -> cr), Verschiebung d im Raster.
   function searchTransform(P, R, rw, rh, scales, co, cr, rx, ry, step, seed) {
     let best = seed || { score: -2, s: 1, tx: 0, ty: 0 };
@@ -1128,9 +1104,12 @@
     let applied = 0, skipped = 0;
     const PAD = 0.15;
     for (const b of boxes) {
-      const rect = { x: Math.max(0, (b.x - b.w * PAD) * Wo), y: Math.max(0, (b.y - b.h * PAD) * Ho) };
-      rect.w = Math.min(Wo, (b.x + b.w * (1 + PAD)) * Wo) - rect.x;
-      rect.h = Math.min(Ho, (b.y + b.h * (1 + PAD)) * Ho) - rect.y;
+      // Gleichmäßiges Polster rundherum, damit am Rand nur Stoff gemessen wird (auch bei flachen Etiketten)
+      const bwp = b.w * Wo, bhp = b.h * Ho;
+      const pad = Math.max(PAD * bwp, PAD * bhp, 0.4 * Math.min(bwp, bhp), 0.02 * Math.min(Wo, Ho));
+      const rect = { x: Math.max(0, b.x * Wo - pad), y: Math.max(0, b.y * Ho - pad) };
+      rect.w = Math.min(Wo, b.x * Wo + bwp + pad) - rect.x;
+      rect.h = Math.min(Ho, b.y * Ho + bhp + pad) - rect.y;
       if (rect.w < 8 || rect.h < 8) continue;
       const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
       let init, sRange, dR;
@@ -1171,42 +1150,90 @@
     return { blob, applied, skipped };
   }
 
-  // Original-Bereich (bilinear abgetastet) mit weichem Rand ins Ergebnis setzen.
-  // Grobe Helligkeit (Schatten/Licht) kommt aus dem KI-Bild, alle feinen Details aus dem Original.
+  // Original-Bereich nahtlos ins Ergebnis setzen (wie ein Reparaturpinsel):
+  // Am Rand des Bereichs wird gemessen, wie sich Stofffarbe und Licht zwischen Original und
+  // KI-Bild unterscheiden (pro Farbkanal, als Faktor). Diese Korrektur wird glatt ins Innere
+  // verteilt (Laplace-Gleichung auf grobem Raster). So passt der Rand exakt zum Shirt, und
+  // Logo/Etikett behalten innen alle Original-Details; Schwarz bleibt schwarz.
   function blendPatch(Rd, W, H, Od, Wo, Ho, rect, s, tx, ty) {
     const x0 = Math.max(0, Math.floor(s * rect.x + tx)), y0 = Math.max(0, Math.floor(s * rect.y + ty));
     const x1 = Math.min(W, Math.ceil(s * (rect.x + rect.w) + tx)), y1 = Math.min(H, Math.ceil(s * (rect.y + rect.h) + ty));
     const dw = x1 - x0, dh = y1 - y0;
-    if (dw < 4 || dh < 4) return;
-    const P = new Float32Array(dw * dh * 3), Lp = new Float32Array(dw * dh), Lr = new Float32Array(dw * dh);
+    if (dw < 8 || dh < 8) return;
+    // Original-Bereich in Ergebnis-Koordinaten abtasten
+    const P = new Float32Array(dw * dh * 3);
     for (let v = 0; v < dh; v++) {
       for (let u = 0; u < dw; u++) {
         const ox = Math.min(Wo - 1.001, Math.max(0, (x0 + u + 0.5 - tx) / s - 0.5));
         const oy = Math.min(Ho - 1.001, Math.max(0, (y0 + v + 0.5 - ty) / s - 0.5));
         const xi = Math.floor(ox), yi = Math.floor(oy), fx = ox - xi, fy = oy - yi;
         const i00 = (yi * Wo + xi) * 4, i10 = i00 + 4, i01 = i00 + Wo * 4, i11 = i01 + 4;
-        const j = v * dw + u;
+        const j = (v * dw + u) * 3;
         for (let c = 0; c < 3; c++) {
-          P[j * 3 + c] = (Od[i00 + c] * (1 - fx) + Od[i10 + c] * fx) * (1 - fy) + (Od[i01 + c] * (1 - fx) + Od[i11 + c] * fx) * fy;
+          P[j + c] = (Od[i00 + c] * (1 - fx) + Od[i10 + c] * fx) * (1 - fy) + (Od[i01 + c] * (1 - fx) + Od[i11 + c] * fx) * fy;
         }
-        Lp[j] = 0.299 * P[j * 3] + 0.587 * P[j * 3 + 1] + 0.114 * P[j * 3 + 2];
-        Lr[j] = lumAt(Rd, ((y0 + v) * W + x0 + u) * 4);
       }
     }
-    const rad = Math.max(6, Math.round(0.08 * Math.max(dw, dh)));
-    const bP = boxBlur(Lp, dw, dh, rad), bR = boxBlur(Lr, dw, dh, rad);
-    const fxw = Math.max(3, dw * 0.11), fyw = Math.max(3, dh * 0.11);
-    const smooth = (t) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+    // Grobes Raster: Mittelwerte pro Zelle (glättet Stoffstruktur und kleine Versätze)
+    const cell = Math.max(2, Math.ceil(Math.max(dw, dh) / 64));
+    const gw = Math.ceil(dw / cell), gh = Math.ceil(dh / cell);
+    const sumP = new Float32Array(gw * gh * 3), sumR = new Float32Array(gw * gh * 3), cnt = new Float32Array(gw * gh);
     for (let v = 0; v < dh; v++) {
-      const ay = smooth(Math.min(v, dh - 1 - v) / fyw);
+      const gy = Math.floor(v / cell);
+      for (let u = 0; u < dw; u++) {
+        const g = gy * gw + Math.floor(u / cell), j = (v * dw + u) * 3, i = ((y0 + v) * W + x0 + u) * 4;
+        cnt[g]++;
+        for (let c = 0; c < 3; c++) { sumP[g * 3 + c] += P[j + c]; sumR[g * 3 + c] += Rd[i + c]; }
+      }
+    }
+    // Randring (äußere ~8 %): dort ist der Korrekturfaktor bekannt
+    const ring = Math.max(1, Math.round(Math.min(gw, gh) * 0.08));
+    const known = new Uint8Array(gw * gh);
+    const F = new Float32Array(gw * gh * 3);
+    const mean = [0, 0, 0];
+    let nk = 0;
+    for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+      if (Math.min(gx, gy, gw - 1 - gx, gh - 1 - gy) >= ring) continue;
+      const g = gy * gw + gx;
+      known[g] = 1; nk++;
+      for (let c = 0; c < 3; c++) {
+        const val = Math.log((sumR[g * 3 + c] / cnt[g]) + 8) - Math.log((sumP[g * 3 + c] / cnt[g]) + 8);
+        F[g * 3 + c] = val; mean[c] += val;
+      }
+    }
+    for (let c = 0; c < 3; c++) mean[c] /= Math.max(1, nk);
+    for (let g = 0; g < gw * gh; g++) if (!known[g]) for (let c = 0; c < 3; c++) F[g * 3 + c] = mean[c];
+    // Laplace-Gleichung im Inneren lösen (Überrelaxation)
+    const iters = Math.min(400, 40 + 4 * Math.max(gw, gh));
+    for (let it = 0; it < iters; it++) {
+      for (let gy = 1; gy < gh - 1; gy++) for (let gx = 1; gx < gw - 1; gx++) {
+        const g = gy * gw + gx;
+        if (known[g]) continue;
+        for (let c = 0; c < 3; c++) {
+          const avg = (F[(g - 1) * 3 + c] + F[(g + 1) * 3 + c] + F[(g - gw) * 3 + c] + F[(g + gw) * 3 + c]) / 4;
+          F[g * 3 + c] += 1.85 * (avg - F[g * 3 + c]);
+        }
+      }
+    }
+    // Korrektur bilinear auf volle Auflösung, einsetzen mit schmalem weichem Rand
+    const fxw = Math.max(3, dw * 0.07), fyw = Math.max(3, dh * 0.07);
+    const smooth = (t) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+    const field = (gxf, gyf, c) => {
+      const gx0 = Math.max(0, Math.min(gw - 1, Math.floor(gxf))), gy0 = Math.max(0, Math.min(gh - 1, Math.floor(gyf)));
+      const gx1 = Math.min(gw - 1, gx0 + 1), gy1 = Math.min(gh - 1, gy0 + 1);
+      const ax = Math.max(0, Math.min(1, gxf - gx0)), ay = Math.max(0, Math.min(1, gyf - gy0));
+      return (F[(gy0 * gw + gx0) * 3 + c] * (1 - ax) + F[(gy0 * gw + gx1) * 3 + c] * ax) * (1 - ay) +
+             (F[(gy1 * gw + gx0) * 3 + c] * (1 - ax) + F[(gy1 * gw + gx1) * 3 + c] * ax) * ay;
+    };
+    for (let v = 0; v < dh; v++) {
+      const ay = smooth(Math.min(v, dh - 1 - v) / fyw), gyf = (v + 0.5) / cell - 0.5;
       for (let u = 0; u < dw; u++) {
         const a = ay * smooth(Math.min(u, dw - 1 - u) / fxw);
         if (a <= 0) continue;
-        const j = v * dw + u;
-        const gain = Math.max(0.6, Math.min(1.8, (bR[j] + 1) / (bP[j] + 1)));
-        const i = ((y0 + v) * W + x0 + u) * 4;
+        const gxf = (u + 0.5) / cell - 0.5, j = (v * dw + u) * 3, i = ((y0 + v) * W + x0 + u) * 4;
         for (let c = 0; c < 3; c++) {
-          const val = P[j * 3 + c] * gain;
+          const gain = Math.exp(Math.max(-0.9, Math.min(0.9, field(gxf, gyf, c))));
+          const val = (P[j + c] + 8) * gain - 8;
           Rd[i + c] = Math.max(0, Math.min(255, Rd[i + c] * (1 - a) + val * a));
         }
       }

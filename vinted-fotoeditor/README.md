@@ -4,6 +4,7 @@ Eine einzelne statische Seite (`index.html`), auf der man Produktfotos hochlädt
 
 - Standardmodell: `google/gemini-3.1-flash-lite-image`, dazu einige Alternativen und ein Feld für eine eigene Modell-ID
 - Vier Prompt-Voreinstellungen (Holzboden, Stein/Beton, Nahaufnahme Logo, Nahaufnahme Etikett), jeweils mit festen Regeln: Farben und Farbintensität nie ändern, nichts hinzufügen (z. B. keine Preisetiketten), Logo und Etikett gestochen scharf, Vintage-Look erhalten
+- Logo- und Etikett-Schutz: Logo und Etiketten werden automatisch erkannt (Text-Modell, Bereiche pro Foto mit dem Finger anpassbar). Nach der KI-Bearbeitung sucht die Seite die Stelle im KI-Bild und setzt dort die Original-Pixel ein. Nur die grobe Beleuchtung kommt aus dem KI-Bild, jedes Detail aus dem Original.
 - Bei Nahaufnahmen wird die Farbintensität des Ergebnisses automatisch auf das Original zurückgesetzt, falls das Modell die Farben verstärkt hat (abschaltbar)
 - Ausgabe-Auflösung wählbar (1K / 2K / 4K, Standard 2K)
 - Automatischer Inserat-Text (Titel, Beschreibung, Marke, Größe, Kategorie, Zustand, Farbe, Material, Hashtags) aus den Originalfotos über `POST /api/v1/chat/completions`, mit „Bitte prüfen“-Hinweisen, wenn etwas auf dem Etikett nicht lesbar ist

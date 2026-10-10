@@ -116,6 +116,15 @@
   .meta { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 8px; }
   details summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  .boxwrap { position: relative; border-radius: 8px; }
+  .boxwrap img { display: block; }
+  .boxwrap.editing { touch-action: none; cursor: crosshair; outline: 2px solid var(--accent); outline-offset: 2px; -webkit-user-select: none; user-select: none; }
+  .pbox { position: absolute; border: 2px dashed var(--ok); border-radius: 4px; pointer-events: none; }
+  .pbox span { position: absolute; bottom: 100%; left: -2px; background: var(--ok); color: var(--surface); font-size: 0.62rem; font-weight: 700; line-height: 1.3; padding: 0 5px; border-radius: 4px 4px 0 0; white-space: nowrap; }
+  .boxwrap.editing .pbox { pointer-events: auto; cursor: pointer; background: rgba(29, 122, 70, 0.14); }
+  .pbox.draft { border-color: var(--accent); background: transparent; }
+  .protect { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.82rem; color: var(--muted); }
+  .protect .ptext { flex: 1 1 180px; }
   label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 12px; cursor: pointer; }
   label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
   .fields { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: 1fr; }
@@ -174,6 +183,8 @@
         <p class="hint">Höhere Auflösung hält Stickerei und Etikett-Text scharf. Unterstützt ein Modell das nicht, wird automatisch ohne Angabe bearbeitet.</p>
         <label class="check" for="matchColors"><input id="matchColors" type="checkbox" checked> Farbintensität bei Nahaufnahmen automatisch ans Original angleichen</label>
         <p class="hint">Wird das KI-Bild kräftiger als dein Foto, wird die Sättigung wieder auf das Original zurückgesetzt. Farbton und Helligkeit bleiben unverändert.</p>
+        <label class="check" for="protectLogos"><input id="protectLogos" type="checkbox" checked> Logo- und Etikett-Schutz: Original-Pixel zurücksetzen</label>
+        <p class="hint">Logo und Etikett werden automatisch erkannt und nach der KI-Bearbeitung exakt aus deinem Foto übernommen. Nur das Licht kommt aus dem KI-Bild. Die Bereiche kannst du bei jedem Foto selbst anpassen.</p>
       </div>
     </div>
   </section>
@@ -341,6 +352,13 @@
   resolutionEl.addEventListener('change', () => store.set('vfe_resolution', resolutionEl.value));
   const noResolutionModels = new Set(); // Modelle, die den Parameter "resolution" ablehnen
 
+  const protectLogosEl = $('protectLogos');
+  protectLogosEl.checked = store.get('vfe_protect_logos', '1') === '1';
+  protectLogosEl.addEventListener('change', () => {
+    store.set('vfe_protect_logos', protectLogosEl.checked ? '1' : '0');
+    items.forEach(it => { renderProtect(it); recomposite(it); });
+  });
+
   const matchColorsEl = $('matchColors');
   matchColorsEl.checked = store.get('vfe_match_colors', '1') === '1';
   matchColorsEl.addEventListener('change', () => store.set('vfe_match_colors', matchColorsEl.checked ? '1' : '0'));
@@ -420,7 +438,7 @@
   function addFiles(fileList) {
     const files = [...(fileList || [])].filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
     files.forEach(file => {
-      const item = { id: nextId++, file, status: 'wait', previewUrl: URL.createObjectURL(file), resultUrl: null, resultBlob: null, cost: null, error: null };
+      const item = { id: nextId++, file, status: 'wait', previewUrl: URL.createObjectURL(file), resultUrl: null, resultBlob: null, rawBlob: null, cost: null, error: null, boxes: null, detecting: false, editing: false };
       items.push(item);
       listEl.appendChild(renderItem(item));
     });
@@ -438,15 +456,18 @@
         <span class="pill"></span>
       </div>
       <div class="imgs">
-        <figure><figcaption>Original</figcaption><img alt="Originalfoto"></figure>
+        <figure><figcaption>Original</figcaption><div class="boxwrap"><img alt="Originalfoto"></div></figure>
         <figure><figcaption>Ergebnis</figcaption><div class="res"></div></figure>
       </div>
+      <div class="protect"></div>
       <div class="err" hidden></div>
       <div class="meta"></div>
       <div class="row btns"></div>`;
     el.querySelector('.item-name').textContent = item.file.name;
     el.querySelector('img').src = item.previewUrl;
     item.el = el;
+    setupBoxEditing(item);
+    renderProtect(item);
     updateItem(item);
     return el;
   }
@@ -483,6 +504,12 @@
     if (item.usedModel) parts.push(item.usedModel);
     if (item.presetName) parts.push(item.presetName);
     if (item.status === 'done' && item.satReduced) parts.push(`Farbintensität −${item.satReduced} % ans Original angeglichen`);
+    if (item.status === 'done' && item.protectInfo) {
+      const pi = item.protectInfo;
+      if (pi.applied) parts.push(`Logo/Etikett aus dem Original übernommen (${pi.applied})`);
+      if (pi.skipped) parts.push(`${pi.skipped} Bereich${pi.skipped === 1 ? '' : 'e'} im KI-Bild nicht wiedergefunden – bitte prüfen`);
+      if (pi.error) parts.push('Logo-Schutz fehlgeschlagen: ' + pi.error);
+    }
     if (item.status === 'done') parts.push(item.cost != null ? 'Kosten: ' + fmt(item.cost) : 'Kosten: nicht gemeldet');
     if (item.seconds) parts.push(item.seconds + ' s');
     meta.textContent = parts.join(' · ');
@@ -591,6 +618,8 @@
     updateButtons();
     const t0 = Date.now();
     try {
+      // Logo/Etikett-Erkennung läuft parallel zur Bildbearbeitung
+      if (protectLogosEl.checked && item.boxes === null && !item.detecting) detectBoxes(item);
       const { dataUrl, width, height } = await prepareImage(item.file, MAX_EDGE, 0.95);
       const body = {
         model,
@@ -620,6 +649,12 @@
           blob = m.blob;
           item.satReduced = m.reduced;
         } catch {}
+      }
+      item.rawBlob = blob;
+      item.protectInfo = null;
+      if (protectLogosEl.checked) {
+        if (item.detectPromise) await item.detectPromise;
+        blob = await applyProtection(item, blob);
       }
       const cost = extractCost(json);
       if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
@@ -746,11 +781,11 @@
     if (!cr) return { blob: resultBlob, reduced: 0 };
     const k = Math.max(0.5, co / cr);
     if (k >= 0.97) return { blob: resultBlob, reduced: 0 };
-    const w = res.naturalWidth || res.width, h = res.naturalHeight || res.height;
+    const [w, h] = fitCanvasSize(res.naturalWidth || res.width, res.naturalHeight || res.height);
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const x = c.getContext('2d');
-    x.drawImage(res, 0, 0);
+    x.drawImage(res, 0, 0, w, h);
     const id = x.getImageData(0, 0, w, h), d = id.data;
     for (let i = 0; i < d.length; i += 4) {
       const L = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
@@ -761,6 +796,421 @@
     x.putImageData(id, 0, 0);
     const blob = await new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(new Error('toBlob')), 'image/jpeg', 0.96));
     return { blob, reduced: Math.round((1 - k) * 100) };
+  }
+
+  // ---------- Logo- und Etikett-Schutz ----------
+  // Die KI zeichnet Logos und Etiketten oft leicht anders oder unscharf neu. Deshalb werden
+  // diese Bereiche nach der Bearbeitung aus dem Originalfoto übernommen: Position im KI-Bild
+  // suchen, Original einsetzen, nur die grobe Beleuchtung (Schatten weg) aus dem KI-Bild übernehmen.
+  const DETECT_PROMPT = 'You locate brand logos and labels on photos of clothing. Detect every clearly visible (a) brand logo or emblem on the garment - e.g. the embroidered Ralph Lauren polo pony / polo player, or any embroidered or printed brand logo or lettering - and (b) every label or tag that is physically present - brand neck label, size tag, care label, hang tag. Return one tight bounding box per object. Do not include buttons, seams, collars, or plain fabric. Respond ONLY with JSON: {"objects":[{"kind":"logo" or "label","box_2d":[ymin,xmin,ymax,xmax]}]} with coordinates normalized to 0-1000 relative to the full image. If nothing is visible, respond {"objects":[]}.';
+  const KIND_LABEL = { logo: 'Logo', label: 'Etikett', area: 'Bereich' };
+  const MAX_CANVAS_PX = 16000000; // iOS Safari verweigert größere Canvas-Flächen
+
+  function fitCanvasSize(w, h) {
+    const sc = Math.min(1, Math.sqrt(MAX_CANVAS_PX / (w * h)));
+    return [Math.max(1, Math.round(w * sc)), Math.max(1, Math.round(h * sc))];
+  }
+
+  function detectBoxes(item) {
+    if (item.detectPromise) return item.detectPromise;
+    item.detecting = true;
+    item.detectError = null;
+    renderProtect(item);
+    item.detectPromise = (async () => {
+      try {
+        const { dataUrl } = await prepareImage(item.file, 1024, 0.9);
+        const body = {
+          model: currentTextModel(),
+          temperature: 0,
+          response_format: { type: 'json_object' },
+          usage: { include: true },
+          messages: [
+            { role: 'system', content: DETECT_PROMPT },
+            { role: 'user', content: [{ type: 'text', text: 'Find the logo(s) and label(s) in this photo.' }, { type: 'image_url', image_url: { url: dataUrl } }] }
+          ]
+        };
+        let json;
+        try {
+          json = await postJSON(CHAT_URL, body);
+        } catch (e) {
+          if (e.status !== 400) throw e;
+          const { response_format, ...rest } = body;
+          json = await postJSON(CHAT_URL, rest);
+        }
+        const cost = extractCost(json);
+        if (cost != null) addCost(cost);
+        const content = json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+        item.boxes = parseBoxes(typeof content === 'string' ? content : JSON.stringify(content || ''));
+      } catch (e) {
+        item.detectError = friendlyError(e);
+        if (item.boxes === null) item.boxes = [];
+      } finally {
+        item.detecting = false;
+        item.detectPromise = null;
+        renderProtect(item);
+      }
+    })();
+    return item.detectPromise;
+  }
+
+  function parseBoxes(text) {
+    let t = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    let list = [];
+    try {
+      const obj = JSON.parse(a >= 0 && b > a ? t.slice(a, b + 1) : t);
+      list = Array.isArray(obj) ? obj : (obj.objects || obj.boxes || []);
+    } catch {
+      const arr = t.indexOf('['), arrEnd = t.lastIndexOf(']');
+      try { list = JSON.parse(t.slice(arr, arrEnd + 1)); } catch { list = []; }
+    }
+    const out = [];
+    for (const o of list) {
+      const bb = o && (o.box_2d || o.box || o.bbox);
+      if (!Array.isArray(bb) || bb.length !== 4) continue;
+      const [ymin, xmin, ymax, xmax] = bb.map(Number);
+      const box = { x: xmin / 1000, y: ymin / 1000, w: (xmax - xmin) / 1000, h: (ymax - ymin) / 1000, kind: /label|tag|etikett/i.test(o.kind || o.label || '') ? 'label' : 'logo' };
+      box.x = Math.max(0, Math.min(1, box.x)); box.y = Math.max(0, Math.min(1, box.y));
+      box.w = Math.min(1 - box.x, box.w); box.h = Math.min(1 - box.y, box.h);
+      if (box.w > 0.01 && box.h > 0.01) out.push(box);
+    }
+    return out.slice(0, 6);
+  }
+
+  function renderBoxes(item) {
+    const wrap = item.el.querySelector('.boxwrap');
+    wrap.querySelectorAll('.pbox:not(.draft)').forEach(n => n.remove());
+    wrap.classList.toggle('editing', !!item.editing);
+    if (!protectLogosEl.checked || !item.boxes) return;
+    item.boxes.forEach((b, i) => {
+      const d = document.createElement('div');
+      d.className = 'pbox';
+      d.style.left = (b.x * 100) + '%'; d.style.top = (b.y * 100) + '%';
+      d.style.width = (b.w * 100) + '%'; d.style.height = (b.h * 100) + '%';
+      const sp = document.createElement('span');
+      sp.textContent = (KIND_LABEL[b.kind] || 'Bereich') + (item.editing ? ' ✕' : '');
+      d.appendChild(sp);
+      d.addEventListener('pointerdown', (e) => {
+        if (!item.editing) return;
+        e.preventDefault(); e.stopPropagation();
+        item.boxes.splice(i, 1);
+        renderBoxes(item); renderProtect(item);
+      });
+      wrap.appendChild(d);
+    });
+  }
+
+  function renderProtect(item) {
+    const row = item.el.querySelector('.protect');
+    row.innerHTML = '';
+    row.hidden = !protectLogosEl.checked;
+    renderBoxes(item);
+    if (row.hidden) return;
+    const txt = document.createElement('span');
+    txt.className = 'ptext';
+    const n = item.boxes ? item.boxes.length : 0;
+    if (item.editing) txt.textContent = 'Mit dem Finger ein Rechteck über Logo oder Etikett ziehen. Einen Bereich antippen, um ihn zu löschen.';
+    else if (item.detecting) txt.textContent = 'Logo/Etikett wird erkannt…';
+    else if (item.boxes === null) txt.textContent = 'Logo-Schutz: wird beim Bearbeiten automatisch erkannt.';
+    else if (n) txt.textContent = `Logo-Schutz: ${n} Bereich${n === 1 ? '' : 'e'} geschützt (grün markiert).`;
+    else txt.textContent = 'Logo-Schutz: kein Logo/Etikett gefunden.' + (item.detectError ? ' Fehler: ' + item.detectError : '');
+    row.appendChild(txt);
+    if (item.editing) {
+      row.appendChild(makeBtn('Automatisch erkennen', 'small', () => { if (!apiKeyEl.value.trim()) { apiKeyEl.focus(); return; } item.boxes = null; detectBoxes(item); }));
+      row.appendChild(makeBtn('Alle löschen', 'small', () => { item.boxes = []; renderProtect(item); }));
+      row.appendChild(makeBtn('Fertig', 'small primary', () => { item.editing = false; renderProtect(item); recomposite(item); }));
+    } else if (!item.detecting) {
+      row.appendChild(makeBtn('Bereiche bearbeiten', 'small', () => { item.editing = true; if (!item.boxes) item.boxes = []; renderProtect(item); }));
+    }
+  }
+
+  function setupBoxEditing(item) {
+    const wrap = item.el.querySelector('.boxwrap');
+    const img = wrap.querySelector('img');
+    let start = null, draft = null;
+    const rel = (e) => {
+      const r = img.getBoundingClientRect();
+      return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) };
+    };
+    const place = (a, b) => {
+      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y), w = Math.abs(a.x - b.x), h = Math.abs(a.y - b.y);
+      draft.style.left = (x * 100) + '%'; draft.style.top = (y * 100) + '%';
+      draft.style.width = (w * 100) + '%'; draft.style.height = (h * 100) + '%';
+      return { x, y, w, h };
+    };
+    wrap.addEventListener('pointerdown', (e) => {
+      if (!item.editing || e.target.closest('.pbox')) return;
+      e.preventDefault();
+      try { wrap.setPointerCapture(e.pointerId); } catch {}
+      start = rel(e);
+      draft = document.createElement('div');
+      draft.className = 'pbox draft';
+      wrap.appendChild(draft);
+      place(start, start);
+    });
+    wrap.addEventListener('pointermove', (e) => { if (start && draft) place(start, rel(e)); });
+    const finish = (e) => {
+      if (!start || !draft) return;
+      const b = place(start, rel(e));
+      draft.remove(); draft = null; start = null;
+      if (b.w > 0.02 && b.h > 0.02) { item.boxes = item.boxes || []; item.boxes.push({ ...b, kind: 'area' }); }
+      renderProtect(item);
+    };
+    wrap.addEventListener('pointerup', finish);
+    wrap.addEventListener('pointercancel', () => { if (draft) draft.remove(); draft = null; start = null; });
+  }
+
+  async function applyProtection(item, blob) {
+    if (!item.boxes || !item.boxes.length) return blob;
+    try {
+      const r = await protectRegions(item.file, blob, item.boxes);
+      item.protectInfo = { applied: r.applied, skipped: r.skipped };
+      return r.blob;
+    } catch (e) {
+      item.protectInfo = { error: String((e && e.message) || e) };
+      return blob;
+    }
+  }
+
+  // Nach dem Bearbeiten der Bereiche neu zusammensetzen, ohne erneute KI-Anfrage
+  async function recomposite(item) {
+    if (item.status !== 'done' || !item.rawBlob) return;
+    item.protectInfo = null;
+    const blob = protectLogosEl.checked ? await applyProtection(item, item.rawBlob) : item.rawBlob;
+    if (item.resultUrl) URL.revokeObjectURL(item.resultUrl);
+    item.resultBlob = blob;
+    item.resultUrl = URL.createObjectURL(blob);
+    updateItem(item);
+  }
+
+  function drawToData(img, w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0, w, h);
+    return { ctx: x, canvas: c, data: x.getImageData(0, 0, w, h) };
+  }
+  const lumAt = (d, i) => 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+
+  // Abtastpunkte (Helligkeit, mittelwertfrei) aus einem Rechteck des Originals
+  function samplePatch(d, w, rect, maxPts) {
+    const step = Math.max(1, Math.sqrt((rect.w * rect.h) / maxPts));
+    const xs = [], ys = [], vs = [];
+    for (let y = rect.y; y < rect.y + rect.h - 0.5; y += step) {
+      for (let x = rect.x; x < rect.x + rect.w - 0.5; x += step) {
+        const xi = Math.floor(x), yi = Math.floor(y);
+        xs.push(xi); ys.push(yi); vs.push(lumAt(d, (yi * w + xi) * 4));
+      }
+    }
+    const n = vs.length;
+    let mean = 0; for (const v of vs) mean += v; mean /= n;
+    let sd = 0; for (let i = 0; i < n; i++) { vs[i] -= mean; sd += vs[i] * vs[i]; }
+    return { xs, ys, vs, n, sd: Math.sqrt(sd / n) };
+  }
+
+  // Normierte Kreuzkorrelation der Abtastpunkte bei Abbildung r = s*o + t (robust gegen Helligkeitsänderung)
+  function nccAt(P, R, rw, rh, s, tx, ty) {
+    let sxy = 0, sy = 0, syy = 0;
+    const d = R.data;
+    for (let i = 0; i < P.n; i++) {
+      const rx = Math.round(s * P.xs[i] + tx), ry = Math.round(s * P.ys[i] + ty);
+      if (rx < 0 || ry < 0 || rx >= rw || ry >= rh) return -1;
+      const v = lumAt(d, (ry * rw + rx) * 4);
+      sxy += P.vs[i] * v; sy += v; syy += v * v;
+    }
+    const varR = syy / P.n - (sy / P.n) * (sy / P.n);
+    if (varR <= 1e-6) return -1;
+    return (sxy / P.n) / (P.sd * Math.sqrt(varR));
+  }
+
+  // Wie nccAt, aber mit bilinearer Abtastung für Verschiebungen unter einem Pixel
+  function nccAtSub(P, R, rw, rh, s, tx, ty) {
+    let sxy = 0, sy = 0, syy = 0;
+    const d = R.data;
+    for (let i = 0; i < P.n; i++) {
+      const rx = s * P.xs[i] + tx, ry = s * P.ys[i] + ty;
+      const xi = Math.floor(rx), yi = Math.floor(ry);
+      if (xi < 0 || yi < 0 || xi >= rw - 1 || yi >= rh - 1) return -1;
+      const fx = rx - xi, fy = ry - yi, i00 = (yi * rw + xi) * 4, i01 = i00 + rw * 4;
+      const v = (lumAt(d, i00) * (1 - fx) + lumAt(d, i00 + 4) * fx) * (1 - fy) + (lumAt(d, i01) * (1 - fx) + lumAt(d, i01 + 4) * fx) * fy;
+      sxy += P.vs[i] * v; sy += v; syy += v * v;
+    }
+    const varR = syy / P.n - (sy / P.n) * (sy / P.n);
+    if (varR <= 1e-6) return -1;
+    return (sxy / P.n) / (P.sd * Math.sqrt(varR));
+  }
+
+  function boxBlur(src, w, h, r) {
+    const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+    for (let pass = 0; pass < 2; pass++) {
+      const a = pass === 0 ? src : out;
+      for (let y = 0; y < h; y++) {           // horizontal
+        let acc = 0; const row = y * w;
+        for (let x = -r; x <= r; x++) acc += a[row + Math.min(w - 1, Math.max(0, x))];
+        for (let x = 0; x < w; x++) {
+          tmp[row + x] = acc / (2 * r + 1);
+          acc += a[row + Math.min(w - 1, x + r + 1)] - a[row + Math.max(0, x - r)];
+        }
+      }
+      for (let x = 0; x < w; x++) {           // vertikal
+        let acc = 0;
+        for (let y = -r; y <= r; y++) acc += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
+        for (let y = 0; y < h; y++) {
+          out[y * w + x] = acc / (2 * r + 1);
+          acc += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x];
+        }
+      }
+    }
+    return out;
+  }
+
+  // Beste Abbildung r = s*o + t suchen. Skalierung um die Mitte (co -> cr), Verschiebung d im Raster.
+  function searchTransform(P, R, rw, rh, scales, co, cr, rx, ry, step, seed) {
+    let best = seed || { score: -2, s: 1, tx: 0, ty: 0 };
+    for (const s of scales) {
+      const bx = cr.x - s * co.x, by = cr.y - s * co.y;
+      for (let dy = -ry; dy <= ry; dy += step) {
+        for (let dx = -rx; dx <= rx; dx += step) {
+          const sc = nccAt(P, R, rw, rh, s, bx + dx, by + dy);
+          if (sc > best.score) best = { score: sc, s, tx: bx + dx, ty: by + dy };
+        }
+      }
+    }
+    return best;
+  }
+  const range = (a, b, st) => { const out = []; for (let v = a; v <= b + 1e-9; v += st) out.push(+v.toFixed(5)); return out; };
+
+  // Ausrichtung des ganzen Bildes (Grob-zu-fein). Bei Nahaufnahmen ist das KI-Bild im Ganzen
+  // nur leicht verschoben/skaliert – das ganze Bild bestimmt Skalierung und Lage viel genauer
+  // als ein einzelner kleiner Bereich.
+  function globalAlign(orig, res, Wo, Ho, W, H) {
+    const lv = (max) => {
+      const k = Math.min(1, max / Math.max(W, H));
+      return { k, o: drawToData(orig, Math.max(1, Math.round(Wo * k)), Math.max(1, Math.round(Ho * k))), r: drawToData(res, Math.max(1, Math.round(W * k)), Math.max(1, Math.round(H * k))) };
+    };
+    const inner = (d) => ({ x: d.data.width * 0.04, y: d.data.height * 0.04, w: d.data.width * 0.92, h: d.data.height * 0.92 });
+    const cen = (d) => ({ x: d.data.width / 2, y: d.data.height / 2 });
+    // Stufe 1: 128 px, weiter Suchraum
+    const A = lv(128);
+    const PA = samplePatch(A.o.data.data, A.o.data.width, inner(A.o), 1500);
+    if (PA.sd < 2) return null;
+    let b = searchTransform(PA, A.r.data, A.r.data.width, A.r.data.height, range(0.88, 1.12, 0.01), cen(A.o), cen(A.r),
+      Math.round(A.r.data.width * 0.12), Math.round(A.r.data.height * 0.12), 1);
+    // Stufe 2: 512 px, verfeinern
+    const B = lv(512), f = B.k / A.k;
+    const PB = samplePatch(B.o.data.data, B.o.data.width, inner(B.o), 2500);
+    let s2 = { score: -2, s: b.s, tx: b.tx * f, ty: b.ty * f };
+    for (const s of range(b.s - 0.01, b.s + 0.01, 0.0025)) {
+      const adjx = (b.s - s) * B.o.data.width / 2, adjy = (b.s - s) * B.o.data.height / 2;
+      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+        const sc = nccAt(PB, B.r.data, B.r.data.width, B.r.data.height, s, b.tx * f + adjx + dx, b.ty * f + adjy + dy);
+        if (sc > s2.score) s2 = { score: sc, s, tx: b.tx * f + adjx + dx, ty: b.ty * f + adjy + dy };
+      }
+    }
+    // in volle Auflösung umrechnen
+    return { score: s2.score, s: s2.s, tx: s2.tx / B.k, ty: s2.ty / B.k };
+  }
+
+  async function protectRegions(origFile, resultBlob, boxes) {
+    const [orig, res] = await Promise.all([loadImage(origFile), loadImage(resultBlob)]);
+    const [W, H] = fitCanvasSize(res.naturalWidth || res.width, res.naturalHeight || res.height);
+    const ow0 = orig.naturalWidth || orig.width, oh0 = orig.naturalHeight || orig.height;
+    // Original gleichmäßig auf die Breite des Ergebnisses skalieren
+    const [Wo, Ho] = fitCanvasSize(W, Math.round(oh0 * W / ow0));
+    const R = drawToData(res, W, H), O = drawToData(orig, Wo, Ho);
+    const G = globalAlign(orig, res, Wo, Ho, W, H);
+    const useGlobal = G && G.score >= 0.6;
+    // Kleine Versionen für die Suche pro Bereich (Rückfall, z. B. wenn der Hintergrund ersetzt wurde)
+    const k = Math.min(1, 512 / Math.max(W, H));
+    const sw = Math.max(1, Math.round(W * k)), sh = Math.max(1, Math.round(H * k));
+    const sow = Math.max(1, Math.round(Wo * k)), soh = Math.max(1, Math.round(Ho * k));
+    const Rs = useGlobal ? null : drawToData(res, sw, sh), Os = useGlobal ? null : drawToData(orig, sow, soh);
+    let applied = 0, skipped = 0;
+    const PAD = 0.15;
+    for (const b of boxes) {
+      const rect = { x: Math.max(0, (b.x - b.w * PAD) * Wo), y: Math.max(0, (b.y - b.h * PAD) * Ho) };
+      rect.w = Math.min(Wo, (b.x + b.w * (1 + PAD)) * Wo) - rect.x;
+      rect.h = Math.min(Ho, (b.y + b.h * (1 + PAD)) * Ho) - rect.y;
+      if (rect.w < 8 || rect.h < 8) continue;
+      const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+      let init, sRange, dR;
+      if (useGlobal) {
+        init = G; sRange = range(G.s - 0.004, G.s + 0.004, 0.002); dR = 8;
+      } else {
+        // Grobsuche nur für diesen Bereich
+        const srect = { x: rect.x * k, y: rect.y * k, w: Math.max(2, rect.w * k), h: Math.max(2, rect.h * k) };
+        const Ps = samplePatch(Os.data.data, sow, srect, 900);
+        if (Ps.sd < 2) { skipped++; continue; }
+        const scx = srect.x + srect.w / 2, scy = srect.y + srect.h / 2;
+        let c = searchTransform(Ps, Rs.data, sw, sh, range(0.9, 1.1, 0.02), { x: scx, y: scy }, { x: scx, y: scy + (sh - soh) / 2 },
+          Math.round(sw * 0.1), Math.round(sh * 0.12), 2);
+        c = searchTransform(Ps, Rs.data, sw, sh, range(c.s - 0.02, c.s + 0.02, 0.005), { x: scx, y: scy },
+          { x: c.s * scx + c.tx, y: c.s * scy + c.ty }, 3, 3, 1, c);
+        if (c.score < 0.5) { skipped++; continue; }
+        init = { s: c.s, tx: c.tx / k, ty: c.ty / k }; sRange = range(c.s - 0.006, c.s + 0.006, 0.002); dR = 6;
+      }
+      // Feinsuche in voller Auflösung um die Bereichsmitte
+      const P = samplePatch(O.data.data, Wo, rect, 3000);
+      if (P.sd < 2) { skipped++; continue; }
+      const target = { x: init.s * cx + init.tx, y: init.s * cy + init.ty };
+      let fine = searchTransform(P, R.data, W, H, sRange, { x: cx, y: cy }, target, dR, dR, 1);
+      if (fine.score < 0.55) { skipped++; continue; }
+      // Verfeinerung in Viertelpixel-Schritten (wichtig für kleine Etikett-Schrift)
+      const f0 = { ...fine, score: nccAtSub(P, R.data, W, H, fine.s, fine.tx, fine.ty) };
+      fine = f0;
+      for (let dy = -1; dy <= 1.0001; dy += 0.25) for (let dx = -1; dx <= 1.0001; dx += 0.25) {
+        const sc = nccAtSub(P, R.data, W, H, f0.s, f0.tx + dx, f0.ty + dy);
+        if (sc > fine.score) fine = { score: sc, s: f0.s, tx: f0.tx + dx, ty: f0.ty + dy };
+      }
+      blendPatch(R.data.data, W, H, O.data.data, Wo, Ho, rect, fine.s, fine.tx, fine.ty);
+      applied++;
+    }
+    if (!applied) return { blob: resultBlob, applied, skipped };
+    R.ctx.putImageData(R.data, 0, 0);
+    const blob = await new Promise((resolve, reject) => R.canvas.toBlob(bb => bb ? resolve(bb) : reject(new Error('toBlob')), 'image/jpeg', 0.96));
+    return { blob, applied, skipped };
+  }
+
+  // Original-Bereich (bilinear abgetastet) mit weichem Rand ins Ergebnis setzen.
+  // Grobe Helligkeit (Schatten/Licht) kommt aus dem KI-Bild, alle feinen Details aus dem Original.
+  function blendPatch(Rd, W, H, Od, Wo, Ho, rect, s, tx, ty) {
+    const x0 = Math.max(0, Math.floor(s * rect.x + tx)), y0 = Math.max(0, Math.floor(s * rect.y + ty));
+    const x1 = Math.min(W, Math.ceil(s * (rect.x + rect.w) + tx)), y1 = Math.min(H, Math.ceil(s * (rect.y + rect.h) + ty));
+    const dw = x1 - x0, dh = y1 - y0;
+    if (dw < 4 || dh < 4) return;
+    const P = new Float32Array(dw * dh * 3), Lp = new Float32Array(dw * dh), Lr = new Float32Array(dw * dh);
+    for (let v = 0; v < dh; v++) {
+      for (let u = 0; u < dw; u++) {
+        const ox = Math.min(Wo - 1.001, Math.max(0, (x0 + u + 0.5 - tx) / s - 0.5));
+        const oy = Math.min(Ho - 1.001, Math.max(0, (y0 + v + 0.5 - ty) / s - 0.5));
+        const xi = Math.floor(ox), yi = Math.floor(oy), fx = ox - xi, fy = oy - yi;
+        const i00 = (yi * Wo + xi) * 4, i10 = i00 + 4, i01 = i00 + Wo * 4, i11 = i01 + 4;
+        const j = v * dw + u;
+        for (let c = 0; c < 3; c++) {
+          P[j * 3 + c] = (Od[i00 + c] * (1 - fx) + Od[i10 + c] * fx) * (1 - fy) + (Od[i01 + c] * (1 - fx) + Od[i11 + c] * fx) * fy;
+        }
+        Lp[j] = 0.299 * P[j * 3] + 0.587 * P[j * 3 + 1] + 0.114 * P[j * 3 + 2];
+        Lr[j] = lumAt(Rd, ((y0 + v) * W + x0 + u) * 4);
+      }
+    }
+    const rad = Math.max(6, Math.round(0.08 * Math.max(dw, dh)));
+    const bP = boxBlur(Lp, dw, dh, rad), bR = boxBlur(Lr, dw, dh, rad);
+    const fxw = Math.max(3, dw * 0.11), fyw = Math.max(3, dh * 0.11);
+    const smooth = (t) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+    for (let v = 0; v < dh; v++) {
+      const ay = smooth(Math.min(v, dh - 1 - v) / fyw);
+      for (let u = 0; u < dw; u++) {
+        const a = ay * smooth(Math.min(u, dw - 1 - u) / fxw);
+        if (a <= 0) continue;
+        const j = v * dw + u;
+        const gain = Math.max(0.6, Math.min(1.8, (bR[j] + 1) / (bP[j] + 1)));
+        const i = ((y0 + v) * W + x0 + u) * 4;
+        for (let c = 0; c < 3; c++) {
+          const val = P[j * 3 + c] * gain;
+          Rd[i + c] = Math.max(0, Math.min(255, Rd[i + c] * (1 - a) + val * a));
+        }
+      }
+    }
   }
 
   function loadImage(file) {

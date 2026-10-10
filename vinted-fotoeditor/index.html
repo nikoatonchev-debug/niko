@@ -137,6 +137,21 @@
   .checks { margin-top: 12px; border: 1px solid var(--warn); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; }
   .checks strong { color: var(--warn); display: block; margin-bottom: 4px; }
   .checks ul { margin: 0; padding-left: 18px; }
+  .imgs img { cursor: zoom-in; }
+  #viewer {
+    position: fixed; inset: 0; z-index: 100; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    touch-action: none; -webkit-user-select: none; user-select: none;
+  }
+  #viewer[hidden] { display: none; }
+  #viewerImg { max-width: 92vw; max-height: 88vh; max-height: 88dvh; object-fit: contain; display: block; border-radius: 0; cursor: zoom-out; -webkit-user-drag: none; pointer-events: none; }
+  #viewerHint {
+    position: absolute; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 0.82rem; padding: 6px 12px; border-radius: 999px;
+    white-space: nowrap; transition: opacity 0.4s; pointer-events: none;
+  }
+  #viewerHint.gone { opacity: 0; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -245,6 +260,11 @@
       <div class="fields" id="listingFields"></div>
     </div>
   </section>
+</div>
+
+<div id="viewer" hidden role="dialog" aria-label="Screenshot-Ansicht">
+  <img id="viewerImg" alt="" draggable="false">
+  <div id="viewerHint">Antippen zum Schließen · Wischen für das nächste Foto</div>
 </div>
 
 <script>
@@ -465,6 +485,7 @@
       <div class="row btns"></div>`;
     el.querySelector('.item-name').textContent = item.file.name;
     el.querySelector('img').src = item.previewUrl;
+    el.querySelector('.boxwrap img').addEventListener('click', () => { if (!item.editing) openViewer('original', item); });
     item.el = el;
     setupBoxEditing(item);
     renderProtect(item);
@@ -485,6 +506,7 @@
       const img = document.createElement('img');
       img.src = item.resultUrl;
       img.alt = 'Bearbeitetes Foto';
+      img.addEventListener('click', () => openViewer('result', item));
       res.appendChild(img);
     } else {
       const ph = document.createElement('div');
@@ -1279,6 +1301,53 @@
     }
   }
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  // ---------- Screenshot-Ansicht ----------
+  // Foto etwas kleiner als der Bildschirm auf Schwarz, ohne Bedienelemente.
+  const viewerEl = $('viewer'), viewerImg = $('viewerImg'), viewerHint = $('viewerHint');
+  let viewerList = [], viewerIndex = 0, hintTimer = null;
+  function openViewer(kind, item) {
+    viewerList = kind === 'result'
+      ? items.filter(i => i.status === 'done' && i.resultUrl).map(i => i.resultUrl)
+      : items.map(i => i.previewUrl);
+    viewerIndex = Math.max(0, viewerList.indexOf(kind === 'result' ? item.resultUrl : item.previewUrl));
+    if (!viewerList.length) return;
+    showViewerImage();
+    viewerEl.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    viewerHint.textContent = viewerList.length > 1 ? 'Antippen zum Schließen · Wischen für das nächste Foto' : 'Antippen zum Schließen';
+    viewerHint.classList.remove('gone');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => viewerHint.classList.add('gone'), 1400);
+  }
+  function showViewerImage() { viewerImg.src = viewerList[viewerIndex]; }
+  function closeViewer() {
+    viewerEl.hidden = true;
+    viewerImg.removeAttribute('src');
+    document.documentElement.style.overflow = '';
+  }
+  function stepViewer(d) {
+    if (viewerList.length < 2) return;
+    viewerIndex = (viewerIndex + d + viewerList.length) % viewerList.length;
+    showViewerImage();
+  }
+  let swipeStart = null;
+  viewerEl.addEventListener('pointerdown', (e) => { swipeStart = { x: e.clientX, y: e.clientY }; });
+  viewerEl.addEventListener('pointerup', (e) => {
+    if (!swipeStart) return;
+    const dx = e.clientX - swipeStart.x, dy = e.clientY - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) stepViewer(dx < 0 ? 1 : -1);
+    else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) closeViewer();
+  });
+  viewerEl.addEventListener('pointercancel', () => { swipeStart = null; });
+  viewerEl.addEventListener('dragstart', (e) => e.preventDefault());
+  document.addEventListener('keydown', (e) => {
+    if (viewerEl.hidden) return;
+    if (e.key === 'Escape') closeViewer();
+    else if (e.key === 'ArrowRight') stepViewer(1);
+    else if (e.key === 'ArrowLeft') stepViewer(-1);
+  });
 
   // ---------- Inserat-Text (Titel, Beschreibung, …) ----------
   const CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';

@@ -9,6 +9,7 @@ Eine einzelne statische Seite (`index.html`), auf der man Produktfotos hochlädt
 - Ausgabe-Auflösung wählbar (1K / 2K / 4K, Standard 2K)
 - Automatischer Inserat-Text (Titel, Beschreibung, Marke, Größe, Kategorie, Zustand, Farbe, Material, Hashtags) aus den Originalfotos über `POST /api/v1/chat/completions`, mit „Bitte prüfen“-Hinweisen, wenn etwas auf dem Etikett nicht lesbar ist
 - Mehrere Fotos auf einmal (Drag & Drop oder Auswahl), pro Foto Status und Download-Button (auf dem iPhone zusätzlich „In Fotos sichern / Teilen“)
+- Screenshot-Ansicht: Foto antippen zeigt es etwas kleiner als den Bildschirm auf Schwarz, ohne Bedienelemente (Antippen schließt, Wischen blättert)
 - Laufende Kostenanzeige aus `usage.cost` der API-Antwort
 - Der API-Key liegt nur im `localStorage` des Browsers und wird nur an openrouter.ai gesendet
 

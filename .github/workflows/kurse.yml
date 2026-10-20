@@ -1,0 +1,30 @@
+name: Kurse holen
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code
+      - name: Kurse abrufen
+        run: python3 code/trading/fetch_prices.py
+      - name: In Branch kurse-daten speichern
+        run: |
+          git init -q data && cd data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          if git fetch -q --depth 1 origin kurse-daten; then git checkout -q -b kurse-daten FETCH_HEAD; else git checkout -q --orphan kurse-daten; fi
+          cp ../kurse.json kurse.json
+          git add kurse.json
+          git commit -q -m "Kurse $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+          git push -q origin kurse-daten

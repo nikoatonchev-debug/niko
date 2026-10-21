@@ -1,0 +1,43 @@
+name: Deploy Schülerfirma-Website zu Firebase Hosting
+
+# Veröffentlicht die Seite unter https://schuelerfirma-siebdruck.web.app
+# Braucht das GitHub-Secret FIREBASE_SERVICE_ACCOUNT (Schlüssel eines
+# Dienstkontos mit der Rolle "Firebase Hosting Admin"). Fehlt das Secret,
+# werden die Schritte übersprungen.
+
+on:
+  push:
+    branches:
+      - claude/schueler-firma-website-mcp6im
+    paths:
+      - "schuelerfirma/**"
+      - "firebase.json"
+      - ".github/workflows/firebase-hosting.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "firebase-hosting"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - name: Hinweis, falls das Secret noch fehlt
+        if: env.FIREBASE_SA == ''
+        run: echo "::warning::Secret FIREBASE_SERVICE_ACCOUNT fehlt - es wird nichts veröffentlicht."
+      - name: Repository auschecken
+        if: env.FIREBASE_SA != ''
+        uses: actions/checkout@v4
+      - name: Zu Firebase Hosting veröffentlichen
+        if: env.FIREBASE_SA != ''
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: schuelerfirma-siebdruck
+          channelId: live

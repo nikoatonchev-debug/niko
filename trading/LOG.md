@@ -5,6 +5,7 @@ Regeln:
 - Bitcoin: Prognose "steigt/fällt bis zum nächsten Check", Auflösung beim nächsten Check.
 - DAX: Prognose "nächster Schlusskurs höher/tiefer als letzter Schlusskurs", Auflösung beim 18:15-Check.
 - S&P 500: wie DAX, Auflösung beim 22:15-Check.
+- Ab 21.10. 14:45 erweitert: Ethereum (wie Bitcoin); SAP (wie DAX, 18:15); Nasdaq 100, Nvidia, Apple, Tesla, Gold, Öl Brent, EUR/USD (wie S&P 500, 22:15). Referenz = letzter bekannter Kurs bei Prognose, Auflösung mit Kurs beim Auflösungs-Check.
 - Kursquelle: Branch kurse-daten, Datei kurse.json (GitHub Action, stündlich + bei jedem Check manuell gestartet).
 - Methode: Trendfolge (Richtung des 1-Wochen-/12-Monats-Trends) + aktuelle News. Kein echtes Geld, keine Anlageberatung.
 
@@ -15,5 +16,14 @@ Regeln:
 | 3 | 21.10. 00:00 | S&P 500 | 7.712,57 (Schluss 20.10.) | steigt | 21.10. 22:15 | offen |
 | 4 | 21.10. 08:15 | BTC | 82.620 $ (21.10. 08:19) | fällt | 21.10. 13:15 | ❌ 83.313 $ (+0,8 %) |
 | 5 | 21.10. 13:15 | BTC | 83.313 $ (21.10. 13:18) | fällt | 21.10. 18:15 | offen |
+| 6 | 21.10. 14:45 | ETH | 2.467,37 $ | fällt | 21.10. 18:15 | offen |
+| 7 | 21.10. 14:45 | SAP | 205,40 € | steigt | 21.10. 18:15 | offen |
+| 8 | 21.10. 14:45 | Nasdaq 100 | 29.490,28 (Schluss 20.10.) | steigt | 21.10. 22:15 | offen |
+| 9 | 21.10. 14:45 | Nvidia | 216,47 $ (Schluss 20.10.) | steigt | 21.10. 22:15 | offen |
+| 10 | 21.10. 14:45 | Apple | 339,50 $ (Schluss 20.10.) | steigt | 21.10. 22:15 | offen |
+| 11 | 21.10. 14:45 | Tesla | 373,71 $ (Schluss 20.10.) | fällt | 21.10. 22:15 | offen |
+| 12 | 21.10. 14:45 | Gold | 4.145,70 $ | fällt | 21.10. 22:15 | offen |
+| 13 | 21.10. 14:45 | Öl Brent | 108,39 $ | steigt | 21.10. 22:15 | offen |
+| 14 | 21.10. 14:45 | EUR/USD | 1,1233 | fällt | 21.10. 22:15 | offen |
 
 Trefferquote: 1 / 2 (50 %)

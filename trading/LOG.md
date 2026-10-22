@@ -50,10 +50,10 @@ Regeln:
 | 37 | 22.10. 22:15 | S&P 500 | 7.663,43 (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
 | 38 | 22.10. 22:15 | Nasdaq 100 | 28.958,69 (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
 | 39 | 22.10. 22:15 | Nvidia | 212,21 $ (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
-| 40 | 22.10. 22:15 | Apple | 348,22 $ (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
+| 40 | 22.10. 22:15 | Apple | 348,22 $ (Schluss 22.10.) | steigt (TOP) | 23.10. 22:15 | offen |
 | 41 | 22.10. 22:15 | Tesla | 374,58 $ (Schluss 22.10.) | fällt | 23.10. 22:15 | offen |
 | 42 | 22.10. 22:15 | Gold | 4.042,70 $ | fällt | 23.10. 22:15 | offen |
-| 43 | 22.10. 22:15 | Öl Brent | 113,08 $ | steigt | 23.10. 22:15 | offen |
+| 43 | 22.10. 22:15 | Öl Brent | 113,08 $ | steigt (TOP) | 23.10. 22:15 | offen |
 | 44 | 22.10. 22:15 | EUR/USD | 1,1216 | fällt | 23.10. 22:15 | offen |
 
 Trefferquote: 23 / 32 (72 %) · Krypto 9/12 · Europa 3/4 · USA/Rohstoffe/Devisen 11/16

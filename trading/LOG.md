@@ -29,8 +29,8 @@ Regeln:
 | 16 | 21.10. 18:15 | ETH | 2.508,47 $ | fällt | 22.10. 08:15* | ✅ 2.438,12 $ (−2,8 %) |
 | 17 | 21.10. 18:15 | DAX | 25.645,04 (Schluss 21.10.) | steigt | 22.10. 18:15 | offen |
 | 18 | 21.10. 18:15 | SAP | 208,65 € (Schluss 21.10.) | steigt | 22.10. 18:15 | offen |
-| 19 | 22.10. 08:15 | BTC | 82.724 $ | fällt | 22.10. 13:15 | offen |
-| 20 | 22.10. 08:15 | ETH | 2.438,12 $ | fällt | 22.10. 13:15 | offen |
+| 19 | 22.10. 08:15 | BTC | 82.724 $ | fällt | 22.10. 13:15 | ✅ 81.898 $ (−1,0 %) |
+| 20 | 22.10. 08:15 | ETH | 2.438,12 $ | fällt | 22.10. 13:15 | ✅ 2.401,97 $ (−1,5 %) |
 | 21 | 22.10. 08:15** | S&P 500 | 7.757,17 (Schluss 21.10.) | steigt | 22.10. 22:15 | offen |
 | 22 | 22.10. 08:15** | Nasdaq 100 | 29.822,52 (Schluss 21.10.) | steigt | 22.10. 22:15 | offen |
 | 23 | 22.10. 08:15** | Nvidia | 221,97 $ (Schluss 21.10.) | steigt | 22.10. 22:15 | offen |
@@ -39,8 +39,10 @@ Regeln:
 | 26 | 22.10. 08:15** | Gold | 4.110,70 $ | fällt | 22.10. 22:15 | offen |
 | 27 | 22.10. 08:15** | Öl Brent | 111,46 $ | steigt | 22.10. 22:15 | offen |
 | 28 | 22.10. 08:15** | EUR/USD | 1,1245 | fällt | 22.10. 22:15 | offen |
+| 29 | 22.10. 13:15 | BTC | 81.898 $ | fällt | 22.10. 18:15 | offen |
+| 30 | 22.10. 13:15 | ETH | 2.401,97 $ | fällt | 22.10. 18:15 | offen |
 
-Trefferquote: 11 / 16 (69 %) · Krypto 3/6 · Europa 2/2 · USA/Rohstoffe/Devisen 6/8
+Trefferquote: 13 / 18 (72 %) · Krypto 5/8 · Europa 2/2 · USA/Rohstoffe/Devisen 6/8
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

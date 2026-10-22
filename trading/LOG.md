@@ -27,8 +27,8 @@ Regeln:
 | 14 | 21.10. 14:45 | EUR/USD | 1,1233 | fällt | 21.10. 22:15 | ✅ 1,1227 (Tagesschluss, −0,05 %) |
 | 15 | 21.10. 18:15 | BTC | 84.557 $ | fällt | 22.10. 08:15* | ✅ 82.724 $ (−2,2 %) |
 | 16 | 21.10. 18:15 | ETH | 2.508,47 $ | fällt | 22.10. 08:15* | ✅ 2.438,12 $ (−2,8 %) |
-| 17 | 21.10. 18:15 | DAX | 25.645,04 (Schluss 21.10.) | steigt | 22.10. 18:15 | offen |
-| 18 | 21.10. 18:15 | SAP | 208,65 € (Schluss 21.10.) | steigt | 22.10. 18:15 | offen |
+| 17 | 21.10. 18:15 | DAX | 25.645,04 (Schluss 21.10.) | steigt | 22.10. 18:15 | ❌ 25.371,75 (−1,1 %) |
+| 18 | 21.10. 18:15 | SAP | 208,65 € (Schluss 21.10.) | steigt | 22.10. 18:15 | ✅ 215,35 € (+3,2 %) |
 | 19 | 22.10. 08:15 | BTC | 82.724 $ | fällt | 22.10. 13:15 | ✅ 81.898 $ (−1,0 %) |
 | 20 | 22.10. 08:15 | ETH | 2.438,12 $ | fällt | 22.10. 13:15 | ✅ 2.401,97 $ (−1,5 %) |
 | 21 | 22.10. 08:15** | S&P 500 | 7.757,17 (Schluss 21.10.) | steigt | 22.10. 22:15 | offen |
@@ -39,10 +39,14 @@ Regeln:
 | 26 | 22.10. 08:15** | Gold | 4.110,70 $ | fällt | 22.10. 22:15 | offen |
 | 27 | 22.10. 08:15** | Öl Brent | 111,46 $ | steigt | 22.10. 22:15 | offen |
 | 28 | 22.10. 08:15** | EUR/USD | 1,1245 | fällt | 22.10. 22:15 | offen |
-| 29 | 22.10. 13:15 | BTC | 81.898 $ | fällt | 22.10. 18:15 | offen |
-| 30 | 22.10. 13:15 | ETH | 2.401,97 $ | fällt | 22.10. 18:15 | offen |
+| 29 | 22.10. 13:15 | BTC | 81.898 $ | fällt | 22.10. 18:15 | ✅ 81.526 $ (−0,5 %) |
+| 30 | 22.10. 13:15 | ETH | 2.401,97 $ | fällt | 22.10. 18:15 | ✅ 2.395,03 $ (−0,3 %) |
+| 31 | 22.10. 18:15 | BTC | 81.526 $ | fällt | 22.10. 22:15 | offen |
+| 32 | 22.10. 18:15 | ETH | 2.395,03 $ | fällt | 22.10. 22:15 | offen |
+| 33 | 22.10. 18:15 | DAX | 25.371,75 (Schluss 22.10.) | steigt | 23.10. 18:15 | offen |
+| 34 | 22.10. 18:15 | SAP | 215,35 € (Schluss 22.10.) | steigt | 23.10. 18:15 | offen |
 
-Trefferquote: 13 / 18 (72 %) · Krypto 5/8 · Europa 2/2 · USA/Rohstoffe/Devisen 6/8
+Trefferquote: 16 / 22 (73 %) · Krypto 7/10 · Europa 3/4 · USA/Rohstoffe/Devisen 6/8
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

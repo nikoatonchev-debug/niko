@@ -47,24 +47,26 @@ Regeln:
 | 34 | 22.10. 18:15 | SAP | 215,35 € (Schluss 22.10.) | steigt | 23.10. 18:15 | ❌ 214,40 € (−0,4 %) |
 | 35 | 22.10. 22:15 | BTC | 81.341 $ | fällt | 23.10. 08:15 | ❌ 81.809 $ (+0,6 %) |
 | 36 | 22.10. 22:15 | ETH | 2.384,37 $ | fällt | 23.10. 08:15 | ❌ 2.405,03 $ (+0,9 %) |
-| 37 | 22.10. 22:15 | S&P 500 | 7.663,43 (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
-| 38 | 22.10. 22:15 | Nasdaq 100 | 28.958,69 (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
-| 39 | 22.10. 22:15 | Nvidia | 212,21 $ (Schluss 22.10.) | steigt | 23.10. 22:15 | offen |
-| 40 | 22.10. 22:15 | Apple | 348,22 $ (Schluss 22.10.) | steigt (TOP) | 23.10. 22:15 | offen |
-| 41 | 22.10. 22:15 | Tesla | 374,58 $ (Schluss 22.10.) | fällt | 23.10. 22:15 | offen |
-| 42 | 22.10. 22:15 | Gold | 4.042,70 $ | fällt | 23.10. 22:15 | offen |
-| 43 | 22.10. 22:15 | Öl Brent | 113,08 $ | steigt (TOP) | 23.10. 22:15 | offen |
-| 44 | 22.10. 22:15 | EUR/USD | 1,1216 | fällt | 23.10. 22:15 | offen |
+| 37 | 22.10. 22:15 | S&P 500 | 7.663,43 (Schluss 22.10.) | steigt | 23.10. 22:15 | ❌ 7.623,68 (−0,5 %) |
+| 38 | 22.10. 22:15 | Nasdaq 100 | 28.958,69 (Schluss 22.10.) | steigt | 23.10. 22:15 | ❌ 28.957,53 (−0,0 %) |
+| 39 | 22.10. 22:15 | Nvidia | 212,21 $ (Schluss 22.10.) | steigt | 23.10. 22:15 | ❌ 210,96 $ (−0,6 %) |
+| 40 | 22.10. 22:15 | Apple | 348,22 $ (Schluss 22.10.) | steigt (TOP) | 23.10. 22:15 | ❌ 347,73 $ (−0,1 %) |
+| 41 | 22.10. 22:15 | Tesla | 374,58 $ (Schluss 22.10.) | fällt | 23.10. 22:15 | ✅ 372,22 $ (−0,6 %) |
+| 42 | 22.10. 22:15 | Gold | 4.042,70 $ | fällt | 23.10. 22:15 | ✅ 4.011,70 $ (−0,8 %) |
+| 43 | 22.10. 22:15 | Öl Brent | 113,08 $ | steigt (TOP) | 23.10. 22:15 | ❌ 111,78 $ (−1,1 %) |
+| 44 | 22.10. 22:15 | EUR/USD | 1,1216 | fällt | 23.10. 22:15 | ✅ 1,1196 (−0,2 %) |
 | 45 | 23.10. 08:15 | BTC | 81.809 $ | fällt | 23.10. 13:15 | ✅ 81.532 $ (−0,3 %) |
 | 46 | 23.10. 08:15 | ETH | 2.405,03 $ | fällt | 23.10. 13:15 | ✅ 2.393,61 $ (−0,5 %) |
 | 47 | 23.10. 13:15 | BTC | 81.532 $ | fällt | 23.10. 18:15 | ✅ 81.508 $ (−0,03 %) |
 | 48 | 23.10. 13:15 | ETH | 2.393,61 $ | fällt | 23.10. 18:15 | ❌ 2.401,77 $ (+0,3 %) |
-| 49 | 23.10. 18:15 | BTC | 81.508 $ | fällt (TOP) | 23.10. 22:15 | offen |
-| 50 | 23.10. 18:15 | ETH | 2.401,77 $ | fällt | 23.10. 22:15 | offen |
+| 49 | 23.10. 18:15 | BTC | 81.508 $ | fällt (TOP) | 23.10. 22:15 | ✅ 81.286 $ (−0,3 %) |
+| 50 | 23.10. 18:15 | ETH | 2.401,77 $ | fällt | 23.10. 22:15 | ✅ 2.394,70 $ (−0,3 %) |
 | 51 | 23.10. 18:15 | DAX | 25.181,65 (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
 | 52 | 23.10. 18:15 | SAP | 214,40 € (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
+| 53 | 23.10. 22:15 | BTC | 81.286 $ | fällt (TOP) | 24.10. 08:15 | offen |
+| 54 | 23.10. 22:15 | ETH | 2.394,70 $ | fällt | 24.10. 08:15 | offen |
 
-Trefferquote: 26 / 40 (65 %) · Krypto 12/18 · Europa 3/6 · USA/Rohstoffe/Devisen 11/16 · TOP 0/0 (3 offen)
+Trefferquote: 31 / 50 (62 %) · Krypto 14/20 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 1/3
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

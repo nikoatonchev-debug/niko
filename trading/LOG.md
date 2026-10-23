@@ -55,10 +55,12 @@ Regeln:
 | 42 | 22.10. 22:15 | Gold | 4.042,70 $ | fällt | 23.10. 22:15 | offen |
 | 43 | 22.10. 22:15 | Öl Brent | 113,08 $ | steigt (TOP) | 23.10. 22:15 | offen |
 | 44 | 22.10. 22:15 | EUR/USD | 1,1216 | fällt | 23.10. 22:15 | offen |
-| 45 | 23.10. 08:15 | BTC | 81.809 $ | fällt | 23.10. 13:15 | offen |
-| 46 | 23.10. 08:15 | ETH | 2.405,03 $ | fällt | 23.10. 13:15 | offen |
+| 45 | 23.10. 08:15 | BTC | 81.809 $ | fällt | 23.10. 13:15 | ✅ 81.532 $ (−0,3 %) |
+| 46 | 23.10. 08:15 | ETH | 2.405,03 $ | fällt | 23.10. 13:15 | ✅ 2.393,61 $ (−0,5 %) |
+| 47 | 23.10. 13:15 | BTC | 81.532 $ | fällt | 23.10. 18:15 | offen |
+| 48 | 23.10. 13:15 | ETH | 2.393,61 $ | fällt | 23.10. 18:15 | offen |
 
-Trefferquote: 23 / 34 (68 %) · Krypto 9/14 · Europa 3/4 · USA/Rohstoffe/Devisen 11/16 · TOP 0/0 (2 offen)
+Trefferquote: 25 / 36 (69 %) · Krypto 11/16 · Europa 3/4 · USA/Rohstoffe/Devisen 11/16 · TOP 0/0 (2 offen)
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

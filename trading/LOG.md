@@ -63,10 +63,12 @@ Regeln:
 | 50 | 23.10. 18:15 | ETH | 2.401,77 $ | fällt | 23.10. 22:15 | ✅ 2.394,70 $ (−0,3 %) |
 | 51 | 23.10. 18:15 | DAX | 25.181,65 (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
 | 52 | 23.10. 18:15 | SAP | 214,40 € (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
-| 53 | 23.10. 22:15 | BTC | 81.286 $ | fällt (TOP) | 24.10. 08:15 | offen |
-| 54 | 23.10. 22:15 | ETH | 2.394,70 $ | fällt | 24.10. 08:15 | offen |
+| 53 | 23.10. 22:15 | BTC | 81.286 $ | fällt (TOP) | 24.10. 08:15 | ✅ 80.709 $ (−0,7 %) |
+| 54 | 23.10. 22:15 | ETH | 2.394,70 $ | fällt | 24.10. 08:15 | ✅ 2.376,82 $ (−0,7 %) |
+| 55 | 24.10. 08:15 | BTC | 80.709 $ | fällt (TOP) | 24.10. 13:15 | offen |
+| 56 | 24.10. 08:15 | ETH | 2.376,82 $ | fällt (TOP) | 24.10. 13:15 | offen |
 
-Trefferquote: 31 / 50 (62 %) · Krypto 14/20 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 1/3
+Trefferquote: 33 / 52 (63 %) · Krypto 16/22 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 2/4
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

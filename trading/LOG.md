@@ -79,10 +79,12 @@ Regeln:
 | 66 | 25.10. 13:15 | ETH | 2.331,93 $ | fällt | 25.10. 18:15 | ❌ 2.351,36 $ (+0,8 %) |
 | 67 | 25.10. 18:15 | BTC | 80.700 $ | fällt | 25.10. 22:15 | ✅ 80.403 $ (−0,4 %) |
 | 68 | 25.10. 18:15 | ETH | 2.351,36 $ | fällt | 25.10. 22:15 | ✅ 2.342,29 $ (−0,4 %) |
-| 69 | 25.10. 22:15 | BTC | 80.403 $ | fällt | 26.10. 08:15 | offen |
-| 70 | 25.10. 22:15 | ETH | 2.342,29 $ | fällt | 26.10. 08:15 | offen |
+| 69 | 25.10. 22:15 | BTC | 80.403 $ | fällt | 26.10. 08:15 | ✅ 80.030 $ (−0,5 %) |
+| 70 | 25.10. 22:15 | ETH | 2.342,29 $ | fällt | 26.10. 08:15 | ✅ 2.318,26 $ (−1,0 %) |
+| 71 | 26.10. 08:15 | BTC | 80.030 $ | fällt (TOP) | 26.10. 13:15 | offen |
+| 72 | 26.10. 08:15 | ETH | 2.318,26 $ | fällt (TOP) | 26.10. 13:15 | offen |
 
-Trefferquote: 41 / 66 (62 %) · Krypto 24/36 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 6/10
+Trefferquote: 43 / 68 (63 %) · Krypto 26/38 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 6/10
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

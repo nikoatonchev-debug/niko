@@ -61,8 +61,8 @@ Regeln:
 | 48 | 23.10. 13:15 | ETH | 2.393,61 $ | fällt | 23.10. 18:15 | ❌ 2.401,77 $ (+0,3 %) |
 | 49 | 23.10. 18:15 | BTC | 81.508 $ | fällt (TOP) | 23.10. 22:15 | ✅ 81.286 $ (−0,3 %) |
 | 50 | 23.10. 18:15 | ETH | 2.401,77 $ | fällt | 23.10. 22:15 | ✅ 2.394,70 $ (−0,3 %) |
-| 51 | 23.10. 18:15 | DAX | 25.181,65 (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
-| 52 | 23.10. 18:15 | SAP | 214,40 € (Schluss 23.10.) | steigt | 26.10. 18:15 | offen |
+| 51 | 23.10. 18:15 | DAX | 25.181,65 (Schluss 23.10.) | steigt | 26.10. 18:15 | ✅ 25.410,84 (+0,9 %) |
+| 52 | 23.10. 18:15 | SAP | 214,40 € (Schluss 23.10.) | steigt | 26.10. 18:15 | ❌ 212,25 € (−1,0 %) |
 | 53 | 23.10. 22:15 | BTC | 81.286 $ | fällt (TOP) | 24.10. 08:15 | ✅ 80.709 $ (−0,7 %) |
 | 54 | 23.10. 22:15 | ETH | 2.394,70 $ | fällt | 24.10. 08:15 | ✅ 2.376,82 $ (−0,7 %) |
 | 55 | 24.10. 08:15 | BTC | 80.709 $ | fällt (TOP) | 24.10. 13:15 | ✅ 80.592 $ (−0,1 %) |
@@ -83,10 +83,14 @@ Regeln:
 | 70 | 25.10. 22:15 | ETH | 2.342,29 $ | fällt | 26.10. 08:15 | ✅ 2.318,26 $ (−1,0 %) |
 | 71 | 26.10. 08:15 | BTC | 80.030 $ | fällt (TOP) | 26.10. 13:15 | ❌ 80.292 $ (+0,3 %) |
 | 72 | 26.10. 08:15 | ETH | 2.318,26 $ | fällt (TOP) | 26.10. 13:15 | ❌ 2.329,05 $ (+0,5 %) |
-| 73 | 26.10. 13:15 | BTC | 80.292 $ | fällt | 26.10. 18:15 | offen |
-| 74 | 26.10. 13:15 | ETH | 2.329,05 $ | fällt | 26.10. 18:15 | offen |
+| 73 | 26.10. 13:15 | BTC | 80.292 $ | fällt | 26.10. 18:15 | ❌ 80.429 $ (+0,2 %) |
+| 74 | 26.10. 13:15 | ETH | 2.329,05 $ | fällt | 26.10. 18:15 | ❌ 2.330,62 $ (+0,1 %) |
+| 75 | 26.10. 18:15 | BTC | 80.429 $ | fällt | 26.10. 22:15 | offen |
+| 76 | 26.10. 18:15 | ETH | 2.330,62 $ | fällt | 26.10. 22:15 | offen |
+| 77 | 26.10. 18:15 | DAX | 25.410,84 (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
+| 78 | 26.10. 18:15 | SAP | 212,25 € (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
 
-Trefferquote: 43 / 70 (61 %) · Krypto 26/40 · Europa 3/6 · USA/Rohstoffe/Devisen 14/24 · TOP 6/12
+Trefferquote: 44 / 74 (59 %) · Krypto 26/42 · Europa 4/8 · USA/Rohstoffe/Devisen 14/24 · TOP 6/12
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

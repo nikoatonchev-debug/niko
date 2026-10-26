@@ -85,12 +85,22 @@ Regeln:
 | 72 | 26.10. 08:15 | ETH | 2.318,26 $ | fällt (TOP) | 26.10. 13:15 | ❌ 2.329,05 $ (+0,5 %) |
 | 73 | 26.10. 13:15 | BTC | 80.292 $ | fällt | 26.10. 18:15 | ❌ 80.429 $ (+0,2 %) |
 | 74 | 26.10. 13:15 | ETH | 2.329,05 $ | fällt | 26.10. 18:15 | ❌ 2.330,62 $ (+0,1 %) |
-| 75 | 26.10. 18:15 | BTC | 80.429 $ | fällt | 26.10. 22:15 | offen |
-| 76 | 26.10. 18:15 | ETH | 2.330,62 $ | fällt | 26.10. 22:15 | offen |
+| 75 | 26.10. 18:15 | BTC | 80.429 $ | fällt | 26.10. 22:15 | ✅ 79.836 $ (−0,7 %) |
+| 76 | 26.10. 18:15 | ETH | 2.330,62 $ | fällt | 26.10. 22:15 | ✅ 2.302,70 $ (−1,2 %) |
 | 77 | 26.10. 18:15 | DAX | 25.410,84 (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
 | 78 | 26.10. 18:15 | SAP | 212,25 € (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
+| 79 | 26.10. 22:15 | BTC | 79.836 $ | fällt | 27.10. 08:15 | offen |
+| 80 | 26.10. 22:15 | ETH | 2.302,70 $ | fällt | 27.10. 08:15 | offen |
+| 81 | 26.10. 22:15 | S&P 500 | 7.676,77 (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
+| 82 | 26.10. 22:15 | Nasdaq 100 | 29.273,40 (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
+| 83 | 26.10. 22:15 | Nvidia | 216,00 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
+| 84 | 26.10. 22:15 | Apple | 343,91 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
+| 85 | 26.10. 22:15 | Tesla | 391,62 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
+| 86 | 26.10. 22:15 | Gold | 4.031,00 $ | fällt | 27.10. 22:15 | offen |
+| 87 | 26.10. 22:15 | Öl Brent | 110,27 $ | steigt | 27.10. 22:15 | offen |
+| 88 | 26.10. 22:15 | EUR/USD | 1,1181 | fällt (TOP) | 27.10. 22:15 | offen |
 
-Trefferquote: 44 / 74 (59 %) · Krypto 26/42 · Europa 4/8 · USA/Rohstoffe/Devisen 14/24 · TOP 6/12
+Trefferquote: 46 / 76 (61 %) · Krypto 28/44 · Europa 4/8 · USA/Rohstoffe/Devisen 14/24 · TOP 6/12
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

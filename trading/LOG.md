@@ -87,8 +87,8 @@ Regeln:
 | 74 | 26.10. 13:15 | ETH | 2.329,05 $ | fällt | 26.10. 18:15 | ❌ 2.330,62 $ (+0,1 %) |
 | 75 | 26.10. 18:15 | BTC | 80.429 $ | fällt | 26.10. 22:15 | ✅ 79.836 $ (−0,7 %) |
 | 76 | 26.10. 18:15 | ETH | 2.330,62 $ | fällt | 26.10. 22:15 | ✅ 2.302,70 $ (−1,2 %) |
-| 77 | 26.10. 18:15 | DAX | 25.410,84 (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
-| 78 | 26.10. 18:15 | SAP | 212,25 € (Schluss 26.10.) | steigt | 27.10. 18:15 | offen |
+| 77 | 26.10. 18:15 | DAX | 25.410,84 (Schluss 26.10.) | steigt | 27.10. 18:15 | ✅ 25.590,77 (+0,7 %) |
+| 78 | 26.10. 18:15 | SAP | 212,25 € (Schluss 26.10.) | steigt | 27.10. 18:15 | ✅ 213,15 € (+0,4 %) |
 | 79 | 26.10. 22:15 | BTC | 79.836 $ | fällt | 27.10. 08:15 | ✅ 79.544 $ (−0,4 %) |
 | 80 | 26.10. 22:15 | ETH | 2.302,70 $ | fällt | 27.10. 08:15 | ✅ 2.301,04 $ (−0,1 %) |
 | 81 | 26.10. 22:15 | S&P 500 | 7.676,77 (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
@@ -101,10 +101,12 @@ Regeln:
 | 88 | 26.10. 22:15 | EUR/USD | 1,1181 | fällt (TOP) | 27.10. 22:15 | offen |
 | 89 | 27.10. 08:15 | BTC | 79.544 $ | fällt (TOP) | 27.10. 13:15 | ❌ 80.075 $ (+0,7 %) |
 | 90 | 27.10. 08:15 | ETH | 2.301,04 $ | fällt (TOP) | 27.10. 13:15 | ❌ 2.323,35 $ (+1,0 %) |
-| 91 | 27.10. 13:15 | BTC | 80.075 $ | fällt | 27.10. 18:15 | offen |
-| 92 | 27.10. 13:15 | ETH | 2.323,35 $ | fällt | 27.10. 18:15 | offen |
+| 91 | 27.10. 13:15 | BTC | 80.075 $ | fällt | 27.10. 18:15 | ❌ 80.579 $ (+0,6 %) |
+| 92 | 27.10. 13:15 | ETH | 2.323,35 $ | fällt | 27.10. 18:15 | ❌ 2.348,16 $ (+1,1 %) |
+| 93 | 27.10. 18:15 | BTC | 80.579 $ | fällt | 27.10. 22:15 | offen |
+| 94 | 27.10. 18:15 | ETH | 2.348,16 $ | fällt | 27.10. 22:15 | offen |
 
-Trefferquote: 48 / 80 (60 %) · Krypto 30/48 · Europa 4/8 · USA/Rohstoffe/Devisen 14/24 · TOP 6/14
+Trefferquote: 50 / 84 (60 %) · Krypto 30/50 · Europa 6/10 · USA/Rohstoffe/Devisen 14/24 · TOP 6/14
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.

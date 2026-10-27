@@ -91,22 +91,43 @@ Regeln:
 | 78 | 26.10. 18:15 | SAP | 212,25 € (Schluss 26.10.) | steigt | 27.10. 18:15 | ✅ 213,15 € (+0,4 %) |
 | 79 | 26.10. 22:15 | BTC | 79.836 $ | fällt | 27.10. 08:15 | ✅ 79.544 $ (−0,4 %) |
 | 80 | 26.10. 22:15 | ETH | 2.302,70 $ | fällt | 27.10. 08:15 | ✅ 2.301,04 $ (−0,1 %) |
-| 81 | 26.10. 22:15 | S&P 500 | 7.676,77 (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
-| 82 | 26.10. 22:15 | Nasdaq 100 | 29.273,40 (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
-| 83 | 26.10. 22:15 | Nvidia | 216,00 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
-| 84 | 26.10. 22:15 | Apple | 343,91 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
-| 85 | 26.10. 22:15 | Tesla | 391,62 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | offen |
-| 86 | 26.10. 22:15 | Gold | 4.031,00 $ | fällt | 27.10. 22:15 | offen |
-| 87 | 26.10. 22:15 | Öl Brent | 110,27 $ | steigt | 27.10. 22:15 | offen |
-| 88 | 26.10. 22:15 | EUR/USD | 1,1181 | fällt (TOP) | 27.10. 22:15 | offen |
+| 81 | 26.10. 22:15 | S&P 500 | 7.676,77 (Schluss 26.10.) | steigt | 27.10. 22:15 | ✅ 7.722,60 (+0,6 %) |
+| 82 | 26.10. 22:15 | Nasdaq 100 | 29.273,40 (Schluss 26.10.) | steigt | 27.10. 22:15 | ✅ 29.651,44 (+1,3 %) |
+| 83 | 26.10. 22:15 | Nvidia | 216,00 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | ✅ 217,94 $ (+0,9 %) |
+| 84 | 26.10. 22:15 | Apple | 343,91 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | ✅ 347,10 $ (+0,9 %) |
+| 85 | 26.10. 22:15 | Tesla | 391,62 $ (Schluss 26.10.) | steigt | 27.10. 22:15 | ✅ 407,46 $ (+4,0 %) |
+| 86 | 26.10. 22:15 | Gold | 4.031,00 $ | fällt | 27.10. 22:15 | ❌ 4.073,10 $ (+1,0 %) |
+| 87 | 26.10. 22:15 | Öl Brent | 110,27 $ | steigt | 27.10. 22:15 | ❌ 109,74 $ (−0,5 %) |
+| 88 | 26.10. 22:15 | EUR/USD | 1,1181 | fällt (TOP) | 27.10. 22:15 | ✅ 1,1131 (−0,4 %) |
 | 89 | 27.10. 08:15 | BTC | 79.544 $ | fällt (TOP) | 27.10. 13:15 | ❌ 80.075 $ (+0,7 %) |
 | 90 | 27.10. 08:15 | ETH | 2.301,04 $ | fällt (TOP) | 27.10. 13:15 | ❌ 2.323,35 $ (+1,0 %) |
 | 91 | 27.10. 13:15 | BTC | 80.075 $ | fällt | 27.10. 18:15 | ❌ 80.579 $ (+0,6 %) |
 | 92 | 27.10. 13:15 | ETH | 2.323,35 $ | fällt | 27.10. 18:15 | ❌ 2.348,16 $ (+1,1 %) |
-| 93 | 27.10. 18:15 | BTC | 80.579 $ | fällt | 27.10. 22:15 | offen |
-| 94 | 27.10. 18:15 | ETH | 2.348,16 $ | fällt | 27.10. 22:15 | offen |
+| 93 | 27.10. 18:15 | BTC | 80.579 $ | fällt | 27.10. 22:15 | ❌ 80.639 $ (+0,1 %) |
+| 94 | 27.10. 18:15 | ETH | 2.348,16 $ | fällt | 27.10. 22:15 | ✅ 2.341,22 $ (−0,3 %) |
 
-Trefferquote: 50 / 84 (60 %) · Krypto 30/50 · Europa 6/10 · USA/Rohstoffe/Devisen 14/24 · TOP 6/14
+Trefferquote (Endstand): 57 / 94 (61 %) · TOP 7/15
 
 \* Check 21.10. 22:15 ist ausgefallen (Nutzungslimit erreicht). Krypto-Prognosen #15/#16 wurden laut Regel "bis zum nächsten Check" beim nächsten tatsächlichen Check (22.10. 08:18) ausgewertet; US-Gruppe mit offiziellen Schlusskursen vom 21.10.
 \*\* Diese Prognosen hätten am 21.10. um 22:15 entstehen sollen; nachgeholt am 22.10. um 08:15 vor US-Börsenstart.
+
+## Abschluss-Auswertung (27.10.2026, 22:15)
+
+| Markt | Treffer |
+|---|---|
+| Bitcoin | 16 / 27 (59 %) |
+| Ethereum | 15 / 25 (60 %) |
+| DAX | 3 / 5 |
+| SAP | 3 / 5 |
+| S&P 500 | 2 / 4 |
+| Nasdaq 100 | 2 / 4 |
+| Nvidia | 2 / 4 |
+| Apple | 3 / 4 |
+| Tesla | 3 / 4 |
+| Gold | 2 / 4 |
+| Öl Brent | 2 / 4 |
+| EUR/USD | 4 / 4 |
+| **Gesamt** | **57 / 94 (61 %)** |
+| TOP-Signale | 7 / 15 (47 %) |
+
+Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prognosen ist 61 % mit Zufall + Trendphase vereinbar; Märkte stark korreliert). TOP-Signale waren nicht besser als alle Prognosen. Kein Beleg für einen echten Vorteil.

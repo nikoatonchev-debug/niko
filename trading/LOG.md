@@ -131,3 +131,21 @@ Trefferquote (Endstand): 57 / 94 (61 %) · TOP 7/15
 | TOP-Signale | 7 / 15 (47 %) |
 
 Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prognosen ist 61 % mit Zufall + Trendphase vereinbar; Märkte stark korreliert). TOP-Signale waren nicht besser als alle Prognosen. Kein Beleg für einen echten Vorteil.
+
+
+## Woche 2 (ab 28.10.2026, läuft bis "stopp")
+
+| Nr | Erstellt | Markt | Referenz | Prognose | Auflösung fällig | Ergebnis |
+|---|---|---|---|---|---|---|
+| 95 | 28.10. 22:15 | BTC | 81.295 $ | fällt | 29.10. 08:15 | offen |
+| 96 | 28.10. 22:15 | ETH | 2.359,63 $ | fällt | 29.10. 08:15 | offen |
+| 97 | 28.10. 22:15 | S&P 500 | 7.743,98 (Schluss 28.10.) | steigt (TOP) | 29.10. 22:15 | offen |
+| 98 | 28.10. 22:15 | Nasdaq 100 | 29.813,16 (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
+| 99 | 28.10. 22:15 | Nvidia | 215,38 $ (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
+| 100 | 28.10. 22:15 | Apple | 343,83 $ (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
+| 101 | 28.10. 22:15 | Tesla | 404,22 $ (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
+| 102 | 28.10. 22:15 | Gold | 4.081,20 $ | fällt | 29.10. 22:15 | offen |
+| 103 | 28.10. 22:15 | Öl Brent | 110,44 $ | steigt | 29.10. 22:15 | offen |
+| 104 | 28.10. 22:15 | EUR/USD | 1,1157 | fällt (TOP) | 29.10. 22:15 | offen |
+
+Trefferquote Woche 2: 0 / 0 · TOP 0/0 · Gesamt seit Start: 57 / 94 (61 %) · TOP gesamt 7/15

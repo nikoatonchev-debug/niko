@@ -137,8 +137,8 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 
 | Nr | Erstellt | Markt | Referenz | Prognose | Auflösung fällig | Ergebnis |
 |---|---|---|---|---|---|---|
-| 95 | 28.10. 22:15 | BTC | 81.295 $ | fällt | 29.10. 08:15 | offen |
-| 96 | 28.10. 22:15 | ETH | 2.359,63 $ | fällt | 29.10. 08:15 | offen |
+| 95 | 28.10. 22:15 | BTC | 81.295 $ | fällt | 29.10. 08:15 | ✅ 79.814 $ (−1,8 %) |
+| 96 | 28.10. 22:15 | ETH | 2.359,63 $ | fällt | 29.10. 08:15 | ✅ 2.306,11 $ (−2,3 %) |
 | 97 | 28.10. 22:15 | S&P 500 | 7.743,98 (Schluss 28.10.) | steigt (TOP) | 29.10. 22:15 | offen |
 | 98 | 28.10. 22:15 | Nasdaq 100 | 29.813,16 (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
 | 99 | 28.10. 22:15 | Nvidia | 215,38 $ (Schluss 28.10.) | steigt | 29.10. 22:15 | offen |
@@ -147,5 +147,7 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 102 | 28.10. 22:15 | Gold | 4.081,20 $ | fällt | 29.10. 22:15 | offen |
 | 103 | 28.10. 22:15 | Öl Brent | 110,44 $ | steigt | 29.10. 22:15 | offen |
 | 104 | 28.10. 22:15 | EUR/USD | 1,1157 | fällt (TOP) | 29.10. 22:15 | offen |
+| 105 | 29.10. 08:15 | BTC | 79.814 $ | fällt | 29.10. 13:15 | offen |
+| 106 | 29.10. 08:15 | ETH | 2.306,11 $ | fällt | 29.10. 13:15 | offen |
 
-Trefferquote Woche 2: 0 / 0 · TOP 0/0 · Gesamt seit Start: 57 / 94 (61 %) · TOP gesamt 7/15
+Trefferquote Woche 2: 2 / 2 · TOP 0/0 · Gesamt seit Start: 59 / 96 (61 %) · TOP gesamt 7/15

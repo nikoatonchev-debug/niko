@@ -149,7 +149,11 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 104 | 28.10. 22:15 | EUR/USD | 1,1157 | fällt (TOP) | 29.10. 22:15 | offen |
 | 105 | 29.10. 08:15 | BTC | 79.814 $ | fällt | 29.10. 13:15 | ❌ 79.997 $ (+0,2 %) |
 | 106 | 29.10. 08:15 | ETH | 2.306,11 $ | fällt | 29.10. 13:15 | ❌ 2.318,92 $ (+0,6 %) |
-| 107 | 29.10. 13:15 | BTC | 79.997 $ | fällt | 29.10. 18:15 | offen |
-| 108 | 29.10. 13:15 | ETH | 2.318,92 $ | fällt | 29.10. 18:15 | offen |
+| 107 | 29.10. 13:15 | BTC | 79.997 $ | fällt | 29.10. 18:15 | ❌ 80.948 $ (+1,2 %) |
+| 108 | 29.10. 13:15 | ETH | 2.318,92 $ | fällt | 29.10. 18:15 | ❌ 2.349,58 $ (+1,3 %) |
+| 109 | 29.10. 18:15 | BTC | 80.948 $ | fällt | 29.10. 22:15 | offen |
+| 110 | 29.10. 18:15 | ETH | 2.349,58 $ | fällt | 29.10. 22:15 | offen |
+| 111 | 29.10. 18:15 | DAX | 26.039,68 (Schluss 29.10.) | steigt (TOP) | 30.10. 18:15 | offen |
+| 112 | 29.10. 18:15 | SAP | 208,90 € (Schluss 29.10.) | steigt | 30.10. 18:15 | offen |
 
-Trefferquote Woche 2: 2 / 4 · TOP 0/0 · Gesamt seit Start: 59 / 98 (60 %) · TOP gesamt 7/15
+Trefferquote Woche 2: 2 / 6 · TOP 0/0 · Gesamt seit Start: 59 / 100 (59 %) · TOP gesamt 7/15

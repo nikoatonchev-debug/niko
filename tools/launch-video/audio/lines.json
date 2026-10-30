@@ -1,0 +1,29 @@
+[
+ {
+  "id": "hook",
+  "say": "Von Hand gedruckt – von uns!",
+  "thorsten": "Von Hand gedruckt. Von uns!"
+ },
+ {
+  "id": "reveal",
+  "say": "Die Siebdruck-Schülerfirma der Montessori-Schule Dietramszell ist jetzt online!",
+  "thorsten": "Die Siebdruck-Schüler-Firma der Montessohri-Schule Dietramszell ist jetzt online!"
+ },
+ {
+  "id": "shop",
+  "say": "Such dir deinen Pulli aus, wähl die Größe, und bestell ihn online."
+ },
+ {
+  "id": "pickup",
+  "say": "Abholen kannst du freitags ab elf Uhr, an der alten Apotheke. Du zahlst einfach bar."
+ },
+ {
+  "id": "special",
+  "say": "Eigenes Motiv, ein Pulli für die ganze Klasse, oder ein anderer Sonderwunsch? Schreib uns einfach!"
+ },
+ {
+  "id": "end",
+  "say": "Scan den QR-Code und schau rein!",
+  "thorsten": "Skänn den QR-Code und schau rein!"
+ }
+]

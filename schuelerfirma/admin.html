@@ -85,7 +85,7 @@
                     <label for="pf-sizes">Größen <span class="hint">(mit Komma getrennt, z. B. 140, 152, S, M)</span></label>
                     <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" maxlength="120" required>
                   </div>
-                  <div class="field">
+                  <div class="field" id="pf-color-field">
                     <label for="pf-color">Farbe <span class="hint">(nur falls kein Bild hochgeladen wird)</span></label>
                     <input type="color" id="pf-color" class="color-input">
                   </div>
@@ -101,7 +101,9 @@
                     <input type="file" id="pf-images" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
                   </div>
                 </div>
+                <p class="hint hidden" id="pf-images-hint">Trag bei jedem Foto ein, welche Farbe darauf zu sehen ist. Im Shop erscheinen die Farben als Kreise – wer eine Farbe anklickt, sieht sofort das passende Foto. Fotos mit derselben Farbe (z. B. vorne und hinten) bekommen denselben Namen.</p>
                 <div id="pf-image-preview" class="img-preview-row"></div>
+                <datalist id="pf-color-names"></datalist>
                 <div class="button-row">
                   <button type="submit" class="btn btn-primary" id="product-form-submit">Produkt hinzufügen</button>
                   <button type="button" class="btn btn-outline hidden" id="product-form-cancel">Abbrechen</button>
@@ -113,7 +115,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>Bild</th><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen</th><th>Bestand</th><th>Status</th><th>Aktionen</th></tr>
+                  <tr><th>Bild</th><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen / Farben</th><th>Bestand</th><th>Status</th><th>Aktionen</th></tr>
                 </thead>
                 <tbody id="product-table-body"></tbody>
               </table>

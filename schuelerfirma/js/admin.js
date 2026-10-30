@@ -9,7 +9,23 @@
   let lastActivity = Date.now();
   let products = [];
   let editingProductId = null;
-  let pendingImages = [];
+  let pendingImages = []; // { src, name, hex, hexTouched } – jedes Foto mit seiner Farbe
+
+  // Farbnamen-Vorschläge mit passendem Farbkreis (man kann auch eigene Namen eintragen)
+  const COLOR_PRESETS = [
+    ["Schwarz", "#1b1b1b"], ["Weiß", "#ffffff"], ["Grau", "#8c8c8c"], ["Hellgrau", "#c9c9c9"],
+    ["Dunkelgrau", "#4a4a4a"], ["Blau", "#1f5fbf"], ["Hellblau", "#86bce8"], ["Dunkelblau", "#1c2a4d"],
+    ["Navy", "#1f2a44"], ["Türkis", "#1fa5a5"], ["Grün", "#2e7d32"], ["Hellgrün", "#8bc34a"],
+    ["Dunkelgrün", "#1e4d2b"], ["Mint", "#a8e6cf"], ["Oliv", "#6b6b2e"], ["Gelb", "#f4d03f"],
+    ["Orange", "#ef7d22"], ["Rot", "#c62828"], ["Bordeaux", "#6d1a2b"], ["Rosa", "#f4b6c8"],
+    ["Pink", "#e84f8a"], ["Lila", "#7b4ea8"], ["Braun", "#6d4c35"], ["Beige", "#d9c7a3"],
+    ["Creme", "#f3ead6"], ["Sand", "#cbb68e"],
+  ];
+  function presetHex(name) {
+    const key = SF.colorKey(name).replace("weiss", "weiß");
+    const hit = COLOR_PRESETS.find(([n]) => SF.colorKey(n) === key);
+    return hit ? hit[1] : null;
+  }
 
   // ---------- Anmeldung / Ansicht ----------
   function showOnly(id) {
@@ -181,13 +197,24 @@
           p.images && p.images[0]
             ? `<img src="${esc(p.images[0])}" alt="" class="admin-thumb">`
             : `<span class="admin-thumb" style="background:${SF.safeColor(p.color, "#999999")};"></span>`;
+        const colors = SF.productColors(p);
+        const colorDots = colors.length
+          ? `<div class="swatch-mini-row">${colors
+              .map(
+                (c) =>
+                  `<span class="swatch-dot swatch-dot-sm" style="background:${SF.safeColor(c.hex)}" title="${esc(c.name)}" aria-hidden="true"></span>`
+              )
+              .join("")}<span class="sr-only">Farben: ${esc(colors.map((c) => c.name).join(", "))}</span></div>`
+          : p.images && p.images.length
+          ? `<br><span class="hint">Fotos ohne Farbe – bitte bearbeiten</span>`
+          : "";
         return `
       <tr>
         <td>${thumb}</td>
         <td>${esc(p.name)}</td>
         <td>${esc(p.description || "")}</td>
         <td>${SF.formatPrice(p.price)}</td>
-        <td>${esc((p.sizes || []).join(", "))}</td>
+        <td>${esc((p.sizes || []).join(", "))}${colorDots}</td>
         <td>${stockBadge}</td>
         <td><span class="badge ${p.active ? "badge-accepted" : ""}">${p.active ? "aktiv" : "inaktiv"}</span></td>
         <td class="actions-cell">
@@ -227,23 +254,87 @@
     );
   }
 
+  // Jedes Foto mit Farbname und Farbkreis. Die Eingaben werden über
+  // setupImageColorFields() (einmal, per Event-Delegation) ausgewertet.
   function renderImagePreview() {
     const el = document.getElementById("pf-image-preview");
     el.innerHTML = pendingImages
       .map(
-        (src, i) =>
+        (img, i) =>
           `<div class="img-preview">
-            <img src="${esc(src)}" alt="Bild ${i + 1}">
-            <button type="button" data-remove-image="${i}" aria-label="Bild ${i + 1} entfernen">&times;</button>
+            <div class="img-preview-pic">
+              <img src="${esc(img.src)}" alt="Bild ${i + 1}">
+              <button type="button" data-remove-image="${i}" aria-label="Bild ${i + 1} entfernen">&times;</button>
+            </div>
+            <label for="pf-img-name-${i}" class="img-color-label">Farbe<span class="sr-only"> von Bild ${i + 1}</span></label>
+            <div class="img-color">
+              <input type="color" id="pf-img-hex-${i}" data-img-hex="${i}" value="${SF.safeColor(img.hex, "#9e9e9e")}" aria-label="Farbkreis für Bild ${i + 1}">
+              <input type="text" id="pf-img-name-${i}" data-img-name="${i}" list="pf-color-names" maxlength="20"
+                placeholder="z. B. Blau" autocomplete="off" value="${esc(img.name)}">
+            </div>
           </div>`
       )
       .join("");
-    el.querySelectorAll("[data-remove-image]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        pendingImages.splice(parseInt(btn.getAttribute("data-remove-image"), 10), 1);
-        renderImagePreview();
-      })
-    );
+    // Die einzelne Farbe wird nur noch gebraucht, wenn es gar kein Foto gibt
+    document.getElementById("pf-color-field").classList.toggle("hidden", pendingImages.length > 0);
+    document.getElementById("pf-images-hint").classList.toggle("hidden", pendingImages.length === 0);
+  }
+
+  function setupImageColorFields() {
+    const el = document.getElementById("pf-image-preview");
+    el.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-image]");
+      if (!btn) return;
+      pendingImages.splice(parseInt(btn.getAttribute("data-remove-image"), 10), 1);
+      renderImagePreview();
+    });
+    el.addEventListener("input", (e) => {
+      const t = e.target;
+      if (t.hasAttribute("data-img-name")) {
+        const i = parseInt(t.getAttribute("data-img-name"), 10);
+        const img = pendingImages[i];
+        img.name = t.value;
+        t.removeAttribute("aria-invalid");
+        // Hinweis "Farbe fehlt" weg, sobald jedes Foto eine Farbe hat
+        const msg = document.getElementById("product-message");
+        if (msg.dataset.kind === "color" && pendingImages.every((x) => SF.colorKey(x.name))) {
+          SFUI.hideMessage(msg);
+          delete msg.dataset.kind;
+        }
+        // Gleicher Name wie bei einem anderen Foto -> gleicher Kreis; sonst Vorschlag aus der Liste
+        const same = pendingImages.find((x, j) => j !== i && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(img.name));
+        const hex = same ? same.hex : !img.hexTouched ? presetHex(img.name) : null;
+        if (hex) {
+          img.hex = hex;
+          document.getElementById(`pf-img-hex-${i}`).value = hex;
+        }
+      } else if (t.hasAttribute("data-img-hex")) {
+        const i = parseInt(t.getAttribute("data-img-hex"), 10);
+        const img = pendingImages[i];
+        img.hex = SF.safeColor(t.value, "#9e9e9e");
+        img.hexTouched = true;
+        // Alle Fotos mit demselben Farbnamen bekommen denselben Kreis
+        pendingImages.forEach((x, j) => {
+          if (j !== i && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(img.name)) {
+            x.hex = img.hex;
+            x.hexTouched = true;
+            document.getElementById(`pf-img-hex-${j}`).value = img.hex;
+          }
+        });
+      }
+    });
+  }
+
+  // Gleich geschriebene Farben vereinheitlichen ("blau" und "Blau" = eine Farbe, ein Kreis)
+  function imageColorsForSave() {
+    const seen = {};
+    return pendingImages.map((img) => {
+      let name = SF.clampText(img.name, 20);
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+      const key = SF.colorKey(name);
+      if (!seen[key]) seen[key] = { name, hex: SF.safeColor(img.hex, "#9e9e9e") };
+      return seen[key];
+    });
   }
 
   function enterEditMode(id) {
@@ -261,7 +352,10 @@
     const info = document.getElementById("pf-stock-info");
     info.textContent = `Bisher verkauft: ${Number(p.sold) || 0} Stück. Trag hier ein, wie viele ab jetzt noch zu haben sind.`;
     info.classList.remove("hidden");
-    pendingImages = (p.images || []).slice();
+    pendingImages = (p.images || []).map((src, i) => {
+      const c = (p.imageColors || [])[i] || {};
+      return { src, name: c.name || "", hex: SF.safeColor(c.hex, "#9e9e9e"), hexTouched: !!c.name };
+    });
     renderImagePreview();
     document.getElementById("product-form-title").textContent = "Produkt bearbeiten: " + p.name;
     document.getElementById("product-form-submit").textContent = "Änderungen speichern";
@@ -283,13 +377,15 @@
   }
 
   function totalImageBytes() {
-    return pendingImages.reduce((n, src) => n + SF.dataUrlBytes(src), 0);
+    return pendingImages.reduce((n, img) => n + SF.dataUrlBytes(img.src), 0);
   }
 
   function setupProductForm() {
     const form = document.getElementById("product-form");
     const msg = document.getElementById("product-message");
     document.getElementById("pf-color").value = "#2c6e6b";
+    document.getElementById("pf-color-names").innerHTML = COLOR_PRESETS.map(([n]) => `<option value="${esc(n)}"></option>`).join("");
+    setupImageColorFields();
 
     // Bilder werden neu als JPEG gezeichnet: das entfernt versteckte Daten
     // (z. B. GPS-Standort aus Handyfotos) und alles, was kein Bild ist.
@@ -314,15 +410,18 @@
             problems.push(`„${file.name}“ passt nicht mehr dazu: Alle Bilder eines Produkts zusammen dürfen höchstens etwa 800 KB groß sein.`);
             continue;
           }
-          pendingImages.push(img);
+          pendingImages.push({ src: img, name: "", hex: "#9e9e9e", hexTouched: false });
         } catch (err) {
           problems.push(`„${file.name}“ konnte nicht gelesen werden.`);
         }
       }
       e.target.value = "";
+      const firstNew = pendingImages.findIndex((x) => !SF.colorKey(x.name));
       renderImagePreview();
       if (problems.length) SFUI.showMessage(msg, problems.join(" "), "error");
       else SFUI.hideMessage(msg);
+      // Gleich zur Farbe des ersten neuen Fotos springen
+      if (firstNew > -1 && !problems.length) document.getElementById(`pf-img-name-${firstNew}`).focus();
     });
 
     document.getElementById("product-form-cancel").addEventListener("click", exitEditMode);
@@ -344,8 +443,17 @@
       if (!name) error = "Bitte einen Namen eingeben.";
       else if (!(price > 0 && price <= 1000)) error = "Bitte einen Preis zwischen 0,01 und 1000 € eingeben.";
       else if (sizes.length === 0) error = "Bitte mindestens eine Größe angeben.";
+      delete msg.dataset.kind;
+      const missingColor = pendingImages.findIndex((x) => !SF.colorKey(x.name));
+      if (!error && missingColor > -1) {
+        error = `Bitte bei jedem Foto eine Farbe eintragen (z. B. Blau) – bei Bild ${missingColor + 1} fehlt sie noch.`;
+        const field = document.getElementById(`pf-img-name-${missingColor}`);
+        field.setAttribute("aria-invalid", "true");
+        field.focus();
+      }
       if (error) {
         SFUI.showMessage(msg, error, "error");
+        if (missingColor > -1) msg.dataset.kind = "color";
         return;
       }
       SFUI.hideMessage(msg);
@@ -353,7 +461,16 @@
       const submit = document.getElementById("product-form-submit");
       submit.disabled = true;
       submit.textContent = "Wird gespeichert …";
-      const payload = { name, description, price, color, sizes, available, images: pendingImages.slice() };
+      const payload = {
+        name,
+        description,
+        price,
+        color,
+        sizes,
+        available,
+        images: pendingImages.map((x) => x.src),
+        imageColors: imageColorsForSave(),
+      };
       try {
         if (editingProductId) await SFDB.updateProduct(editingProductId, payload);
         else await SFDB.addProduct(Object.assign({ active: true }, payload));
@@ -388,7 +505,7 @@
       .map((o) => {
         const id = esc(o.id);
         const items = (o.items || [])
-          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)})`)
+          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)}${i.color ? ", " + esc(i.color) : ""})`)
           .join("<br>");
         return `
         <tr>

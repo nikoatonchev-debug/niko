@@ -225,6 +225,7 @@ const SFDB = (function () {
       color: x.color || "#2c6e6b",
       sizes: Array.isArray(x.sizes) ? x.sizes : [],
       images: Array.isArray(x.images) ? x.images : [],
+      imageColors: cleanImageColors(x.imageColors),
       stock: x.stock === undefined ? null : x.stock,
       sold: Number(x.sold) || 0,
       active: x.active !== false,
@@ -242,14 +243,24 @@ const SFDB = (function () {
     return (await getProducts()).filter((p) => p.active);
   }
 
+  // Zu jedem Foto gehört eine Farbe { name, hex } (gleiche Reihenfolge wie images)
+  function cleanImageColors(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map((c) => ({
+      name: String((c && c.name) || "").trim().slice(0, 20),
+      hex: SF.safeColor(c && c.hex, "#9e9e9e"),
+    }));
+  }
   function cleanProduct(p) {
+    const images = p.images || [];
     return {
       name: p.name,
       description: p.description || "",
       price: p.price,
       color: p.color,
       sizes: p.sizes,
-      images: p.images || [],
+      images,
+      imageColors: cleanImageColors(p.imageColors).slice(0, images.length),
     };
   }
   // „available“ = wie viele Stück ab jetzt noch zu haben sind (null = unbegrenzt).
@@ -344,8 +355,24 @@ const SFDB = (function () {
           if (!p.sizes.includes(i.size)) {
             throw withMessage(`Die Größe „${i.size}“ gibt es bei „${p.name}“ nicht mehr.`, "sf/gone");
           }
+          // Hat das Produkt Farben, muss eine davon gewählt sein
+          let color = "";
+          if (SF.productColors(p).length) {
+            const c = SF.findColor(p, i.color);
+            if (!c) {
+              throw withMessage(
+                i.color
+                  ? `Die Farbe „${i.color}“ gibt es bei „${p.name}“ nicht mehr.`
+                  : `Bitte wähle bei „${p.name}“ eine Farbe aus.`,
+                "sf/gone"
+              );
+            }
+            color = c.name;
+          }
           total += p.price * i.qty;
-          return { productId: i.productId, name: p.name, size: i.size, qty: i.qty, price: p.price };
+          const line = { productId: i.productId, name: p.name, size: i.size, qty: i.qty, price: p.price };
+          if (color) line.color = color;
+          return line;
         });
         productIds.forEach((id) => {
           const remaining = SF.getProductRemaining(products[id]);

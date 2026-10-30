@@ -17,7 +17,7 @@
     el.innerHTML = list
       .map((o) => {
         const items = (o.items || [])
-          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)})`)
+          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)}${i.color ? ", " + esc(i.color) : ""})`)
           .join("<br>");
         const ready = o.status === "abholbereit";
         return `

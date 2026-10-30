@@ -115,5 +115,8 @@ npm run build
 - Content-Security-Policy per `<meta>`-Tag auf jeder Seite, keine Inline-Skripte, Ausgaben werden maskiert.
 - Bild-Uploads (Admin): nur JPG/PNG/WebP/GIF, werden neu als JPEG gezeichnet (entfernt Standort-Metadaten),
   alle Bilder eines Produkts zusammen höchstens ca. 800 KB.
+- Farben: Zu jedem Produktfoto gehört eine Farbe (Name + Farbkreis, gespeichert in `imageColors`,
+  gleiche Reihenfolge wie `images`). Im Shop erscheinen die Farben als Kreise; ein Klick zeigt das
+  passende Foto. Die gewählte Farbe wird mit der Bestellung gespeichert (`items[].color`).
 - Der Firebase-API-Schlüssel in `js/firebase-config.js` ist absichtlich öffentlich – geschützt wird über
   die Regeln, nicht über Verstecken.

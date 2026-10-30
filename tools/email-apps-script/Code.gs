@@ -93,7 +93,7 @@ function buildMail(collection, id, o) {
   var lines, amount;
   if (collection === 'orders') {
     lines = (o.items || []).map(function (i) {
-      return Number(i.qty) + 'x ' + String(i.name || '') + ' (' + String(i.size || '') + ')';
+      return Number(i.qty) + 'x ' + String(i.name || '') + ' (' + String(i.size || '') + (i.color ? ', ' + String(i.color) : '') + ')';
     });
     amount = 'Betrag: ' + euro(o.total) + ' – bitte bar mitbringen.';
   } else {

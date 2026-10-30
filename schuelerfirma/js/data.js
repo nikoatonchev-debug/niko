@@ -137,6 +137,26 @@ const SF = (() => {
     return Math.max(0, Number(product.stock) - (Number(product.sold) || 0));
   }
 
+  // Farben eines Produkts: Jedes Foto hat eine Farbe (imageColors[i] = { name, hex }).
+  // Gleicher Name = gleiche Farbe. Ergebnis in Foto-Reihenfolge; "image" ist
+  // das erste Foto in dieser Farbe. Ohne Farben: leere Liste.
+  function colorKey(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+  function productColors(product) {
+    const images = product.images || [];
+    const list = [];
+    (product.imageColors || []).forEach((c, i) => {
+      if (i >= images.length || !c || !colorKey(c.name)) return;
+      if (list.some((x) => colorKey(x.name) === colorKey(c.name))) return;
+      list.push({ name: String(c.name).trim(), hex: safeColor(c.hex, "#9e9e9e"), image: i });
+    });
+    return list;
+  }
+  function findColor(product, name) {
+    return productColors(product).find((c) => colorKey(c.name) === colorKey(name)) || null;
+  }
+
   // Verkleinert ein Bild (z. B. Produktfoto) und gibt es als komprimierte
   // JPEG-data:-URL zurück. Beim Neuzeichnen gehen versteckte Daten (z. B.
   // GPS-Standort aus Handyfotos) verloren. Die Qualität wird so lange
@@ -218,6 +238,9 @@ const SF = (() => {
     specialDecision,
     specialDecisionBadgeHtml,
     getProductRemaining,
+    colorKey,
+    productColors,
+    findColor,
     resizeImageFile,
     dataUrlBytes,
     cooldownSecondsLeft,

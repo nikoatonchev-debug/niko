@@ -1,16 +1,66 @@
 (function () {
-  let cart = []; // { productId, name, size, qty, price }
+  let cart = []; // { productId, name, size, color, hex, qty, price }
   let products = []; // aktuelle Produktliste aus der Datenbank
   let detailProduct = null;
   let detailImageIndex = 0;
+  const chosenColor = {}; // Produkt-ID -> gewählter Farbname
 
   const esc = (s) => SF.escapeHtml(s);
 
+  // Gewählte Farbe eines Produkts (oder die erste), null wenn es keine Farben hat
+  function currentColor(p) {
+    const colors = SF.productColors(p);
+    if (!colors.length) return null;
+    return SF.findColor(p, chosenColor[p.id]) || colors[0];
+  }
+
   function productImagesOrIcon(p) {
     if (p.images && p.images.length) {
-      return `<img src="${esc(p.images[0])}" alt="" class="fill-img">`;
+      const c = currentColor(p);
+      return `<img src="${esc(p.images[c ? c.image : 0])}" alt="" class="fill-img">`;
     }
     return SFIcons.hoodie(SF.safeColor(p.color));
+  }
+
+  // Farben als kleine Kreise zum Anklicken (Radio-Buttons, per Tastatur mit Pfeiltasten)
+  function swatchesHtml(p, groupName) {
+    const colors = SF.productColors(p);
+    if (!colors.length) return "";
+    const cur = currentColor(p);
+    return `
+      <fieldset class="swatch-field">
+        <legend>Farbe: <span class="swatch-current">${esc(cur.name)}</span></legend>
+        <div class="swatches">
+          ${colors
+            .map(
+              (c) => `
+            <label class="swatch" title="${esc(c.name)}">
+              <input type="radio" name="${esc(groupName)}" value="${esc(c.name)}" data-color-for="${esc(p.id)}" ${SF.colorKey(c.name) === SF.colorKey(cur.name) ? "checked" : ""}>
+              <span class="swatch-dot" style="background:${SF.safeColor(c.hex)}" aria-hidden="true"></span>
+              <span class="sr-only">${esc(c.name)}</span>
+            </label>`
+            )
+            .join("")}
+        </div>
+      </fieldset>`;
+  }
+
+  // Kreise und Farbname in einem Bereich (Karte oder Detailansicht) an die gewählte Farbe anpassen
+  function syncSwatches(scope, c) {
+    scope.querySelectorAll(".swatch input").forEach((r) => {
+      r.checked = SF.colorKey(r.value) === SF.colorKey(c.name);
+    });
+    const label = scope.querySelector(".swatch-current");
+    if (label) label.textContent = c.name;
+  }
+
+  function syncCard(p) {
+    const c = currentColor(p);
+    const card = document.querySelector(`[data-card="${CSS.escape(p.id)}"]`);
+    if (!c || !card) return;
+    const img = card.querySelector(".product-image img");
+    if (img) img.src = p.images[c.image];
+    syncSwatches(card, c);
   }
 
   function productCardHtml(p) {
@@ -34,6 +84,7 @@
               ? `<p class="hint">Nur noch ${remaining} Stück verfügbar</p>`
               : ""
           }
+          ${swatchesHtml(p, `color-${p.id}`)}
           <div class="field mb-8">
             <label for="size-${id}">Größe</label>
             <select id="size-${id}" ${soldOut ? "disabled" : ""}>${sizeOptions}</select>
@@ -73,6 +124,20 @@
     el.querySelectorAll("[data-open-detail]").forEach((elm) => {
       elm.addEventListener("click", () => openDetail(elm.getAttribute("data-open-detail")));
     });
+    // Farbe anklicken: Foto oben wechselt sofort
+    el.querySelectorAll("[data-color-for]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const p = products.find((x) => x.id === input.getAttribute("data-color-for"));
+        if (!p) return;
+        chosenColor[p.id] = input.value;
+        syncCard(p);
+      });
+    });
+  }
+
+  // Passt die Farbe im Warenkorb noch zum Produkt?
+  function colorStillValid(p, color) {
+    return SF.productColors(p).length ? !!SF.findColor(p, color) : !color;
   }
 
   async function loadProducts() {
@@ -84,7 +149,10 @@
       return false;
     }
     // Waren, die inzwischen weniger werden/verschwinden, aus dem Warenkorb nehmen
-    cart = cart.filter((c) => products.some((p) => p.id === c.productId));
+    cart = cart.filter((c) => {
+      const p = products.find((x) => x.id === c.productId);
+      return p && colorStillValid(p, c.color);
+    });
     renderCart();
     renderProducts();
     return true;
@@ -106,16 +174,18 @@
       if (qty > room) qty = room;
     }
 
-    const existing = cart.find((c) => c.productId === p.id && c.size === size);
+    const c = currentColor(p);
+    const color = c ? c.name : "";
+    const existing = cart.find((x) => x.productId === p.id && x.size === size && x.color === color);
     if (existing) {
       existing.qty += qty;
     } else {
-      cart.push({ productId: p.id, name: p.name, size, qty, price: p.price });
+      cart.push({ productId: p.id, name: p.name, size, color, hex: c ? c.hex : "", qty, price: p.price });
     }
     renderCart();
     renderProducts();
     flashCart();
-    announce(`${qty} × ${p.name} (Größe ${size}) in den Warenkorb gelegt.`);
+    announce(`${qty} × ${p.name} (Größe ${size}${color ? ", " + color : ""}) in den Warenkorb gelegt.`);
   }
 
   function announce(text) {
@@ -143,11 +213,17 @@
         <div class="cart-line">
           <div class="cart-line-info">
             <strong>${esc(c.name)}</strong>
-            Größe ${esc(c.size)} &middot; ${Number(c.qty)} Stück &middot; ${SF.formatPrice(c.price * c.qty)}
+            Größe ${esc(c.size)} &middot;
+            ${
+              c.color
+                ? `<span class="swatch-dot swatch-dot-sm" style="background:${SF.safeColor(c.hex, "#9e9e9e")}" aria-hidden="true"></span> ${esc(c.color)} &middot;`
+                : ""
+            }
+            ${Number(c.qty)} Stück &middot; ${SF.formatPrice(c.price * c.qty)}
           </div>
           ${
             withRemove
-              ? `<button class="btn btn-outline btn-small" data-remove="${i}" aria-label="${esc(c.name)} (Größe ${esc(c.size)}) entfernen">Entfernen</button>`
+              ? `<button class="btn btn-outline btn-small" data-remove="${i}" aria-label="${esc(c.name)} (Größe ${esc(c.size)}${c.color ? ", " + esc(c.color) : ""}) entfernen">Entfernen</button>`
               : ""
           }
         </div>`
@@ -191,14 +267,28 @@
     const p = products.find((x) => x.id === productId);
     if (!p) return;
     detailProduct = p;
-    detailImageIndex = 0;
+    const c = currentColor(p);
+    detailImageIndex = c ? c.image : 0;
     renderDetail();
-    openModal("product-detail-modal", "#pd-size");
+    openModal("product-detail-modal", c ? "#pd-colors input:checked" : "#pd-size");
   }
 
-  function renderDetail() {
+  // Beim Blättern durch die Fotos wechselt die Farbe mit (Foto und Farbe passen immer zusammen)
+  function showDetailImage(index) {
     const p = detailProduct;
-    if (!p) return;
+    detailImageIndex = index;
+    const ic = (p.imageColors || [])[index];
+    const c = ic && SF.findColor(p, ic.name);
+    if (c) {
+      chosenColor[p.id] = c.name;
+      syncSwatches(document.getElementById("pd-colors"), c);
+      syncCard(p);
+    }
+    renderGallery();
+  }
+
+  function renderGallery() {
+    const p = detailProduct;
     const images = p.images && p.images.length ? p.images : null;
     const remaining = SF.getProductRemaining(p);
     const soldOut = remaining !== null && remaining <= 0;
@@ -207,9 +297,11 @@
     const galleryEl = document.getElementById("pd-gallery");
     if (images) {
       const n = detailImageIndex + 1;
+      const ic = (p.imageColors || [])[detailImageIndex];
+      const colorName = ic && ic.name ? ` (${ic.name})` : "";
       galleryEl.innerHTML = `
         <div class="product-image product-image-detail">
-          <img src="${esc(images[detailImageIndex])}" alt="${esc(p.name)} – Bild ${n} von ${images.length}" class="fill-img">
+          <img src="${esc(images[detailImageIndex])}" alt="${esc(p.name + colorName)} – Bild ${n} von ${images.length}" class="fill-img">
           ${overlay}
         </div>
         ${
@@ -224,13 +316,11 @@
       `;
       if (images.length > 1) {
         document.getElementById("pd-prev").addEventListener("click", () => {
-          detailImageIndex = (detailImageIndex - 1 + images.length) % images.length;
-          renderDetail();
+          showDetailImage((detailImageIndex - 1 + images.length) % images.length);
           document.getElementById("pd-prev").focus();
         });
         document.getElementById("pd-next").addEventListener("click", () => {
-          detailImageIndex = (detailImageIndex + 1) % images.length;
-          renderDetail();
+          showDetailImage((detailImageIndex + 1) % images.length);
           document.getElementById("pd-next").focus();
         });
       }
@@ -241,6 +331,27 @@
           ${overlay}
         </div>`;
     }
+  }
+
+  function renderDetail() {
+    const p = detailProduct;
+    if (!p) return;
+    const remaining = SF.getProductRemaining(p);
+    const soldOut = remaining !== null && remaining <= 0;
+    renderGallery();
+
+    const colorsEl = document.getElementById("pd-colors");
+    colorsEl.innerHTML = swatchesHtml(p, "pd-color");
+    colorsEl.querySelectorAll("[data-color-for]").forEach((input) => {
+      input.addEventListener("change", () => {
+        chosenColor[p.id] = input.value;
+        const c = currentColor(p);
+        syncSwatches(colorsEl, c);
+        syncCard(p);
+        detailImageIndex = c.image;
+        renderGallery();
+      });
+    });
 
     document.getElementById("pd-name").textContent = p.name;
     document.getElementById("pd-desc").textContent = p.description || "";
@@ -339,7 +450,7 @@
           customerName: name,
           klasse,
           phone,
-          items: cart.map((c) => ({ productId: c.productId, size: c.size, qty: c.qty })),
+          items: cart.map((c) => ({ productId: c.productId, size: c.size, color: c.color, qty: c.qty })),
         });
         cart = [];
         renderCart();

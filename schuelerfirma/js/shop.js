@@ -108,7 +108,7 @@
         </div>
         <div class="product-body">
           <h3><button type="button" class="link-btn" data-open-detail="${id}">${esc(p.name)}</button></h3>
-          <p class="product-desc">${esc(p.description || "")}</p>
+          <p class="product-desc product-desc-short" data-open-detail="${id}" title="Ganze Beschreibung anzeigen">${esc(p.description || "")}</p>
           ${
             remaining !== null && !soldOut
               ? `<p class="hint">Nur noch ${remaining} Stück verfügbar</p>`

@@ -1716,3 +1716,26 @@ img.img-loading {
   opacity: 0.45;
   transition: opacity 0.15s;
 }
+
+/* Shop: Beschreibung auf der Karte höchstens 3 Zeilen mit „…“, ganze Beschreibung in der Detailansicht.
+   Alle Karten sind gleich hoch (jede Reihe so hoch wie die höchste Karte). */
+.product-grid {
+  grid-auto-rows: 1fr;
+}
+
+.product-desc-short {
+  flex: 0 0 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  line-height: 1.45;
+  min-height: calc(3 * 1.45em);
+  cursor: pointer;
+}
+
+/* Alles unter der Beschreibung nach unten schieben, damit Knöpfe auf einer Linie liegen */
+.product-desc-short + * {
+  margin-top: auto;
+}

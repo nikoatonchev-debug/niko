@@ -41,3 +41,6 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: schuelerfirma-siebdruck
           channelId: live
+          # Neuere firebase-tools prüfen zusätzlich die Service-Usage-API; dafür
+          # fehlt dem Dienstkonto die Berechtigung. 15.32.1 hat funktioniert.
+          firebaseToolsVersion: "15.32.1"

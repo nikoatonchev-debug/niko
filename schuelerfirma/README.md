@@ -114,9 +114,15 @@ npm run build
 - Passwörter verwaltet Firebase (gesalzen, verschlüsselt); die Website sieht sie nie.
 - Content-Security-Policy per `<meta>`-Tag auf jeder Seite, keine Inline-Skripte, Ausgaben werden maskiert.
 - Bild-Uploads (Admin): nur JPG/PNG/WebP/GIF, werden neu als JPEG gezeichnet (entfernt Standort-Metadaten),
-  alle Bilder eines Produkts zusammen höchstens ca. 800 KB.
+  höchstens ca. 150 KB pro Foto und 40 Fotos pro Produkt. Jedes Foto ist ein eigenes Dokument in
+  `productImages` (Felder `productId`, `src`); das Produkt speichert nur die Reihenfolge (`imageIds`).
+  So bleibt jedes Dokument unter der 1-MB-Grenze von Firestore, und der Shop lädt nur die Fotos, die
+  gerade gezeigt werden. Ältere Produkte mit Fotos direkt im Feld `images` funktionieren weiter und
+  werden beim nächsten Speichern umgestellt. Dafür muss die Regel für `productImages` aus
+  `firestore.rules` veröffentlicht sein.
 - Farben: Zu jedem Produktfoto gehört eine Farbe (Name + Farbkreis, gespeichert in `imageColors`,
-  gleiche Reihenfolge wie `images`). Im Shop erscheinen die Farben als Kreise; ein Klick zeigt das
-  passende Foto. Die gewählte Farbe wird mit der Bestellung gespeichert (`items[].color`).
+  gleiche Reihenfolge wie `imageIds`). Im Admin-Bereich zieht man Fotos derselben Farbe aufeinander
+  (Gruppe = eine Farbe). Im Shop erscheinen die Farben als Kreise; ein Klick zeigt das passende Foto.
+  Die gewählte Farbe wird mit der Bestellung gespeichert (`items[].color`).
 - Der Firebase-API-Schlüssel in `js/firebase-config.js` ist absichtlich öffentlich – geschützt wird über
   die Regeln, nicht über Verstecken.

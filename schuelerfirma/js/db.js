@@ -224,7 +224,8 @@ const SFDB = (function () {
       price: Number(x.price) || 0,
       color: x.color || "#2c6e6b",
       sizes: Array.isArray(x.sizes) ? x.sizes : [],
-      images: Array.isArray(x.images) ? x.images : [],
+      images: Array.isArray(x.images) ? x.images : [], // alte Produkte: Fotos direkt im Produkt
+      imageIds: Array.isArray(x.imageIds) ? x.imageIds.filter((id) => /^[A-Za-z0-9]{20}$/.test(id)) : [],
       imageColors: cleanImageColors(x.imageColors),
       stock: x.stock === undefined ? null : x.stock,
       sold: Number(x.sold) || 0,
@@ -251,16 +252,16 @@ const SFDB = (function () {
       hex: SF.safeColor(c && c.hex, "#9e9e9e"),
     }));
   }
-  function cleanProduct(p) {
-    const images = p.images || [];
+  function cleanProduct(p, imageIds) {
     return {
       name: p.name,
       description: p.description || "",
       price: p.price,
       color: p.color,
       sizes: p.sizes,
-      images,
-      imageColors: cleanImageColors(p.imageColors).slice(0, images.length),
+      images: [],
+      imageIds,
+      imageColors: cleanImageColors(p.imageColors).slice(0, imageIds.length),
     };
   }
   // „available“ = wie viele Stück ab jetzt noch zu haben sind (null = unbegrenzt).
@@ -268,35 +269,130 @@ const SFDB = (function () {
   function availableToStock(available, sold) {
     return available === null || available === undefined ? null : (Number(sold) || 0) + Math.max(0, Number(available) || 0);
   }
+
+  // ---------- Produktfotos ----------
+  // Jedes Foto ist ein eigenes Dokument in "productImages" (ein Firestore-Dokument
+  // darf höchstens 1 MB groß sein – so passen beliebig viele Fotos zu einem Produkt).
+  // Der Shop lädt nur die Fotos, die gerade gezeigt werden. Alte Produkte haben
+  // ihre Fotos noch direkt im Feld "images".
+  const imagePromises = new Map(); // Foto-ID -> Promise<src>
+  const imageSrcs = new Map(); // Foto-ID -> src (schon geladen)
+  function rememberImage(id, src) {
+    imageSrcs.set(id, src);
+    imagePromises.set(id, Promise.resolve(src));
+  }
+  function cachedProductImage(p, i) {
+    if (p.imageIds && p.imageIds.length) return imageSrcs.get(p.imageIds[i]) || null;
+    return (p.images || [])[i] || null;
+  }
+  function getProductImage(p, i) {
+    if (!(p.imageIds && p.imageIds.length)) return Promise.resolve((p.images || [])[i] || null);
+    const id = p.imageIds[i];
+    if (!id) return Promise.resolve(null);
+    if (!imagePromises.has(id)) {
+      const load = F.getDoc(F.doc(requireDb(), "productImages", id)).then(
+        (snap) => {
+          const src = snap.exists() ? String(snap.data().src || "") : "";
+          if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(src)) return null;
+          imageSrcs.set(id, src);
+          return src;
+        },
+        (e) => {
+          imagePromises.delete(id); // später nochmal versuchen
+          throw e;
+        }
+      );
+      imagePromises.set(id, load);
+    }
+    return imagePromises.get(id);
+  }
+  function getAllProductImages(p) {
+    return Promise.all(Array.from({ length: SF.photoCount(p) }, (_, i) => getProductImage(p, i)));
+  }
+  async function deleteImages(ids) {
+    await Promise.all(ids.map((id) => F.deleteDoc(F.doc(requireDb(), "productImages", id)).catch(() => {})));
+  }
+  // photos: [{ src, imageId }] – mit imageId = schon gespeichert, sonst wird es neu angelegt
+  async function savePhotos(productId, photos) {
+    const db = requireDb();
+    const created = [];
+    try {
+      const ids = await Promise.all(
+        photos.map(async (ph) => {
+          if (ph.imageId) return ph.imageId;
+          const ref = F.doc(F.collection(db, "productImages"));
+          await F.setDoc(ref, { productId, src: ph.src, createdAt: F.serverTimestamp() });
+          created.push(ref.id);
+          rememberImage(ref.id, ph.src);
+          return ref.id;
+        })
+      );
+      return { ids, created };
+    } catch (e) {
+      await deleteImages(created);
+      if (e && e.code === "permission-denied") {
+        throw withMessage(
+          "Die Fotos konnten nicht gespeichert werden: Die neuen Datenbank-Regeln sind noch nicht veröffentlicht (Firebase-Konsole → Firestore → Regeln).",
+          "sf/rules"
+        );
+      }
+      throw e;
+    }
+  }
+
   async function addProduct(p) {
     const ref = F.doc(F.collection(requireDb(), "products"));
-    await F.setDoc(
-      ref,
-      Object.assign(cleanProduct(p), {
-        stock: availableToStock(p.available, 0),
-        active: p.active !== false,
-        sold: 0,
-        createdAt: F.serverTimestamp(),
-      })
-    );
+    const photos = await savePhotos(ref.id, p.photos || []);
+    try {
+      await F.setDoc(
+        ref,
+        Object.assign(cleanProduct(p, photos.ids), {
+          stock: availableToStock(p.available, 0),
+          active: p.active !== false,
+          sold: 0,
+          createdAt: F.serverTimestamp(),
+        })
+      );
+    } catch (e) {
+      await deleteImages(photos.created);
+      throw e;
+    }
     return ref.id;
   }
   async function updateProduct(id, p) {
-    // In einer Transaktion, damit eine Bestellung genau in diesem Moment nicht verloren geht
     const db = requireDb();
     const ref = F.doc(db, "products", id);
-    await F.runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) throw withMessage("Dieses Produkt gibt es nicht mehr.");
-      const sold = Number(snap.data().sold) || 0;
-      tx.update(ref, Object.assign(cleanProduct(p), { stock: availableToStock(p.available, sold) }));
-    });
+    const photos = await savePhotos(id, p.photos || []);
+    let oldIds = [];
+    try {
+      // In einer Transaktion, damit eine Bestellung genau in diesem Moment nicht verloren geht
+      await F.runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw withMessage("Dieses Produkt gibt es nicht mehr.");
+        const sold = Number(snap.data().sold) || 0;
+        oldIds = productFrom(snap).imageIds;
+        tx.update(ref, Object.assign(cleanProduct(p, photos.ids), { stock: availableToStock(p.available, sold) }));
+      });
+    } catch (e) {
+      await deleteImages(photos.created);
+      throw e;
+    }
+    // Entfernte Fotos löschen
+    await deleteImages(oldIds.filter((x) => !photos.ids.includes(x)));
   }
   async function setProductActive(id, active) {
     await F.updateDoc(F.doc(requireDb(), "products", id), { active: !!active });
   }
   async function deleteProduct(id) {
-    await F.deleteDoc(F.doc(requireDb(), "products", id));
+    const db = requireDb();
+    await F.deleteDoc(F.doc(db, "products", id));
+    // Fotos des Produkts mitlöschen
+    try {
+      const s = await F.getDocs(F.query(F.collection(db, "productImages"), F.where("productId", "==", id)));
+      await deleteImages(s.docs.map((d) => d.id));
+    } catch (e) {
+      console.warn("SFDB: Fotos von", id, "nicht gelöscht", e);
+    }
   }
 
   // ---------- Bestellungen ----------
@@ -549,6 +645,9 @@ const SFDB = (function () {
     updateProduct,
     setProductActive,
     deleteProduct,
+    cachedProductImage,
+    getProductImage,
+    getAllProductImages,
     placeOrder,
     getMyOrders,
     getAllOrders,

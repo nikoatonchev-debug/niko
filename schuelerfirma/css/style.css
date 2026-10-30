@@ -1241,6 +1241,7 @@ th {
   height: 40px;
   object-fit: cover;
   border-radius: 6px;
+  background: var(--color-bg-alt);
 }
 
 .img-preview-row {
@@ -1708,4 +1709,10 @@ select.photo-move {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 6px;
+}
+
+/* Foto wird gerade nachgeladen */
+img.img-loading {
+  opacity: 0.45;
+  transition: opacity 0.15s;
 }

@@ -2,8 +2,7 @@
   const IDLE_LIMIT_MS = 30 * 60 * 1000;
   const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
-  const MAX_IMAGES = 6;
-  const MAX_TOTAL_IMAGE_BYTES = 800 * 1024; // Firestore: höchstens 1 MB pro Dokument
+  const MAX_IMAGES = 40; // jedes Foto ist ein eigenes Datenbank-Dokument (höchstens ca. 150 KB)
   const esc = (s) => SF.escapeHtml(s);
 
   let lastActivity = Date.now();
@@ -11,8 +10,10 @@
   let editingProductId = null;
   // Fotos in Farb-Gruppen: Alle Fotos einer Gruppe haben dieselbe Farbe
   // (z. B. vorne und hinten vom blauen Pulli). Ein Foto auf ein anderes ziehen = zusammen in eine Gruppe.
-  let colorGroups = []; // [{ name, hex, hexTouched, photos: [{ id, src }] }]
+  let colorGroups = []; // [{ name, hex, hexTouched, photos: [{ id, src, imageId }] }]
   let photoSeq = 0;
+  let photosLoading = false; // beim Bearbeiten: gespeicherte Fotos werden noch geladen
+  let editToken = 0;
 
   // Farbnamen-Vorschläge mit passendem Farbkreis (man kann auch eigene Namen eintragen)
   const COLOR_PRESETS = [
@@ -196,10 +197,9 @@
             : soldOut
             ? `<span class="badge badge-declined">ausverkauft</span>`
             : `${remaining} übrig`) + soldInfo;
-        const thumb =
-          p.images && p.images[0]
-            ? `<img src="${esc(p.images[0])}" alt="" class="admin-thumb">`
-            : `<span class="admin-thumb" style="background:${SF.safeColor(p.color, "#999999")};"></span>`;
+        const thumb = SF.photoCount(p)
+          ? `<img alt="" class="admin-thumb" data-thumb="${id}">`
+          : `<span class="admin-thumb" style="background:${SF.safeColor(p.color, "#999999")};"></span>`;
         const colors = SF.productColors(p);
         const colorDots = colors.length
           ? `<div class="swatch-mini-row">${colors
@@ -208,7 +208,7 @@
                   `<span class="swatch-dot swatch-dot-sm" style="background:${SF.safeColor(c.hex)}" title="${esc(c.name)}" aria-hidden="true"></span>`
               )
               .join("")}<span class="sr-only">Farben: ${esc(colors.map((c) => c.name).join(", "))}</span></div>`
-          : p.images && p.images.length
+          : SF.photoCount(p)
           ? `<br><span class="hint">Fotos ohne Farbe – bitte bearbeiten</span>`
           : "";
         return `
@@ -255,11 +255,16 @@
     el.querySelectorAll("[data-edit-product]").forEach((btn) =>
       btn.addEventListener("click", () => enterEditMode(btn.getAttribute("data-edit-product")))
     );
+    // Vorschaubilder nachladen (jedes Foto ist ein eigenes Dokument)
+    products.forEach((p) => {
+      const img = el.querySelector(`[data-thumb="${CSS.escape(p.id)}"]`);
+      if (img) SFDB.getProductImage(p, 0).then((src) => src && (img.src = src)).catch(() => {});
+    });
   }
 
   const allPhotos = () => colorGroups.flatMap((g) => g.photos);
-  function newPhoto(src) {
-    return { id: ++photoSeq, src };
+  function newPhoto(src, imageId) {
+    return { id: ++photoSeq, src, imageId: imageId || null };
   }
   function newGroup(photos, name, hex) {
     return { name: name || "", hex: SF.safeColor(hex, "#9e9e9e"), hexTouched: !!name, photos };
@@ -489,7 +494,7 @@
   // gleich geschriebene Farben werden vereinheitlicht ("blau" und "Blau" = ein Kreis).
   function photosForSave() {
     const seen = {};
-    const images = [];
+    const photos = [];
     const imageColors = [];
     colorGroups.forEach((g) => {
       let name = SF.clampText(g.name, 20);
@@ -497,16 +502,26 @@
       const key = SF.colorKey(name);
       if (!seen[key]) seen[key] = { name, hex: SF.safeColor(g.hex, "#9e9e9e") };
       g.photos.forEach((ph) => {
-        images.push(ph.src);
+        photos.push({ src: ph.src, imageId: ph.imageId });
         imageColors.push(seen[key]);
       });
     });
-    return { images, imageColors };
+    return { photos, imageColors };
   }
 
-  function enterEditMode(id) {
+  // Während Fotos geladen/vorbereitet werden: Speichern und weitere Fotos sperren
+  function setPhotosBusy(text) {
+    const note = document.getElementById("pf-photos-loading");
+    note.textContent = text || "";
+    note.classList.toggle("hidden", !text);
+    document.getElementById("product-form-submit").disabled = !!text;
+    document.getElementById("pf-images").disabled = !!text;
+  }
+
+  async function enterEditMode(id) {
     const p = products.find((x) => x.id === id);
     if (!p) return;
+    const token = ++editToken;
     editingProductId = id;
     document.getElementById("pf-name").value = p.name;
     document.getElementById("pf-description").value = p.description || "";
@@ -519,26 +534,49 @@
     const info = document.getElementById("pf-stock-info");
     info.textContent = `Bisher verkauft: ${Number(p.sold) || 0} Stück. Trag hier ein, wie viele ab jetzt noch zu haben sind.`;
     info.classList.remove("hidden");
-    // Fotos mit derselben Farbe wieder zu einer Gruppe zusammenfassen
     colorGroups = [];
-    (p.images || []).forEach((src, i) => {
-      const c = (p.imageColors || [])[i] || {};
-      const key = SF.colorKey(c.name);
-      const g = key && colorGroups.find((x) => SF.colorKey(x.name) === key);
-      if (g) g.photos.push(newPhoto(src));
-      else colorGroups.push(newGroup([newPhoto(src)], c.name, c.hex));
-    });
     renderImagePreview();
     document.getElementById("product-form-title").textContent = "Produkt bearbeiten: " + p.name;
     document.getElementById("product-form-submit").textContent = "Änderungen speichern";
     document.getElementById("product-form-cancel").classList.remove("hidden");
     document.getElementById("product-form").scrollIntoView({ behavior: "smooth", block: "start" });
     document.getElementById("pf-name").focus({ preventScroll: true });
+    if (!SF.photoCount(p)) return;
+
+    // Gespeicherte Fotos laden. Bis sie da sind, darf nicht gespeichert werden
+    // (sonst würden die Fotos verloren gehen).
+    photosLoading = true;
+    setPhotosBusy(`${SF.photoCount(p)} Fotos werden geladen …`);
+    let srcs;
+    try {
+      srcs = await SFDB.getAllProductImages(p);
+    } catch (err) {
+      if (token !== editToken) return;
+      setPhotosBusy("Die Fotos konnten nicht geladen werden. Bitte die Seite neu laden und nochmal auf „Bearbeiten“ klicken.");
+      return;
+    }
+    if (token !== editToken) return; // inzwischen abgebrochen oder anderes Produkt gewählt
+    // Fotos mit derselben Farbe wieder zu einer Gruppe zusammenfassen
+    srcs.forEach((src, i) => {
+      if (!src) return; // Foto gibt es nicht mehr
+      const c = (p.imageColors || [])[i] || {};
+      const photo = newPhoto(src, p.imageIds[i]);
+      const key = SF.colorKey(c.name);
+      const g = key && colorGroups.find((x) => SF.colorKey(x.name) === key);
+      if (g) g.photos.push(photo);
+      else colorGroups.push(newGroup([photo], c.name, c.hex));
+    });
+    photosLoading = false;
+    setPhotosBusy("");
+    renderImagePreview();
   }
 
   function exitEditMode() {
+    editToken++;
     editingProductId = null;
     colorGroups = [];
+    photosLoading = false;
+    setPhotosBusy("");
     document.getElementById("product-form").reset();
     document.getElementById("pf-color").value = "#2c6e6b";
     renderImagePreview();
@@ -546,10 +584,6 @@
     document.getElementById("product-form-submit").textContent = "Produkt hinzufügen";
     document.getElementById("product-form-cancel").classList.add("hidden");
     document.getElementById("pf-stock-info").classList.add("hidden");
-  }
-
-  function totalImageBytes() {
-    return allPhotos().reduce((n, ph) => n + SF.dataUrlBytes(ph.src), 0);
   }
 
   function setupProductForm() {
@@ -563,11 +597,14 @@
     // (z. B. GPS-Standort aus Handyfotos) und alles, was kein Bild ist.
     document.getElementById("pf-images").addEventListener("change", async (e) => {
       const problems = [];
-      for (const file of Array.from(e.target.files || [])) {
+      const chosen = Array.from(e.target.files || []);
+      let done = 0;
+      for (const file of chosen) {
         if (allPhotos().length >= MAX_IMAGES) {
-          problems.push(`Maximal ${MAX_IMAGES} Bilder pro Produkt.`);
+          problems.push(`Maximal ${MAX_IMAGES} Fotos pro Produkt – die restlichen wurden nicht hinzugefügt.`);
           break;
         }
+        if (chosen.length > 1) setPhotosBusy(`Fotos werden vorbereitet … ${++done} von ${chosen.length}`);
         if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
           problems.push(`„${file.name}“ ist kein JPG-, PNG-, WebP- oder GIF-Bild.`);
           continue;
@@ -578,16 +615,13 @@
         }
         try {
           const img = await SF.resizeImageFile(file, 800, 150 * 1024);
-          if (totalImageBytes() + SF.dataUrlBytes(img) > MAX_TOTAL_IMAGE_BYTES) {
-            problems.push(`„${file.name}“ passt nicht mehr dazu: Alle Bilder eines Produkts zusammen dürfen höchstens etwa 800 KB groß sein.`);
-            continue;
-          }
           colorGroups.push(newGroup([newPhoto(img)])); // jedes neue Foto erst mal eigene Gruppe
         } catch (err) {
           problems.push(`„${file.name}“ konnte nicht gelesen werden.`);
         }
       }
       e.target.value = "";
+      setPhotosBusy("");
       const firstNew = colorGroups.findIndex((g) => !SF.colorKey(g.name));
       renderImagePreview();
       if (problems.length) SFUI.showMessage(msg, problems.join(" "), "error");

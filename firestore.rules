@@ -62,6 +62,19 @@ service cloud.firestore {
       }
     }
 
+    // ---------- Produktfotos: jedes Foto ein eigenes Dokument ----------
+    // (ein Dokument darf hoechstens 1 MB gross sein; so passen viele Fotos zu einem Produkt)
+    match /productImages/{imageId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['productId', 'src', 'createdAt'])
+        && request.resource.data.productId is string
+        && request.resource.data.productId.size() <= 40
+        && request.resource.data.src is string
+        && request.resource.data.src.size() <= 900000;
+      allow delete: if isAdmin();
+    }
+
     // ---------- Bestellungen: Kund:in sieht nur die eigenen, Admin alle ----------
     match /orders/{orderId} {
       allow create: if verified() && validOrder();

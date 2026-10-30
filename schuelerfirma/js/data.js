@@ -143,11 +143,15 @@ const SF = (() => {
   function colorKey(name) {
     return String(name || "").trim().toLowerCase();
   }
+  // Anzahl Fotos: neue Produkte speichern Foto-IDs (imageIds), alte die Fotos selbst (images)
+  function photoCount(product) {
+    return (product.imageIds && product.imageIds.length) || (product.images || []).length;
+  }
   function productColors(product) {
-    const images = product.images || [];
+    const count = photoCount(product);
     const list = [];
     (product.imageColors || []).forEach((c, i) => {
-      if (i >= images.length || !c || !colorKey(c.name)) return;
+      if (i >= count || !c || !colorKey(c.name)) return;
       if (list.some((x) => colorKey(x.name) === colorKey(c.name))) return;
       list.push({ name: String(c.name).trim(), hex: safeColor(c.hex, "#9e9e9e"), image: i });
     });
@@ -239,6 +243,7 @@ const SF = (() => {
     specialDecisionBadgeHtml,
     getProductRemaining,
     colorKey,
+    photoCount,
     productColors,
     findColor,
     resizeImageFile,

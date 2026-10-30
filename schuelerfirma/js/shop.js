@@ -14,10 +14,40 @@
     return SF.findColor(p, chosenColor[p.id]) || colors[0];
   }
 
+  // Foto-Tag: sofort mit Bild, wenn es schon geladen ist, sonst wird es von showPhoto() nachgeladen
+  function photoImgHtml(p, index, alt, placeholder) {
+    const src = SFDB.cachedProductImage(p, index) || placeholder;
+    return `<img ${src ? `src="${esc(src)}"` : ""} alt="${esc(alt)}" class="fill-img" data-photo-index="${index}">`;
+  }
+
+  // Lädt Foto Nr. index in das img-Element (bis es da ist, bleibt das alte Bild blass stehen)
+  function showPhoto(img, p, index) {
+    img.setAttribute("data-photo-index", index);
+    const cached = SFDB.cachedProductImage(p, index);
+    if (cached) {
+      if (img.getAttribute("src") !== cached) img.src = cached;
+      img.classList.remove("img-loading");
+      return;
+    }
+    img.classList.add("img-loading");
+    SFDB.getProductImage(p, index)
+      .then((src) => {
+        if (img.getAttribute("data-photo-index") !== String(index)) return; // inzwischen anderes Foto gewählt
+        if (src) img.src = src;
+        img.classList.remove("img-loading");
+      })
+      .catch(() => img.classList.remove("img-loading"));
+  }
+
+  // Erstes Foto jeder Farbe schon mal laden (z. B. wenn die Maus über den Farbkreisen ist)
+  function prefetchColors(p) {
+    SF.productColors(p).forEach((c) => SFDB.getProductImage(p, c.image).catch(() => {}));
+  }
+
   function productImagesOrIcon(p) {
-    if (p.images && p.images.length) {
+    if (SF.photoCount(p)) {
       const c = currentColor(p);
-      return `<img src="${esc(p.images[c ? c.image : 0])}" alt="" class="fill-img">`;
+      return photoImgHtml(p, c ? c.image : 0, "");
     }
     return SFIcons.hoodie(SF.safeColor(p.color));
   }
@@ -59,7 +89,7 @@
     const card = document.querySelector(`[data-card="${CSS.escape(p.id)}"]`);
     if (!c || !card) return;
     const img = card.querySelector(".product-image img");
-    if (img) img.src = p.images[c.image];
+    if (img) showPhoto(img, p, c.image);
     syncSwatches(card, c);
   }
 
@@ -132,6 +162,16 @@
         chosenColor[p.id] = input.value;
         syncCard(p);
       });
+    });
+    products.forEach((p) => {
+      const card = el.querySelector(`[data-card="${CSS.escape(p.id)}"]`);
+      const img = card && card.querySelector(".product-image img");
+      if (img) showPhoto(img, p, Number(img.getAttribute("data-photo-index")));
+      const swatches = card && card.querySelector(".swatches");
+      if (swatches) {
+        swatches.addEventListener("pointerenter", () => prefetchColors(p), { once: true });
+        swatches.addEventListener("focusin", () => prefetchColors(p), { once: true });
+      }
     });
   }
 
@@ -289,38 +329,44 @@
 
   function renderGallery() {
     const p = detailProduct;
-    const images = p.images && p.images.length ? p.images : null;
+    const count = SF.photoCount(p);
     const remaining = SF.getProductRemaining(p);
     const soldOut = remaining !== null && remaining <= 0;
     const overlay = soldOut ? `<div class="sold-out-overlay"><span class="sold-out-text">Ausverkauft</span></div>` : "";
 
     const galleryEl = document.getElementById("pd-gallery");
-    if (images) {
+    if (count) {
       const n = detailImageIndex + 1;
       const ic = (p.imageColors || [])[detailImageIndex];
       const colorName = ic && ic.name ? ` (${ic.name})` : "";
+      // Bis das neue Foto geladen ist, bleibt das bisherige (blass) stehen
+      const before = galleryEl.querySelector("img");
+      const placeholder = before ? before.getAttribute("src") : null;
       galleryEl.innerHTML = `
         <div class="product-image product-image-detail">
-          <img src="${esc(images[detailImageIndex])}" alt="${esc(p.name + colorName)} – Bild ${n} von ${images.length}" class="fill-img">
+          ${photoImgHtml(p, detailImageIndex, `${p.name + colorName} – Bild ${n} von ${count}`, placeholder)}
           ${overlay}
         </div>
         ${
-          images.length > 1
+          count > 1
             ? `<div class="gallery-nav">
                 <button type="button" class="btn btn-outline btn-small" id="pd-prev" aria-label="Vorheriges Bild">&larr; Zurück</button>
-                <span class="hint" aria-live="polite">${n} / ${images.length}</span>
+                <span class="hint" aria-live="polite">${n} / ${count}</span>
                 <button type="button" class="btn btn-outline btn-small" id="pd-next" aria-label="Nächstes Bild">Weiter &rarr;</button>
               </div>`
             : ""
         }
       `;
-      if (images.length > 1) {
+      showPhoto(galleryEl.querySelector("img"), p, detailImageIndex);
+      if (count > 1) {
+        // Nachbarfotos schon laden, damit Blättern ohne Warten geht
+        [1, count - 1].forEach((d) => SFDB.getProductImage(p, (detailImageIndex + d) % count).catch(() => {}));
         document.getElementById("pd-prev").addEventListener("click", () => {
-          showDetailImage((detailImageIndex - 1 + images.length) % images.length);
+          showDetailImage((detailImageIndex - 1 + count) % count);
           document.getElementById("pd-prev").focus();
         });
         document.getElementById("pd-next").addEventListener("click", () => {
-          showDetailImage((detailImageIndex + 1) % images.length);
+          showDetailImage((detailImageIndex + 1) % count);
           document.getElementById("pd-next").focus();
         });
       }
@@ -342,6 +388,11 @@
 
     const colorsEl = document.getElementById("pd-colors");
     colorsEl.innerHTML = swatchesHtml(p, "pd-color");
+    const detailSwatches = colorsEl.querySelector(".swatches");
+    if (detailSwatches) {
+      detailSwatches.addEventListener("pointerenter", () => prefetchColors(p), { once: true });
+      detailSwatches.addEventListener("focusin", () => prefetchColors(p), { once: true });
+    }
     colorsEl.querySelectorAll("[data-color-for]").forEach((input) => {
       input.addEventListener("change", () => {
         chosenColor[p.id] = input.value;

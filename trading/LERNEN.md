@@ -21,3 +21,4 @@
 - 30.10. 08:15: Nacht-Fenster Krypto jetzt 13/17 (76 %) – bestätigt sich weiter. Regel: Krypto-TOP nur noch nachts; heute früh hätten die alten Regeln ein TOP gegeben, das lasse ich bewusst weg.
 - 30.10. 13:15: Wenn Krypto über 24h schon mehr als 3 % gefallen ist (heute BTC −3,3 %), ging der Abwärtstrend im nächsten Fenster weiter (2/2 heute). Bei starken 24h-Bewegungen scheint Trendfolge auch tagsüber besser zu passen – weiter zählen.
 - 30.10. 18:15: DAX-TOP nach 3 Plus-Tagen falsch (−0,9 %); TOP gesamt jetzt 7/18 (39 %), Woche 2 0/3. Nach 3 Tagen in eine Richtung kam bisher oft eine Gegenbewegung → Regel (b) auf 'Rücksetzer im Trend' umgestellt.
+- 30.10. 22:15: Alle 5 US-Aktien/Index-Prognosen 'steigt' lagen heute gemeinsam falsch (0/5, Nasdaq −3,5 %), Gold/Öl/EUR-USD dagegen 3/3. Bestätigt: US-Tech-Werte bewegen sich als Block – ein schlechter Tag kostet 5 Treffer auf einmal.

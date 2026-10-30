@@ -171,7 +171,7 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 126 | 30.10. 13:15 | ETH | 2.235,26 $ | fällt | 30.10. 18:15 | ❌ 2.241,08 $ (+0,3 %) |
 | 127 | 30.10. 18:15 | BTC | 77.215 $ | fällt | 30.10. 22:15 | offen |
 | 128 | 30.10. 18:15 | ETH | 2.241,08 $ | fällt | 30.10. 22:15 | offen |
-| 129 | 30.10. 18:15 | DAX | 25.818,21 (Schluss 30.10.) | steigt | 02.11. 18:15 | offen |
+| 129 | 30.10. 18:15 | DAX | 25.818,21 (Schluss 30.10.) | steigt (TOP, neue Regel) | 02.11. 18:15 | offen |
 | 130 | 30.10. 18:15 | SAP | 211,25 € (Schluss 30.10.) | steigt | 02.11. 18:15 | offen |
 
 Trefferquote Woche 2: 13 / 24 · TOP 0/3 · Gesamt seit Start: 70 / 118 (59 %) · TOP gesamt 7/18

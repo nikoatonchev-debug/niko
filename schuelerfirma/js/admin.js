@@ -9,7 +9,10 @@
   let lastActivity = Date.now();
   let products = [];
   let editingProductId = null;
-  let pendingImages = []; // { src, name, hex, hexTouched } – jedes Foto mit seiner Farbe
+  // Fotos in Farb-Gruppen: Alle Fotos einer Gruppe haben dieselbe Farbe
+  // (z. B. vorne und hinten vom blauen Pulli). Ein Foto auf ein anderes ziehen = zusammen in eine Gruppe.
+  let colorGroups = []; // [{ name, hex, hexTouched, photos: [{ id, src }] }]
+  let photoSeq = 0;
 
   // Farbnamen-Vorschläge mit passendem Farbkreis (man kann auch eigene Namen eintragen)
   const COLOR_PRESETS = [
@@ -254,87 +257,251 @@
     );
   }
 
-  // Jedes Foto mit Farbname und Farbkreis. Die Eingaben werden über
+  const allPhotos = () => colorGroups.flatMap((g) => g.photos);
+  function newPhoto(src) {
+    return { id: ++photoSeq, src };
+  }
+  function newGroup(photos, name, hex) {
+    return { name: name || "", hex: SF.safeColor(hex, "#9e9e9e"), hexTouched: !!name, photos };
+  }
+  function groupTitle(g, gi) {
+    return SF.colorKey(g.name) ? g.name.trim() : `Gruppe ${gi + 1} (noch ohne Farbe)`;
+  }
+  function groupOfPhoto(id) {
+    return colorGroups.findIndex((g) => g.photos.some((ph) => ph.id === id));
+  }
+
+  // Foto in eine andere Gruppe schieben (target = Gruppen-Nummer oder "new" für eine eigene Farbe)
+  function movePhoto(id, target) {
+    const from = groupOfPhoto(id);
+    if (from < 0 || target === from) return false;
+    const src = colorGroups[from];
+    if (target === "new" && src.photos.length === 1) return false;
+    const photo = src.photos.splice(src.photos.findIndex((ph) => ph.id === id), 1)[0];
+    if (target === "new") {
+      colorGroups.splice(from + 1, 0, newGroup([photo]));
+    } else {
+      const dest = colorGroups[target];
+      // Letztes Foto einer Gruppe mit Farbe wandert in eine Gruppe ohne Farbe -> Farbe mitnehmen
+      if (!src.photos.length && !SF.colorKey(dest.name) && SF.colorKey(src.name)) {
+        Object.assign(dest, { name: src.name, hex: src.hex, hexTouched: src.hexTouched });
+      }
+      dest.photos.push(photo);
+    }
+    colorGroups = colorGroups.filter((g) => g.photos.length);
+    return true;
+  }
+
+  function moveOptionsHtml(gi) {
+    const options = colorGroups
+      .map((g, xi) => (xi === gi ? "" : `<option value="${xi}">zu ${esc(groupTitle(g, xi))}</option>`))
+      .join("");
+    const own = colorGroups[gi].photos.length > 1 ? `<option value="new">eigene neue Farbe</option>` : "";
+    return options + own;
+  }
+
+  // Farb-Gruppen mit ihren Fotos. Die Eingaben werden über
   // setupImageColorFields() (einmal, per Event-Delegation) ausgewertet.
   function renderImagePreview() {
     const el = document.getElementById("pf-image-preview");
-    el.innerHTML = pendingImages
-      .map(
-        (img, i) =>
-          `<div class="img-preview">
-            <div class="img-preview-pic">
-              <img src="${esc(img.src)}" alt="Bild ${i + 1}">
-              <button type="button" data-remove-image="${i}" aria-label="Bild ${i + 1} entfernen">&times;</button>
-            </div>
-            <label for="pf-img-name-${i}" class="img-color-label">Farbe<span class="sr-only"> von Bild ${i + 1}</span></label>
+    let n = 0;
+    el.innerHTML =
+      colorGroups
+        .map((g, gi) => {
+          const numbers = [];
+          const moves = moveOptionsHtml(gi);
+          const photos = g.photos
+            .map((ph) => {
+              n++;
+              numbers.push(n);
+              return `<div class="group-photo" data-photo="${ph.id}">
+              <img src="${esc(ph.src)}" alt="Foto ${n}" draggable="false">
+              <button type="button" class="photo-remove" data-remove-photo="${ph.id}" aria-label="Foto ${n} entfernen">&times;</button>
+              ${
+                moves
+                  ? `<label class="sr-only" for="pf-photo-move-${ph.id}">Foto ${n} verschieben</label>
+              <select id="pf-photo-move-${ph.id}" class="photo-move" data-photo-move="${ph.id}">
+                <option value="" selected>Verschieben …</option>${moves}
+              </select>`
+                  : ""
+              }
+            </div>`;
+            })
+            .join("");
+          const which = numbers.length > 1 ? `Fotos ${numbers.slice(0, -1).join(", ")} und ${numbers[numbers.length - 1]}` : `Foto ${numbers[0]}`;
+          return `<div class="color-group" data-group="${gi}">
+            <div class="color-group-photos">${photos}</div>
+            <label for="pf-grp-name-${gi}" class="img-color-label">${
+              numbers.length > 1 ? `Farbe für diese ${numbers.length} Fotos` : "Farbe"
+            }<span class="sr-only"> (${which})</span></label>
             <div class="img-color">
-              <input type="color" id="pf-img-hex-${i}" data-img-hex="${i}" value="${SF.safeColor(img.hex, "#9e9e9e")}" aria-label="Farbkreis für Bild ${i + 1}">
-              <input type="text" id="pf-img-name-${i}" data-img-name="${i}" list="pf-color-names" maxlength="20"
-                placeholder="z. B. Blau" autocomplete="off" value="${esc(img.name)}">
+              <input type="color" id="pf-grp-hex-${gi}" data-grp-hex="${gi}" value="${SF.safeColor(g.hex, "#9e9e9e")}" aria-label="Farbkreis für ${which}">
+              <input type="text" id="pf-grp-name-${gi}" data-grp-name="${gi}" list="pf-color-names" maxlength="20"
+                placeholder="z. B. Blau" autocomplete="off" value="${esc(g.name)}">
             </div>
-          </div>`
-      )
-      .join("");
+          </div>`;
+        })
+        .join("") + (colorGroups.length > 1 || allPhotos().length > 1 ? `<div class="color-group color-group-new" data-group="new" aria-hidden="true">Hier ablegen = eigene Farbe</div>` : "");
     // Die einzelne Farbe wird nur noch gebraucht, wenn es gar kein Foto gibt
-    document.getElementById("pf-color-field").classList.toggle("hidden", pendingImages.length > 0);
-    document.getElementById("pf-images-hint").classList.toggle("hidden", pendingImages.length === 0);
+    document.getElementById("pf-color-field").classList.toggle("hidden", colorGroups.length > 0);
+    document.getElementById("pf-images-hint").classList.toggle("hidden", colorGroups.length === 0);
+  }
+
+  function announcePhotos(text) {
+    const live = document.getElementById("pf-photo-live");
+    live.textContent = "";
+    setTimeout(() => (live.textContent = text), 50);
   }
 
   function setupImageColorFields() {
     const el = document.getElementById("pf-image-preview");
+    const msg = document.getElementById("product-message");
+
     el.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-remove-image]");
+      const btn = e.target.closest("[data-remove-photo]");
       if (!btn) return;
-      pendingImages.splice(parseInt(btn.getAttribute("data-remove-image"), 10), 1);
+      const id = Number(btn.getAttribute("data-remove-photo"));
+      const gi = groupOfPhoto(id);
+      colorGroups[gi].photos = colorGroups[gi].photos.filter((ph) => ph.id !== id);
+      colorGroups = colorGroups.filter((g) => g.photos.length);
       renderImagePreview();
+      document.getElementById("pf-images").focus();
     });
+
+    // Ohne Ziehen (Tastatur, Handy): "Verschieben …"-Auswahl unter jedem Foto
+    el.addEventListener("change", (e) => {
+      const sel = e.target.closest("[data-photo-move]");
+      if (!sel || !sel.value) return;
+      const id = Number(sel.getAttribute("data-photo-move"));
+      if (!movePhoto(id, sel.value === "new" ? "new" : Number(sel.value))) return;
+      renderImagePreview();
+      const gi = groupOfPhoto(id);
+      announcePhotos(`Foto verschoben. Es gehört jetzt zu: ${groupTitle(colorGroups[gi], gi)}.`);
+      const again = document.getElementById(`pf-photo-move-${id}`);
+      (again || document.getElementById(`pf-grp-name-${gi}`)).focus();
+    });
+
     el.addEventListener("input", (e) => {
       const t = e.target;
-      if (t.hasAttribute("data-img-name")) {
-        const i = parseInt(t.getAttribute("data-img-name"), 10);
-        const img = pendingImages[i];
-        img.name = t.value;
+      if (t.hasAttribute("data-grp-name")) {
+        const gi = Number(t.getAttribute("data-grp-name"));
+        const g = colorGroups[gi];
+        g.name = t.value;
         t.removeAttribute("aria-invalid");
-        // Hinweis "Farbe fehlt" weg, sobald jedes Foto eine Farbe hat
-        const msg = document.getElementById("product-message");
-        if (msg.dataset.kind === "color" && pendingImages.every((x) => SF.colorKey(x.name))) {
+        el.querySelectorAll(`[data-photo-move] option[value="${gi}"]`).forEach((o) => (o.textContent = "zu " + groupTitle(g, gi)));
+        // Hinweis "Farbe fehlt" weg, sobald jede Gruppe eine Farbe hat
+        if (msg.dataset.kind === "color" && colorGroups.every((x) => SF.colorKey(x.name))) {
           SFUI.hideMessage(msg);
           delete msg.dataset.kind;
         }
-        // Gleicher Name wie bei einem anderen Foto -> gleicher Kreis; sonst Vorschlag aus der Liste
-        const same = pendingImages.find((x, j) => j !== i && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(img.name));
-        const hex = same ? same.hex : !img.hexTouched ? presetHex(img.name) : null;
+        // Gleicher Name wie bei einer anderen Gruppe -> gleicher Kreis; sonst Vorschlag aus der Liste
+        const same = colorGroups.find((x, j) => j !== gi && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(g.name));
+        const hex = same ? same.hex : !g.hexTouched ? presetHex(g.name) : null;
         if (hex) {
-          img.hex = hex;
-          document.getElementById(`pf-img-hex-${i}`).value = hex;
+          g.hex = hex;
+          document.getElementById(`pf-grp-hex-${gi}`).value = hex;
         }
-      } else if (t.hasAttribute("data-img-hex")) {
-        const i = parseInt(t.getAttribute("data-img-hex"), 10);
-        const img = pendingImages[i];
-        img.hex = SF.safeColor(t.value, "#9e9e9e");
-        img.hexTouched = true;
-        // Alle Fotos mit demselben Farbnamen bekommen denselben Kreis
-        pendingImages.forEach((x, j) => {
-          if (j !== i && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(img.name)) {
-            x.hex = img.hex;
+      } else if (t.hasAttribute("data-grp-hex")) {
+        const gi = Number(t.getAttribute("data-grp-hex"));
+        const g = colorGroups[gi];
+        g.hex = SF.safeColor(t.value, "#9e9e9e");
+        g.hexTouched = true;
+        // Gruppen mit demselben Farbnamen bekommen denselben Kreis
+        colorGroups.forEach((x, j) => {
+          if (j !== gi && SF.colorKey(x.name) && SF.colorKey(x.name) === SF.colorKey(g.name)) {
+            x.hex = g.hex;
             x.hexTouched = true;
-            document.getElementById(`pf-img-hex-${j}`).value = img.hex;
+            document.getElementById(`pf-grp-hex-${j}`).value = g.hex;
           }
         });
       }
     });
+
+    // Ziehen und Ablegen mit Maus oder Finger (Pointer Events)
+    let drag = null;
+    function dropTargetAt(x, y) {
+      const under = document.elementFromPoint(x, y);
+      return under ? under.closest("#pf-image-preview .color-group") : null;
+    }
+    function endDrag(apply) {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      document.removeEventListener("keydown", onDragKey);
+      if (d.ghost) d.ghost.remove();
+      el.classList.remove("dragging");
+      el.querySelectorAll(".drop-target, .is-dragging").forEach((x) => x.classList.remove("drop-target", "is-dragging"));
+      if (!apply || !d.active || !d.target) return;
+      const t = d.target.getAttribute("data-group");
+      if (movePhoto(d.id, t === "new" ? "new" : Number(t))) {
+        renderImagePreview();
+        const gi = groupOfPhoto(d.id);
+        announcePhotos(`Foto verschoben. Es gehört jetzt zu: ${groupTitle(colorGroups[gi], gi)}.`);
+      }
+    }
+    function onDragKey(e) {
+      if (e.key === "Escape") endDrag(false);
+    }
+    el.addEventListener("pointerdown", (e) => {
+      const img = e.target.closest(".group-photo img");
+      if (!img || e.button > 0) return;
+      e.preventDefault();
+      const photo = img.closest(".group-photo");
+      drag = { id: Number(photo.getAttribute("data-photo")), x: e.clientX, y: e.clientY, pointerId: e.pointerId, photo, img, active: false, target: null, ghost: null };
+      try {
+        img.setPointerCapture(e.pointerId);
+      } catch (err) {
+        /* egal */
+      }
+      document.addEventListener("keydown", onDragKey);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      if (!drag.active) {
+        if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+        drag.active = true;
+        drag.ghost = drag.img.cloneNode();
+        drag.ghost.className = "drag-ghost";
+        drag.ghost.alt = "";
+        document.body.appendChild(drag.ghost);
+        drag.photo.classList.add("is-dragging");
+        el.classList.add("dragging");
+      }
+      drag.ghost.style.left = e.clientX + "px";
+      drag.ghost.style.top = e.clientY + "px";
+      const target = dropTargetAt(e.clientX, e.clientY);
+      if (target !== drag.target) {
+        if (drag.target) drag.target.classList.remove("drop-target");
+        drag.target = target;
+        if (target) target.classList.add("drop-target");
+      }
+      // Am Bildschirmrand mitscrollen
+      if (e.clientY < 70) window.scrollBy(0, -12);
+      else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+    });
+    el.addEventListener("pointerup", (e) => {
+      if (drag && e.pointerId === drag.pointerId) endDrag(true);
+    });
+    el.addEventListener("pointercancel", () => endDrag(false));
   }
 
-  // Gleich geschriebene Farben vereinheitlichen ("blau" und "Blau" = eine Farbe, ein Kreis)
-  function imageColorsForSave() {
+  // Fotos und Farben zum Speichern: Fotos einer Gruppe stehen nebeneinander,
+  // gleich geschriebene Farben werden vereinheitlicht ("blau" und "Blau" = ein Kreis).
+  function photosForSave() {
     const seen = {};
-    return pendingImages.map((img) => {
-      let name = SF.clampText(img.name, 20);
+    const images = [];
+    const imageColors = [];
+    colorGroups.forEach((g) => {
+      let name = SF.clampText(g.name, 20);
       name = name.charAt(0).toUpperCase() + name.slice(1);
       const key = SF.colorKey(name);
-      if (!seen[key]) seen[key] = { name, hex: SF.safeColor(img.hex, "#9e9e9e") };
-      return seen[key];
+      if (!seen[key]) seen[key] = { name, hex: SF.safeColor(g.hex, "#9e9e9e") };
+      g.photos.forEach((ph) => {
+        images.push(ph.src);
+        imageColors.push(seen[key]);
+      });
     });
+    return { images, imageColors };
   }
 
   function enterEditMode(id) {
@@ -352,9 +519,14 @@
     const info = document.getElementById("pf-stock-info");
     info.textContent = `Bisher verkauft: ${Number(p.sold) || 0} Stück. Trag hier ein, wie viele ab jetzt noch zu haben sind.`;
     info.classList.remove("hidden");
-    pendingImages = (p.images || []).map((src, i) => {
+    // Fotos mit derselben Farbe wieder zu einer Gruppe zusammenfassen
+    colorGroups = [];
+    (p.images || []).forEach((src, i) => {
       const c = (p.imageColors || [])[i] || {};
-      return { src, name: c.name || "", hex: SF.safeColor(c.hex, "#9e9e9e"), hexTouched: !!c.name };
+      const key = SF.colorKey(c.name);
+      const g = key && colorGroups.find((x) => SF.colorKey(x.name) === key);
+      if (g) g.photos.push(newPhoto(src));
+      else colorGroups.push(newGroup([newPhoto(src)], c.name, c.hex));
     });
     renderImagePreview();
     document.getElementById("product-form-title").textContent = "Produkt bearbeiten: " + p.name;
@@ -366,7 +538,7 @@
 
   function exitEditMode() {
     editingProductId = null;
-    pendingImages = [];
+    colorGroups = [];
     document.getElementById("product-form").reset();
     document.getElementById("pf-color").value = "#2c6e6b";
     renderImagePreview();
@@ -377,7 +549,7 @@
   }
 
   function totalImageBytes() {
-    return pendingImages.reduce((n, img) => n + SF.dataUrlBytes(img.src), 0);
+    return allPhotos().reduce((n, ph) => n + SF.dataUrlBytes(ph.src), 0);
   }
 
   function setupProductForm() {
@@ -392,7 +564,7 @@
     document.getElementById("pf-images").addEventListener("change", async (e) => {
       const problems = [];
       for (const file of Array.from(e.target.files || [])) {
-        if (pendingImages.length >= MAX_IMAGES) {
+        if (allPhotos().length >= MAX_IMAGES) {
           problems.push(`Maximal ${MAX_IMAGES} Bilder pro Produkt.`);
           break;
         }
@@ -410,18 +582,18 @@
             problems.push(`„${file.name}“ passt nicht mehr dazu: Alle Bilder eines Produkts zusammen dürfen höchstens etwa 800 KB groß sein.`);
             continue;
           }
-          pendingImages.push({ src: img, name: "", hex: "#9e9e9e", hexTouched: false });
+          colorGroups.push(newGroup([newPhoto(img)])); // jedes neue Foto erst mal eigene Gruppe
         } catch (err) {
           problems.push(`„${file.name}“ konnte nicht gelesen werden.`);
         }
       }
       e.target.value = "";
-      const firstNew = pendingImages.findIndex((x) => !SF.colorKey(x.name));
+      const firstNew = colorGroups.findIndex((g) => !SF.colorKey(g.name));
       renderImagePreview();
       if (problems.length) SFUI.showMessage(msg, problems.join(" "), "error");
       else SFUI.hideMessage(msg);
-      // Gleich zur Farbe des ersten neuen Fotos springen
-      if (firstNew > -1 && !problems.length) document.getElementById(`pf-img-name-${firstNew}`).focus();
+      // Gleich zur Farbe der ersten Gruppe ohne Farbe springen
+      if (firstNew > -1 && !problems.length) document.getElementById(`pf-grp-name-${firstNew}`).focus();
     });
 
     document.getElementById("product-form-cancel").addEventListener("click", exitEditMode);
@@ -444,10 +616,10 @@
       else if (!(price > 0 && price <= 1000)) error = "Bitte einen Preis zwischen 0,01 und 1000 € eingeben.";
       else if (sizes.length === 0) error = "Bitte mindestens eine Größe angeben.";
       delete msg.dataset.kind;
-      const missingColor = pendingImages.findIndex((x) => !SF.colorKey(x.name));
+      const missingColor = colorGroups.findIndex((g) => !SF.colorKey(g.name));
       if (!error && missingColor > -1) {
-        error = `Bitte bei jedem Foto eine Farbe eintragen (z. B. Blau) – bei Bild ${missingColor + 1} fehlt sie noch.`;
-        const field = document.getElementById(`pf-img-name-${missingColor}`);
+        error = "Bitte bei jedem Foto bzw. jeder Foto-Gruppe eine Farbe eintragen (z. B. Blau) – beim rot markierten Feld fehlt sie noch.";
+        const field = document.getElementById(`pf-grp-name-${missingColor}`);
         field.setAttribute("aria-invalid", "true");
         field.focus();
       }
@@ -468,9 +640,8 @@
         color,
         sizes,
         available,
-        images: pendingImages.map((x) => x.src),
-        imageColors: imageColorsForSave(),
       };
+      Object.assign(payload, photosForSave());
       try {
         if (editingProductId) await SFDB.updateProduct(editingProductId, payload);
         else await SFDB.addProduct(Object.assign({ active: true }, payload));

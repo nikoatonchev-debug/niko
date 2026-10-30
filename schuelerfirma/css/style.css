@@ -1245,26 +1245,105 @@ th {
 
 .img-preview-row {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
+  align-items: flex-start;
   margin-bottom: 16px;
 }
 
-.img-preview {
-  width: 150px;
+/* Farb-Gruppe: ein oder mehrere Fotos mit einer gemeinsamen Farbe */
+.color-group {
+  min-width: 200px;
+  max-width: 100%;
+  padding: 12px;
+  border: 2px dashed var(--color-border);
+  border-radius: 12px;
+  background: #fff;
 }
 
-.img-preview-pic {
+.color-group-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.group-photo {
   position: relative;
-  margin-bottom: 6px;
+  width: 120px;
 }
 
-.img-preview img {
+.group-photo img {
   display: block;
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
   border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+.group-photo.is-dragging {
+  opacity: 0.35;
+}
+
+.photo-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #b23a3a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+select.photo-move {
+  margin-top: 6px;
+  padding: 4px 6px;
+  font-size: 0.8rem;
+  border-width: 1px;
+}
+
+.color-group.drop-target {
+  border-style: solid;
+  border-color: var(--color-secondary);
+  background: #eaf4f3;
+}
+
+.color-group-new {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--color-muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.img-preview-row.dragging .color-group-new {
+  display: flex;
+}
+
+.drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0.9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -50%) rotate(-4deg);
 }
 
 .img-color-label {
@@ -1301,21 +1380,6 @@ th {
 
 .img-color input[aria-invalid="true"] {
   border-color: #b23a3a;
-}
-
-.img-preview button {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  border: none;
-  background: #b23a3a;
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
 }
 
 .table-empty {

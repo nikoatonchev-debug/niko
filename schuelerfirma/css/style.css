@@ -574,6 +574,18 @@ section {
 
 /* ---------- Product cards ---------- */
 
+/* Shop-Raster: feste Kartenbreite, auch wenn es nur 1–2 Produkte gibt
+   (auto-fill lässt leere Spalten stehen, statt eine Karte riesig zu ziehen). */
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (min-width: 900px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 320px));
+  }
+}
+
 .product-card {
   background: var(--color-card);
   border-radius: var(--radius);
@@ -584,12 +596,15 @@ section {
 }
 
 .product-image {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   background: var(--color-bg-alt);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
+  /* sonst schieben hohe Fotos das Feld trotz aspect-ratio in die Länge */
+  min-height: 0;
+  overflow: hidden;
 }
 
 .product-image svg {
@@ -609,6 +624,7 @@ section {
 .fill-img {
   width: 100%;
   height: 100%;
+  min-height: 0;
   object-fit: contain;
 }
 

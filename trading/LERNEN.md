@@ -27,3 +27,4 @@
 - 31.10. 08:15: Erstes Krypto-Nacht-TOP falsch (BTC +0,9 %). Nacht-Fenster gesamt jetzt 13/19 (68 %) – immer noch besser als tagsüber, aber der Vorsprung schrumpft. Freitagnacht/Wochenende evtl. weniger zuverlässig (weniger Handel).
 - 31.10. 13:15: Nach dem −4,6 %-Tag bei Krypto (30.10.) lagen die nächsten 4 'fällt'-Prognosen falsch – nach starken Abverkäufen kommt oft erst eine Seitwärts-/Erholungsphase. Idee: nach >4 % Tagesverlust Krypto-Prognosen als unsicher markieren.
 - 31.10. 18:15: BTC bewegte sich in 5 Stunden nur +3 $ (+0,004 %). Solche Mini-Bewegungen als ✅/❌ zu werten verfälscht die Statistik → neue Neutral-Zone ±0,1 %.
+- 31.10. 22:15: Samstags bewegt sich Krypto kaum (heute 4 Checks, alle Bewegungen < 0,3 %, 2× neutral). Am Wochenende sind Krypto-Prognosen fast nur Rauschen – dort keine TOP-Signale vergeben.

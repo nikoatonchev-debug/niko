@@ -173,8 +173,8 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 128 | 30.10. 18:15 | ETH | 2.241,08 $ | fällt | 30.10. 22:15 | ✅ 2.237,02 $ (−0,2 %) |
 | 129 | 30.10. 18:15 | DAX | 25.818,21 (Schluss 30.10.) | steigt (TOP, neue Regel) | 02.11. 18:15 | offen |
 | 130 | 30.10. 18:15 | SAP | 211,25 € (Schluss 30.10.) | steigt | 02.11. 18:15 | offen |
-| 131 | 30.10. 22:15 | BTC | 76.638 $ | fällt (TOP, Nacht) | 31.10. 08:15 | offen |
-| 132 | 30.10. 22:15 | ETH | 2.237,02 $ | fällt | 31.10. 08:15 | offen |
+| 131 | 30.10. 22:15 | BTC | 76.638 $ | fällt (TOP, Nacht) | 31.10. 08:15 | ❌ 77.325 $ (+0,9 %) |
+| 132 | 30.10. 22:15 | ETH | 2.237,02 $ | fällt | 31.10. 08:15 | ❌ 2.242,07 $ (+0,2 %) |
 | 133 | 30.10. 22:15 | S&P 500 | 7.580,07 (Schluss 30.10.) | steigt (TOP, neue Regel) | 02.11. 22:15 | offen |
 | 134 | 30.10. 22:15 | Nasdaq 100 | 28.384,85 (Schluss 30.10.) | steigt | 02.11. 22:15 | offen |
 | 135 | 30.10. 22:15 | Nvidia | 204,64 $ (Schluss 30.10.) | steigt | 02.11. 22:15 | offen |
@@ -183,5 +183,7 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 138 | 30.10. 22:15 | Gold | 3.884,90 $ | fällt | 02.11. 22:15 | offen |
 | 139 | 30.10. 22:15 | Öl Brent | 112,33 $ | steigt (TOP, neue Regel) | 02.11. 22:15 | offen |
 | 140 | 30.10. 22:15 | EUR/USD | 1,1166 | fällt (TOP, neue Regel) | 02.11. 22:15 | offen |
+| 141 | 31.10. 08:15 | BTC | 77.325 $ | fällt | 31.10. 13:15 | offen |
+| 142 | 31.10. 08:15 | ETH | 2.242,07 $ | fällt | 31.10. 13:15 | offen |
 
-Trefferquote Woche 2: 18 / 34 · TOP 1/4 · Gesamt seit Start: 75 / 128 (59 %) · TOP gesamt 8/19
+Trefferquote Woche 2: 18 / 36 · TOP 1/5 · Gesamt seit Start: 75 / 130 (58 %) · TOP gesamt 8/20

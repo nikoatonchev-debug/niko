@@ -185,7 +185,9 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 140 | 30.10. 22:15 | EUR/USD | 1,1166 | fällt (TOP, neue Regel) | 02.11. 22:15 | offen |
 | 141 | 31.10. 08:15 | BTC | 77.325 $ | fällt | 31.10. 13:15 | ❌ 77.515 $ (+0,2 %) |
 | 142 | 31.10. 08:15 | ETH | 2.242,07 $ | fällt | 31.10. 13:15 | ❌ 2.245,83 $ (+0,2 %) |
-| 143 | 31.10. 13:15 | BTC | 77.515 $ | fällt | 31.10. 18:15 | offen |
-| 144 | 31.10. 13:15 | ETH | 2.245,83 $ | fällt | 31.10. 18:15 | offen |
+| 143 | 31.10. 13:15 | BTC | 77.515 $ | fällt | 31.10. 18:15 | ➖ neutral 77.518 $ (±0,0 %, zählt nicht) |
+| 144 | 31.10. 13:15 | ETH | 2.245,83 $ | fällt | 31.10. 18:15 | ❌ 2.249,92 $ (+0,2 %) |
+| 145 | 31.10. 18:15 | BTC | 77.518 $ | fällt | 31.10. 22:15 | offen |
+| 146 | 31.10. 18:15 | ETH | 2.249,92 $ | fällt | 31.10. 22:15 | offen |
 
-Trefferquote Woche 2: 18 / 38 · TOP 1/5 · Gesamt seit Start: 75 / 132 (57 %) · TOP gesamt 8/20
+Trefferquote Woche 2: 18 / 39 · TOP 1/5 · Gesamt seit Start: 75 / 133 (56 %) · TOP gesamt 8/20

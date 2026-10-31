@@ -9,6 +9,8 @@
 
 - Neu 30.10. 18:15: Börsen-TOP-Bedingung (b) geändert: statt '3 Schlusskurse in Folge in Trendrichtung' jetzt 'Trend klar (≥3 % Abstand zur sma200) UND letzter Schlusskurs war ein Rücksetzer gegen den Trend'. Test ab sofort.
 
+- Neu 31.10. 18:15: Bewegungen unter ±0,1 % gelten als 'neutral' (➖) und zählen weder als Treffer noch als Fehler – das ist Rauschen, keine Richtung.
+
 ## Lektionen
 - 27.10. (Woche 1): Gesamt 57/94 (61 %), TOP nur 7/15 (47 %). Strengere TOP-Regeln haben die Trefferquote nicht verbessert.
 - 27.10. (Woche 1): Krypto-TOP 6/12 (50 %) – auf 4-5-Stunden-Sicht kein Vorteil; Serien gleichgerichteter Checks rissen oft plötzlich ab (z.B. 24.10. 22:15 nach 6 Treffern in Folge).
@@ -24,3 +26,4 @@
 - 30.10. 22:15: Alle 5 US-Aktien/Index-Prognosen 'steigt' lagen heute gemeinsam falsch (0/5, Nasdaq −3,5 %), Gold/Öl/EUR-USD dagegen 3/3. Bestätigt: US-Tech-Werte bewegen sich als Block – ein schlechter Tag kostet 5 Treffer auf einmal.
 - 31.10. 08:15: Erstes Krypto-Nacht-TOP falsch (BTC +0,9 %). Nacht-Fenster gesamt jetzt 13/19 (68 %) – immer noch besser als tagsüber, aber der Vorsprung schrumpft. Freitagnacht/Wochenende evtl. weniger zuverlässig (weniger Handel).
 - 31.10. 13:15: Nach dem −4,6 %-Tag bei Krypto (30.10.) lagen die nächsten 4 'fällt'-Prognosen falsch – nach starken Abverkäufen kommt oft erst eine Seitwärts-/Erholungsphase. Idee: nach >4 % Tagesverlust Krypto-Prognosen als unsicher markieren.
+- 31.10. 18:15: BTC bewegte sich in 5 Stunden nur +3 $ (+0,004 %). Solche Mini-Bewegungen als ✅/❌ zu werten verfälscht die Statistik → neue Neutral-Zone ±0,1 %.

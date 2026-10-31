@@ -23,3 +23,4 @@
 - 30.10. 18:15: DAX-TOP nach 3 Plus-Tagen falsch (−0,9 %); TOP gesamt jetzt 7/18 (39 %), Woche 2 0/3. Nach 3 Tagen in eine Richtung kam bisher oft eine Gegenbewegung → Regel (b) auf 'Rücksetzer im Trend' umgestellt.
 - 30.10. 22:15: Alle 5 US-Aktien/Index-Prognosen 'steigt' lagen heute gemeinsam falsch (0/5, Nasdaq −3,5 %), Gold/Öl/EUR-USD dagegen 3/3. Bestätigt: US-Tech-Werte bewegen sich als Block – ein schlechter Tag kostet 5 Treffer auf einmal.
 - 31.10. 08:15: Erstes Krypto-Nacht-TOP falsch (BTC +0,9 %). Nacht-Fenster gesamt jetzt 13/19 (68 %) – immer noch besser als tagsüber, aber der Vorsprung schrumpft. Freitagnacht/Wochenende evtl. weniger zuverlässig (weniger Handel).
+- 31.10. 13:15: Nach dem −4,6 %-Tag bei Krypto (30.10.) lagen die nächsten 4 'fällt'-Prognosen falsch – nach starken Abverkäufen kommt oft erst eine Seitwärts-/Erholungsphase. Idee: nach >4 % Tagesverlust Krypto-Prognosen als unsicher markieren.

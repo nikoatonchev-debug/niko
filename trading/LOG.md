@@ -183,7 +183,9 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 138 | 30.10. 22:15 | Gold | 3.884,90 $ | fällt | 02.11. 22:15 | offen |
 | 139 | 30.10. 22:15 | Öl Brent | 112,33 $ | steigt (TOP, neue Regel) | 02.11. 22:15 | offen |
 | 140 | 30.10. 22:15 | EUR/USD | 1,1166 | fällt (TOP, neue Regel) | 02.11. 22:15 | offen |
-| 141 | 31.10. 08:15 | BTC | 77.325 $ | fällt | 31.10. 13:15 | offen |
-| 142 | 31.10. 08:15 | ETH | 2.242,07 $ | fällt | 31.10. 13:15 | offen |
+| 141 | 31.10. 08:15 | BTC | 77.325 $ | fällt | 31.10. 13:15 | ❌ 77.515 $ (+0,2 %) |
+| 142 | 31.10. 08:15 | ETH | 2.242,07 $ | fällt | 31.10. 13:15 | ❌ 2.245,83 $ (+0,2 %) |
+| 143 | 31.10. 13:15 | BTC | 77.515 $ | fällt | 31.10. 18:15 | offen |
+| 144 | 31.10. 13:15 | ETH | 2.245,83 $ | fällt | 31.10. 18:15 | offen |
 
-Trefferquote Woche 2: 18 / 36 · TOP 1/5 · Gesamt seit Start: 75 / 130 (58 %) · TOP gesamt 8/20
+Trefferquote Woche 2: 18 / 38 · TOP 1/5 · Gesamt seit Start: 75 / 132 (57 %) · TOP gesamt 8/20

@@ -32,3 +32,4 @@
 - 31.10. 22:15: Samstags bewegt sich Krypto kaum (heute 4 Checks, alle Bewegungen < 0,3 %, 2× neutral). Am Wochenende sind Krypto-Prognosen fast nur Rauschen – dort keine TOP-Signale vergeben.
 - 01.11. 08:15: Seit dem Absturz am 30.10. lag 'fällt' bei Krypto nur 2 von 8 richtig (ohne neutrale) – der langfristige Abwärtstrend sagte die kurzfristige Erholung nicht voraus. Test: Krypto folgt jetzt der 24h-Richtung (wenn > ±0,5 %).
 - 01.11. 13:15: Neutrale Ergebnisse (±0,1 %) gab es am Wochenende schon 3× in 6 Krypto-Prognosen – die Hälfte der Wochenend-Prognosen ist reines Rauschen. Wochenend-Krypto ist als Lernquelle wenig wert.
+- 01.11. 18:15: Direkter Vergleich heute: ETH folgte der 24h-Richtung (steigt) ✅, BTC lag knapp unter der 0,5-%-Schwelle und blieb bei 'fällt' ❌. Neue 24h-Regel bisher 1/2 (1 neutral) – erste Indizien, noch zu wenig Daten.

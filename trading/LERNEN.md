@@ -11,6 +11,8 @@
 
 - Neu 31.10. 18:15: Bewegungen unter ±0,1 % gelten als 'neutral' (➖) und zählen weder als Treffer noch als Fehler – das ist Rauschen, keine Richtung.
 
+- Neu 01.11. 08:15 (Test): Krypto-Richtung folgt der 24h-Veränderung, wenn diese über ±0,5 % liegt; sonst weiter langfristiger Trend (fällt).
+
 ## Lektionen
 - 27.10. (Woche 1): Gesamt 57/94 (61 %), TOP nur 7/15 (47 %). Strengere TOP-Regeln haben die Trefferquote nicht verbessert.
 - 27.10. (Woche 1): Krypto-TOP 6/12 (50 %) – auf 4-5-Stunden-Sicht kein Vorteil; Serien gleichgerichteter Checks rissen oft plötzlich ab (z.B. 24.10. 22:15 nach 6 Treffern in Folge).
@@ -28,3 +30,4 @@
 - 31.10. 13:15: Nach dem −4,6 %-Tag bei Krypto (30.10.) lagen die nächsten 4 'fällt'-Prognosen falsch – nach starken Abverkäufen kommt oft erst eine Seitwärts-/Erholungsphase. Idee: nach >4 % Tagesverlust Krypto-Prognosen als unsicher markieren.
 - 31.10. 18:15: BTC bewegte sich in 5 Stunden nur +3 $ (+0,004 %). Solche Mini-Bewegungen als ✅/❌ zu werten verfälscht die Statistik → neue Neutral-Zone ±0,1 %.
 - 31.10. 22:15: Samstags bewegt sich Krypto kaum (heute 4 Checks, alle Bewegungen < 0,3 %, 2× neutral). Am Wochenende sind Krypto-Prognosen fast nur Rauschen – dort keine TOP-Signale vergeben.
+- 01.11. 08:15: Seit dem Absturz am 30.10. lag 'fällt' bei Krypto nur 2 von 8 richtig (ohne neutrale) – der langfristige Abwärtstrend sagte die kurzfristige Erholung nicht voraus. Test: Krypto folgt jetzt der 24h-Richtung (wenn > ±0,5 %).

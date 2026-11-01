@@ -33,3 +33,4 @@
 - 01.11. 08:15: Seit dem Absturz am 30.10. lag 'fällt' bei Krypto nur 2 von 8 richtig (ohne neutrale) – der langfristige Abwärtstrend sagte die kurzfristige Erholung nicht voraus. Test: Krypto folgt jetzt der 24h-Richtung (wenn > ±0,5 %).
 - 01.11. 13:15: Neutrale Ergebnisse (±0,1 %) gab es am Wochenende schon 3× in 6 Krypto-Prognosen – die Hälfte der Wochenend-Prognosen ist reines Rauschen. Wochenend-Krypto ist als Lernquelle wenig wert.
 - 01.11. 18:15: Direkter Vergleich heute: ETH folgte der 24h-Richtung (steigt) ✅, BTC lag knapp unter der 0,5-%-Schwelle und blieb bei 'fällt' ❌. Neue 24h-Regel bisher 1/2 (1 neutral) – erste Indizien, noch zu wenig Daten.
+- 01.11. 22:15: Die neue 24h-Krypto-Regel steht nach 5 Prognosen bei 1/4 (+1 neutral) – nicht besser als die alte. Sowohl 'Trend' als auch '24h-Richtung' liegen bei Krypto auf 4-5h-Sicht nahe am Zufall. Regel läuft noch bis Ende Woche 3, dann Vergleich.

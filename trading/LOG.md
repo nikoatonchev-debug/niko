@@ -195,7 +195,9 @@ Fazit: Gesamt leicht über 50 %, aber statistisch nicht signifikant (bei 94 Prog
 | 150 | 01.11. 08:15 | ETH | 2.265,79 $ | steigt (neue Krypto-Regel) | 01.11. 13:15 | ❌ 2.260,78 $ (−0,2 %) |
 | 151 | 01.11. 13:15 | BTC | 77.847 $ | fällt | 01.11. 18:15 | ❌ 78.076 $ (+0,3 %) |
 | 152 | 01.11. 13:15 | ETH | 2.260,78 $ | steigt (neue Krypto-Regel) | 01.11. 18:15 | ✅ 2.267,31 $ (+0,3 %) |
-| 153 | 01.11. 18:15 | BTC | 78.076 $ | steigt (neue Krypto-Regel) | 01.11. 22:15 | offen |
-| 154 | 01.11. 18:15 | ETH | 2.267,31 $ | steigt (neue Krypto-Regel) | 01.11. 22:15 | offen |
+| 153 | 01.11. 18:15 | BTC | 78.076 $ | steigt (neue Krypto-Regel) | 01.11. 22:15 | ❌ 77.861 $ (−0,3 %) |
+| 154 | 01.11. 18:15 | ETH | 2.267,31 $ | steigt (neue Krypto-Regel) | 01.11. 22:15 | ❌ 2.262,71 $ (−0,2 %) |
+| 155 | 01.11. 22:15 | BTC | 77.861 $ | steigt (neue Krypto-Regel) | 02.11. 08:15 | offen |
+| 156 | 01.11. 22:15 | ETH | 2.262,71 $ | fällt | 02.11. 08:15 | offen |
 
-Trefferquote Woche 2: 20 / 45 · TOP 1/5 · Gesamt seit Start: 77 / 139 (55 %) · TOP gesamt 8/20
+Trefferquote Woche 2: 20 / 47 · TOP 1/5 · Gesamt seit Start: 77 / 141 (55 %) · TOP gesamt 8/20

@@ -26,3 +26,8 @@ window.SF_ADMIN_EMAILS = ["erdkinderkollektiv@gmail.com"];
  * verschickt nur, wenn der angemeldete Admin es auslöst. Leer = keine E-Mails.
  * Einrichtung: siehe README. */
 window.SF_MAIL_URL = "https://script.google.com/macros/s/AKfycbxCgCsB5X2CrKmnud0ZUHWNnhiuBA_5gxkxm1Xn95SkRO1XoL6MoNg0V1V8zM_5RaUZ/exec";
+
+// Rechnung per E-Mail an der Kasse anbieten. Erst auf true stellen, wenn die
+// neuen Datenbank-Regeln (invoiceByEmail) und der neue Apps-Script-Code
+// veröffentlicht sind – vorher würden Bestellungen mit diesem Feld abgelehnt.
+window.SF_INVOICE_EMAIL = false;

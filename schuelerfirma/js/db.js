@@ -491,7 +491,7 @@ const SFDB = (function () {
           items: cleanItems,
           total,
           qtyByProduct,
-          invoiceByEmail: !!invoiceByEmail,
+          ...(window.SF_INVOICE_EMAIL ? { invoiceByEmail: !!invoiceByEmail } : {}),
           date: F.serverTimestamp(),
           status: "offen",
         });
@@ -606,6 +606,9 @@ const SFDB = (function () {
     return postToMailService({ collection, orderId });
   }
   // Rechnung per E-Mail: an die Adresse des Kontos, eine Kopie geht an die Schülerfirma
+  function invoiceEmailEnabled() {
+    return window.SF_INVOICE_EMAIL === true && readyEmailEnabled();
+  }
   async function sendInvoiceEmail(orderId) {
     return postToMailService({ action: "invoice", collection: "orders", orderId });
   }
@@ -678,6 +681,7 @@ const SFDB = (function () {
     readyEmailEnabled,
     sendReadyEmail,
     sendInvoiceEmail,
+    invoiceEmailEnabled,
     MAX_CART_PRODUCTS,
   };
 })();

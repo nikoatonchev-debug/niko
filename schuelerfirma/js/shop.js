@@ -498,7 +498,7 @@
       submitBtn.textContent = "Bestellung wird gesendet …";
       try {
         const invoiceChoice = document.querySelector('input[name="co-invoice"]:checked');
-        const invoiceByEmail = !!invoiceChoice && invoiceChoice.value === "email" && SFDB.readyEmailEnabled();
+        const invoiceByEmail = !!invoiceChoice && invoiceChoice.value === "email" && SFDB.invoiceEmailEnabled();
         const order = await SFDB.placeOrder({
           customerName: name,
           klasse,

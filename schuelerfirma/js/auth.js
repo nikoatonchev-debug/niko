@@ -448,6 +448,7 @@ const SFAuth = (function () {
     injectModal();
     // Hinweise auf die „abholbereit“-E-Mail nur zeigen, wenn sie eingerichtet ist
     document.querySelectorAll("[data-if-email]").forEach((el) => (el.hidden = !SFDB.readyEmailEnabled()));
+    document.querySelectorAll("[data-if-invoice-email]").forEach((el) => (el.hidden = !SFDB.invoiceEmailEnabled()));
     SFDB.ready.then(onAuth);
     SFDB.onAuthChange(onAuth);
   });

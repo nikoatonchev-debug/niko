@@ -25,7 +25,7 @@ window.SF_ADMIN_EMAILS = ["erdkinderkollektiv@gmail.com"];
  * Hier steht nur dessen Web-App-Adresse – die ist nicht geheim, denn das Skript
  * verschickt nur, wenn der angemeldete Admin es auslöst. Leer = keine E-Mails.
  * Einrichtung: siehe README. */
-window.SF_MAIL_URL = "https://script.google.com/macros/s/AKfycbxCgCsB5X2CrKmnud0ZUHWNnhiuBA_5gxkxm1Xn95SkRO1XoL6MoNg0V1V8zM_5RaUZ/exec";
+window.SF_MAIL_URL = "https://script.google.com/macros/s/AKfycby3t_F7d5o5ek1WFwadabp_BmqaUyRQFn2sR3GgiSOGDR70Lez-4eQWf0sMqIU27TQe/exec";
 
 // Rechnungsnummern (1, 2, 3 …), Rechnung per E-Mail und selbst erstellte
 // Rechnungen. Erst auf true stellen, wenn die neuen Datenbank-Regeln

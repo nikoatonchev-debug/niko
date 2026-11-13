@@ -1133,18 +1133,40 @@ body[data-page="shop"] main {
   }
 }
 
+/* Schließen-X: groß, dunkel und bleibt beim Scrollen oben rechts stehen */
 .modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  background: var(--color-bg-alt);
-  border: none;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -14px -14px -42px auto; /* nimmt keinen Platz weg, sitzt in der Ecke */
+  background: var(--color-text);
+  border: 2px solid #fff;
   border-radius: 999px;
-  width: 32px;
-  height: 32px;
-  font-size: 1.1rem;
+  width: 42px;
+  height: 42px;
+  font-size: 1.6rem;
+  line-height: 1;
   cursor: pointer;
-  color: var(--color-text);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.modal-close:hover {
+  background: var(--color-primary);
+}
+
+.modal-close:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+@media (max-height: 700px) {
+  .modal-close {
+    margin: -6px -6px -42px auto;
+  }
 }
 
 .modal-wide {

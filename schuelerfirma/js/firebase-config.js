@@ -31,4 +31,4 @@ window.SF_MAIL_URL = "https://script.google.com/macros/s/AKfycby3t_F7d5o5ek1WFwa
 // Rechnungen. Erst auf true stellen, wenn die neuen Datenbank-Regeln
 // (firestore.rules) und der neue Apps-Script-Code veröffentlicht sind –
 // vorher würden Bestellungen mit den neuen Feldern abgelehnt.
-window.SF_INVOICES_LIVE = false;
+window.SF_INVOICES_LIVE = true;

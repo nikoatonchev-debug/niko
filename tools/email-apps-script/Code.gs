@@ -170,7 +170,7 @@ function buildInvoiceMail(id, o) {
     '<p>Hallo' + (name ? ' ' + esc(name) : '') + ',</p>' +
     '<p>vielen Dank für deine Bestellung! Hier ist deine Rechnung.</p>' +
     '<div style="border:1px solid #ddd;border-radius:6px;padding:20px">' +
-    '<img src="' + SITE_URL + '/images/erdkinderkollektiv-logo.png" alt="Erdkinderkollektiv" width="170" style="display:block;border:1px solid #000;padding:3px 6px">' +
+    '<img src="' + SITE_URL + '/images/logo-erdkinderplan.png" alt="Erdkinderkollektiv" width="110" style="display:block">' +
     '<h2 style="font-family:Georgia,serif;color:#444;border-bottom:3px solid #4f81bd;padding-bottom:6px;margin:18px 0 14px">Rechnung</h2>' +
     '<table style="width:100%;border-collapse:collapse;font-size:14px"><tr>' +
     '<td style="vertical-align:top;padding:0 10px 10px 0"><strong>Kunde</strong><br>' + esc(name) +

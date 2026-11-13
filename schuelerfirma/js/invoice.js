@@ -84,7 +84,7 @@ const SFInvoice = (function () {
     return `
     <article class="invoice">
       <header class="inv-top">
-        <div class="inv-logo"><img src="images/erdkinderkollektiv-logo.png" alt="Logo Erdkinderkollektiv"></div>
+        <div class="inv-logo"><img src="images/logo-erdkinderplan.png" alt="Logo Erdkinderkollektiv"></div>
         <div class="inv-seller">
           <strong>${esc(SELLER.name)}</strong><br>${esc(SELLER.sub)}<br>
           ${SELLER.address.map(esc).join("<br>")}<br>${esc(SELLER.email)}

@@ -1837,16 +1837,14 @@ img.img-loading {
 }
 
 .inv-logo {
-  border: 1px solid #000;
-  padding: 4px 8px;
-  width: 230px;
-  max-width: 100%;
+  width: 130px;
+  max-width: 40%;
 }
 
 .inv-logo img {
   display: block;
   width: 100%;
-  mix-blend-mode: multiply;
+  height: auto;
 }
 
 .inv-seller {

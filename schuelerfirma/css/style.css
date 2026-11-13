@@ -1761,3 +1761,276 @@ img.img-loading {
 .product-desc-short + * {
   margin-top: auto;
 }
+
+/* ---------- Kasse: Rechnung per E-Mail oder nur Website ---------- */
+.invoice-choice {
+  border: 0;
+  padding: 0;
+  margin: 18px 0 14px;
+  min-width: 0;
+}
+
+.invoice-choice legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.choice-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 0 0 8px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.choice-line input {
+  width: auto;
+  margin-top: 4px;
+  accent-color: var(--color-secondary);
+}
+
+.choice-line:has(input:checked) {
+  border-color: var(--color-secondary);
+  background: #eef6f5;
+}
+
+.invoice-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 10px;
+}
+
+/* ---------- Rechnung (rechnung.html) ---------- */
+.invoice-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.invoice {
+  background: #fff;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto 28px;
+  padding: 40px 44px;
+  box-shadow: var(--shadow-sm);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.inv-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.inv-logo {
+  border: 1px solid #000;
+  padding: 4px 8px;
+  width: 230px;
+  max-width: 100%;
+}
+
+.inv-logo img {
+  display: block;
+  width: 100%;
+  mix-blend-mode: multiply;
+}
+
+.inv-seller {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.inv-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0 26px;
+}
+
+.inv-title span {
+  flex: 1;
+  border-top: 3px solid #4f81bd;
+  border-bottom: 1px solid #4f81bd;
+  height: 5px;
+}
+
+.inv-title span:last-child {
+  flex: 0 0 90px;
+}
+
+.inv-title h2 {
+  margin: 0;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 1.9rem;
+  color: #444;
+}
+
+.inv-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.inv-box {
+  position: relative;
+  border: 3px solid #95b3d7;
+  border-radius: 22px;
+  padding: 20px 20px 14px;
+  line-height: 1.9;
+}
+
+.inv-box h3 {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 10px;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.inv-box-strong {
+  border-color: #4f81bd;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 0;
+  overflow: visible;
+  margin-top: 30px;
+  border: 3px solid #95b3d7;
+}
+
+.inv-table th,
+.inv-table td {
+  border: 1px solid #95b3d7;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.inv-table th,
+.inv-table td {
+  font-size: inherit;
+  color: #333;
+}
+
+.inv-table th {
+  font-weight: 700;
+  background: #f1f6fb;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.inv-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.inv-table tfoot td {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.inv-muted {
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.inv-pay {
+  margin: 18px 0 0;
+}
+
+.inv-thanks {
+  border: 1px solid #000;
+  padding: 12px 14px;
+  margin-top: 34px;
+  line-height: 1.9;
+}
+
+@media (max-width: 640px) {
+  .invoice {
+    padding: 22px 12px;
+    font-size: 0.88rem;
+  }
+  .inv-boxes {
+    grid-template-columns: 1fr;
+  }
+  .inv-seller {
+    text-align: left;
+  }
+  .inv-table {
+    font-size: 0.78rem;
+  }
+  .inv-table th,
+  .inv-table td {
+    padding: 5px 4px;
+  }
+  .inv-table th.num {
+    white-space: normal;
+  }
+  .inv-table {
+    border-width: 2px;
+  }
+}
+
+/* Drucken / Als PDF speichern: nur die Rechnung, eine pro Seite */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  body {
+    background: #fff !important;
+  }
+  .site-header,
+  .site-footer,
+  .no-print,
+  .skip-link,
+  #ready-banner,
+  #invoice-message {
+    display: none !important;
+  }
+  main > section,
+  main > section > .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  .invoice {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    font-size: 10.5pt;
+    break-after: page;
+  }
+  .invoice:last-child {
+    break-after: auto;
+  }
+  .inv-boxes {
+    grid-template-columns: 1fr 1fr;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

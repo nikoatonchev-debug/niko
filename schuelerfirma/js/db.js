@@ -399,7 +399,7 @@ const SFDB = (function () {
   // Legt die Bestellung an und erhöht in derselben Transaktion den Zähler
   // "sold" der Produkte. Preise und Namen kommen frisch aus der Datenbank,
   // und es wird nie mehr verkauft als vorrätig ist.
-  async function placeOrder({ customerName, klasse, phone, items }) {
+  async function placeOrder({ customerName, klasse, phone, items, invoiceByEmail }) {
     requireDb();
     const u = auth.currentUser;
     if (!u) throw withMessage("Bitte melde dich zuerst an.");
@@ -491,6 +491,7 @@ const SFDB = (function () {
           items: cleanItems,
           total,
           qtyByProduct,
+          invoiceByEmail: !!invoiceByEmail,
           date: F.serverTimestamp(),
           status: "offen",
         });
@@ -511,6 +512,10 @@ const SFDB = (function () {
     if (!u) return [];
     const s = await F.getDocs(F.query(F.collection(requireDb(), "orders"), F.where("userId", "==", u.uid)));
     return s.docs.map(withId).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+  async function getOrder(id) {
+    const s = await F.getDoc(F.doc(requireDb(), "orders", id));
+    return s.exists() ? withId(s) : null;
   }
   async function getAllOrders() {
     const s = await F.getDocs(F.query(F.collection(requireDb(), "orders"), F.orderBy("date", "desc")));
@@ -598,6 +603,13 @@ const SFDB = (function () {
     return MAIL_URL_PATTERN.test(String(window.SF_MAIL_URL || ""));
   }
   async function sendReadyEmail({ collection, orderId }) {
+    return postToMailService({ collection, orderId });
+  }
+  // Rechnung per E-Mail: an die Adresse des Kontos, eine Kopie geht an die Schülerfirma
+  async function sendInvoiceEmail(orderId) {
+    return postToMailService({ action: "invoice", collection: "orders", orderId });
+  }
+  async function postToMailService(payload) {
     if (!readyEmailEnabled()) return { skipped: true };
     const u = auth && auth.currentUser;
     if (!u) throw withMessage("Bitte melde dich neu an.");
@@ -608,7 +620,7 @@ const SFDB = (function () {
       res = await fetch(window.SF_MAIL_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ idToken, collection, orderId }),
+        body: JSON.stringify(Object.assign({ idToken }, payload)),
       });
     } catch (e) {
       throw withMessage("Keine Verbindung zum E-Mail-Dienst.");
@@ -650,6 +662,7 @@ const SFDB = (function () {
     getAllProductImages,
     placeOrder,
     getMyOrders,
+    getOrder,
     getAllOrders,
     updateOrderStatus,
     deleteOrder,
@@ -664,6 +677,7 @@ const SFDB = (function () {
     getUsers,
     readyEmailEnabled,
     sendReadyEmail,
+    sendInvoiceEmail,
     MAX_CART_PRODUCTS,
   };
 })();

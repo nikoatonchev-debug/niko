@@ -410,7 +410,7 @@ const SFAuth = (function () {
     const user = SFDB.currentUser();
     const page = document.body.getAttribute("data-page");
     const old = document.getElementById("ready-banner");
-    if (!user || !user.emailVerified || page === "orders" || page === "admin") {
+    if (!user || !user.emailVerified || page === "orders" || page === "admin" || page === "invoice") {
       if (old) old.remove();
       readyCheckedFor = null;
       return;

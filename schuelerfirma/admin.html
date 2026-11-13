@@ -55,6 +55,7 @@
           <div class="admin-tabs">
             <button class="admin-tab-btn active" data-tab="products">Produkte</button>
             <button class="admin-tab-btn" data-tab="orders">Bestellungen</button>
+            <button class="admin-tab-btn" data-tab="invoices">Rechnungen</button>
             <button class="admin-tab-btn" data-tab="special">Spezialbestellungen</button>
             <button class="admin-tab-btn" data-tab="reviews">Bewertungen</button>
             <button class="admin-tab-btn" data-tab="users">Kund:innen</button>
@@ -137,6 +138,26 @@
             </div>
           </div>
 
+          <!-- Rechnungen -->
+          <div class="admin-panel" id="panel-invoices">
+            <p class="hint mb-16">
+              Zu jeder Shop-Bestellung gibt es automatisch eine Rechnung. Hat die Kund:in &bdquo;Per E-Mail&ldquo; gewählt,
+              wurde sie ihr geschickt und eine Kopie ging an <strong>erdkinderkollektiv@gmail.com</strong>.
+              Zum Speichern auf dem Gerät: &bdquo;Als PDF speichern&ldquo; und im Druckfenster &bdquo;Als PDF speichern&ldquo; wählen.
+            </p>
+            <div class="button-row mb-16">
+              <a class="btn btn-secondary btn-small" href="rechnung.html?alle=1&amp;drucken=1">Alle Rechnungen als eine PDF speichern</a>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Rechnungsnr.</th><th>Datum</th><th>Kunde</th><th>Betrag</th><th>Zustellung</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="invoices-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Spezialbestellungen -->
           <div class="admin-panel" id="panel-special">
             <p class="form-message hidden" id="special-notice"></p>
@@ -206,6 +227,7 @@
   <script src="js/vendor/firebase.bundle.js"></script>
   <script src="js/db.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/invoice.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

@@ -694,6 +694,33 @@
 
   // ---------- Bestellungen (Shop) ----------
   let orders = [];
+  // Rechnungen: eine pro Shop-Bestellung (werden aus den Bestellungen erzeugt)
+  function renderInvoices() {
+    const el = document.getElementById("invoices-table-body");
+    if (orders.length === 0) {
+      el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Rechnungen.</td></tr>`;
+      return;
+    }
+    el.innerHTML = orders
+      .map((o) => {
+        const nr = esc(SFInvoice.number(o));
+        const link = `rechnung.html?id=${encodeURIComponent(o.id)}&admin=1`;
+        return `
+        <tr>
+          <td><strong>${nr}</strong></td>
+          <td>${SF.formatDate(o.date, true)}</td>
+          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}</td>
+          <td>${SF.formatPrice(o.total)}</td>
+          <td>${o.invoiceByEmail ? `<span class="badge badge-accepted">per E-Mail</span>` : `<span class="badge">nur Website</span>`}</td>
+          <td class="actions-cell">
+            <a class="btn btn-outline btn-small" href="${link}" aria-label="Rechnung ${nr} ansehen">Ansehen</a>
+            <a class="btn btn-outline btn-small" href="${link}&drucken=1" aria-label="Rechnung ${nr} als PDF speichern">Als PDF speichern</a>
+          </td>
+        </tr>`;
+      })
+      .join("");
+  }
+
   async function renderOrders() {
     const el = document.getElementById("orders-table-body");
     try {
@@ -702,6 +729,7 @@
       loadError("orders-table-body", 6, err);
       return;
     }
+    renderInvoices();
     if (orders.length === 0) {
       el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Bestellungen.</td></tr>`;
       return;
@@ -721,6 +749,7 @@
           <td>${SF.pickupBadgeHtml(o.status)}</td>
           <td class="actions-cell">
             ${pickupButtons(o.status, id, "offen")}
+            <a class="btn btn-outline btn-small" href="rechnung.html?id=${encodeURIComponent(o.id)}&admin=1">Rechnung</a>
             <button class="btn btn-danger btn-small" data-delete-order="${id}" aria-label="Bestellung #${esc(String(o.id).slice(-6).toUpperCase())} löschen">Löschen</button>
           </td>
         </tr>`;

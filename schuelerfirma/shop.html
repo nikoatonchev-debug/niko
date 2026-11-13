@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://script.google.com https://script.googleusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Shop &ndash; Siebdruck-Schülerfirma</title>
   <meta name="description" content="Siebdruck-Pullis der Schülerfirma der Montessori-Schule Dietramszell – online bestellen, freitags abholen und bar bezahlen.">
@@ -95,6 +95,18 @@
           <p class="hint">Abholung freitags ab 11 Uhr bei der alten Apotheke, Bezahlung bar bei Abholung. Keine Versandkosten.</p>
         </section>
 
+        <fieldset class="invoice-choice">
+          <legend>Wie möchtest du deine Rechnung bekommen?</legend>
+          <label class="choice-line" data-if-email hidden>
+            <input type="radio" name="co-invoice" value="email">
+            <span><strong>Per E-Mail schicken</strong><br><span class="hint">an die E-Mail-Adresse deines Kontos &ndash; und zusätzlich hier auf der Website</span></span>
+          </label>
+          <label class="choice-line">
+            <input type="radio" name="co-invoice" value="web" checked>
+            <span><strong>Nur hier auf der Website</strong><br><span class="hint">jederzeit unter &bdquo;Meine Bestellungen&ldquo; ansehen und als PDF speichern</span></span>
+          </label>
+        </fieldset>
+
         <p class="hint">
           Es gelten unsere <a href="agb.html" target="_blank" rel="noopener">AGB</a>
           (inkl. <a href="agb.html#rueckgabe" target="_blank" rel="noopener">Rückgabe &amp; Umtausch</a>).
@@ -140,6 +152,7 @@
       <h2 id="confirmation-title">Danke für deine Bestellung!</h2>
       <p>Deine Bestellnummer: <strong id="order-confirmation-id"></strong></p>
       <p>Abholung &amp; Bezahlung: <strong>jeden Freitag ab 11 Uhr bei der alten Apotheke</strong>, bar.</p>
+      <p id="confirmation-invoice"><a href="#" id="confirmation-invoice-link" class="btn btn-outline btn-small">Rechnung ansehen</a><br><span class="hint" id="confirmation-invoice-note"></span></p>
       <p class="info-box">Wir drucken deine Bestellung jetzt. <strong>Sobald sie abholbereit ist, siehst du das hier auf der Website</strong>: unter <a href="meine-bestellungen.html">Meine Bestellungen</a> steht dann &bdquo;Abholbereit&ldquo;.<span data-if-email hidden> Außerdem bekommst du eine E-Mail.</span></p>
       <button type="button" class="btn btn-primary" id="confirmation-ok-btn">OK</button>
     </div>

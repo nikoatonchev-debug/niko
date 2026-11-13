@@ -497,10 +497,13 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Bestellung wird gesendet …";
       try {
+        const invoiceChoice = document.querySelector('input[name="co-invoice"]:checked');
+        const invoiceByEmail = !!invoiceChoice && invoiceChoice.value === "email" && SFDB.readyEmailEnabled();
         const order = await SFDB.placeOrder({
           customerName: name,
           klasse,
           phone,
+          invoiceByEmail,
           items: cart.map((c) => ({ productId: c.productId, size: c.size, color: c.color, qty: c.qty })),
         });
         cart = [];
@@ -509,7 +512,18 @@
         document.getElementById("checkout-form").reset();
         closeModal("checkout-modal");
         document.getElementById("order-confirmation-id").textContent = order.id.slice(-6).toUpperCase();
+        document.getElementById("confirmation-invoice-link").href = "rechnung.html?id=" + encodeURIComponent(order.id);
+        const note = document.getElementById("confirmation-invoice-note");
+        note.textContent = invoiceByEmail
+          ? "Die Rechnung wird gerade an deine E-Mail-Adresse geschickt …"
+          : "Deine Rechnung findest du jederzeit unter „Meine Bestellungen“.";
         openModal("confirmation-modal", "#confirmation-ok-btn");
+        if (invoiceByEmail) {
+          SFDB.sendInvoiceEmail(order.id).then(
+            () => (note.textContent = "Die Rechnung haben wir dir per E-Mail geschickt. Schau auch im Spam-Ordner nach."),
+            () => (note.textContent = "Die E-Mail mit der Rechnung konnte gerade nicht verschickt werden. Du findest die Rechnung unter „Meine Bestellungen“.")
+          );
+        }
       } catch (err) {
         SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
         if (err && (err.code === "sf/soldout" || err.code === "sf/gone")) {

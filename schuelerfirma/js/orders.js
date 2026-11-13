@@ -31,6 +31,10 @@
             <span class="price">${SF.formatPrice(o.total)}</span>
             ${SF.pickupBadgeHtml(o.status)}
           </div>
+          <div class="invoice-line">
+            <a class="btn btn-outline btn-small" href="rechnung.html?id=${encodeURIComponent(o.id)}">Rechnung ansehen</a>
+            <span class="hint">${o.invoiceByEmail ? "Auch per E-Mail geschickt" : "Nur hier auf der Website"}</span>
+          </div>
           ${ready ? READY_NOTE : ""}
         </article>`;
       })

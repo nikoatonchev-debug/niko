@@ -140,18 +140,99 @@
 
           <!-- Rechnungen -->
           <div class="admin-panel" id="panel-invoices">
-            <p class="hint mb-16">
-              Zu jeder Shop-Bestellung gibt es automatisch eine Rechnung. Hat die Kund:in &bdquo;Per E-Mail&ldquo; gewählt,
-              wurde sie ihr geschickt und eine Kopie ging an <strong>erdkinderkollektiv@gmail.com</strong>.
-              Zum Speichern auf dem Gerät: &bdquo;Als PDF speichern&ldquo; und im Druckfenster &bdquo;Als PDF speichern&ldquo; wählen.
+            <p class="info-box mb-16 hidden" id="invoices-not-live">
+              Rechnungsnummern, &bdquo;Nummer nehmen&ldquo; und selbst erstellte Rechnungen sind noch nicht freigeschaltet:
+              Dafür müssen zuerst die neuen Datenbank-Regeln veröffentlicht werden. Bis dahin bekommen Shop-Bestellungen
+              eine Nummer wie R-2026-AB12CD.
             </p>
-            <div class="button-row mb-16">
-              <a class="btn btn-secondary btn-small" href="rechnung.html?alle=1&amp;drucken=1">Alle Rechnungen als eine PDF speichern</a>
+            <p class="form-message hidden" id="invoices-notice"></p>
+
+            <div class="grid grid-2 mb-24 invoice-admin-cards" id="invoices-live-cards">
+              <div class="card">
+                <h3>Rechnungsnummern</h3>
+                <p class="mb-8">Nächste freie Nummer: <strong class="inv-next" id="inv-next">…</strong></p>
+                <p class="hint">Jede Shop-Bestellung bekommt automatisch die nächste Nummer. Für private Rechnungen kannst du dir hier eine Nummer nehmen &ndash; die wird dann nicht mehr vergeben.</p>
+                <div class="field mt-14">
+                  <label for="inv-take-note">Wofür? <span class="hint">(freiwillig, nur für dich)</span></label>
+                  <input type="text" id="inv-take-note" maxlength="120" placeholder="z. B. Tassen für Oma Müller">
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" id="inv-take-btn">Nächste Nummer nehmen</button>
+                <details class="mt-14">
+                  <summary>Nächste Nummer selbst einstellen</summary>
+                  <p class="hint mt-6">Zum Beispiel, wenn ihr schon Rechnungen von Hand geschrieben habt. Achtung: Eine kleinere Nummer als jetzt kann doppelte Nummern ergeben.</p>
+                  <div class="inline-form">
+                    <label for="inv-next-input" class="sr-only">Nächste Nummer</label>
+                    <input type="number" id="inv-next-input" min="1" max="999999" step="1">
+                    <button type="button" class="btn btn-outline btn-small" id="inv-next-save">Speichern</button>
+                  </div>
+                </details>
+              </div>
+              <div class="card">
+                <h3>Alle Rechnungen speichern</h3>
+                <p class="hint">Speichert alle Rechnungen (Shop und selbst erstellte) zusammen als eine PDF-Datei. Im Druckfenster &bdquo;Als PDF speichern&ldquo; wählen.</p>
+                <a class="btn btn-secondary btn-small" href="rechnung.html?alle=1&amp;drucken=1">Alle Rechnungen als eine PDF speichern</a>
+              </div>
             </div>
+
+            <div class="card mb-24" id="inv-builder-card">
+              <h3 id="inv-builder-title">Rechnungs-Assistent: Rechnung selbst erstellen</h3>
+              <p class="hint mb-16">Alles eintragen &ndash; unten siehst du sofort, wie die Rechnung aussieht. Beim Erstellen bekommt sie automatisch die nächste Nummer.</p>
+              <form id="inv-builder" novalidate>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="ib-name">Name der Kundin / des Kunden</label>
+                    <input type="text" id="ib-name" maxlength="80" required>
+                  </div>
+                  <div class="field">
+                    <label for="ib-date">Rechnungsdatum</label>
+                    <input type="date" id="ib-date" required>
+                  </div>
+                  <div class="field">
+                    <label for="ib-address">Adresse <span class="hint">(freiwillig, z. B. Straße + PLZ Ort)</span></label>
+                    <textarea id="ib-address" maxlength="200" rows="2"></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="ib-phone">Telefon <span class="hint">(freiwillig)</span></label>
+                    <input type="tel" id="ib-phone" maxlength="30">
+                    <label for="ib-klasse" class="mt-10">Klasse <span class="hint">(freiwillig)</span></label>
+                    <input type="text" id="ib-klasse" maxlength="20">
+                  </div>
+                </div>
+                <fieldset class="ib-items">
+                  <legend>Posten</legend>
+                  <div id="ib-rows"></div>
+                  <button type="button" class="btn btn-outline btn-small" id="ib-add-row">+ Posten hinzufügen</button>
+                </fieldset>
+                <div class="grid grid-2 mt-14">
+                  <div class="field">
+                    <label for="ib-pay">Zahlung</label>
+                    <input type="text" id="ib-pay" maxlength="120" value="bar bei der Abholung" list="ib-pay-list">
+                    <datalist id="ib-pay-list">
+                      <option value="bar bei der Abholung"></option>
+                      <option value="bar bezahlt"></option>
+                      <option value="per Überweisung"></option>
+                    </datalist>
+                  </div>
+                  <div class="field">
+                    <label for="ib-note">Bemerkung <span class="hint">(freiwillig, steht unter der Tabelle)</span></label>
+                    <textarea id="ib-note" maxlength="400" rows="2"></textarea>
+                  </div>
+                </div>
+                <div class="button-row">
+                  <button type="submit" class="btn btn-primary" id="ib-submit">Rechnung erstellen</button>
+                  <button type="button" class="btn btn-outline" id="ib-reset">Leeren</button>
+                </div>
+                <div id="ib-message" class="form-message hidden"></div>
+              </form>
+              <h4 class="mt-20">Vorschau</h4>
+              <div id="ib-preview" class="ib-preview"></div>
+            </div>
+
+            <h3>Alle Rechnungen</h3>
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>Rechnungsnr.</th><th>Datum</th><th>Kunde</th><th>Betrag</th><th>Zustellung</th><th>Aktionen</th></tr>
+                  <tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Betrag</th><th>Art</th><th>Aktionen</th></tr>
                 </thead>
                 <tbody id="invoices-table-body"></tbody>
               </table>

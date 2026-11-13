@@ -130,6 +130,7 @@ function handleInvoice(req) {
 var SITE_URL = 'https://schuelerfirma-siebdruck.web.app';
 
 function invoiceNumber(id, o) {
+  if (o.invoiceNo) return String(o.invoiceNo); // fortlaufende Nummer 1, 2, 3 …
   var d = o.date ? new Date(o.date) : new Date();
   return 'R-' + d.getFullYear() + '-' + id.slice(-6).toUpperCase();
 }

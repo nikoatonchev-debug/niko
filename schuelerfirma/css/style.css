@@ -2034,3 +2034,85 @@ img.img-loading {
     print-color-adjust: exact;
   }
 }
+
+/* ---------- Admin: Rechnungsnummern & Rechnungs-Assistent ---------- */
+.inv-next {
+  font-size: 1.6rem;
+  color: var(--color-primary);
+}
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.inline-form input {
+  max-width: 140px;
+}
+
+.ib-items {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px 14px;
+  margin-top: 4px;
+}
+
+.ib-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.6fr) 80px 90px 100px 36px;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.ib-row label {
+  font-size: 0.78rem;
+  margin-bottom: 3px;
+}
+
+.ib-row input,
+.ib-row select {
+  padding: 8px 9px;
+  font-size: 0.92rem;
+}
+
+.ib-row .ib-remove {
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #f3dede;
+  color: #8a2626;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.ib-total {
+  text-align: right;
+  font-weight: 700;
+  margin: 4px 0 10px;
+}
+
+.ib-preview {
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.ib-preview .invoice {
+  margin: 0 auto;
+}
+
+@media (max-width: 760px) {
+  .ib-row {
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px dashed var(--color-border);
+    padding-bottom: 10px;
+  }
+  .ib-row .ib-name,
+  .ib-row .ib-details {
+    grid-column: 1 / -1;
+  }
+}

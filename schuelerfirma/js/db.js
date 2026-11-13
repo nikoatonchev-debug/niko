@@ -438,6 +438,13 @@ const SFDB = (function () {
       await F.runTransaction(db, async (tx) => {
         const snaps = [];
         for (const id of productIds) snaps.push(await tx.get(F.doc(db, "products", id)));
+        // Fortlaufende Rechnungsnummer (Zähler wird in derselben Transaktion weitergezählt)
+        const counterRef = F.doc(db, "counters", "invoices");
+        let invoiceNo = null;
+        if (invoicesLive()) {
+          const c = await tx.get(counterRef);
+          invoiceNo = c.exists() ? Math.max(1, Math.floor(Number(c.data().next)) || 1) : 1;
+        }
         const products = {};
         snaps.forEach((s) => {
           if (!s.exists() || s.data().active === false) {
@@ -491,10 +498,11 @@ const SFDB = (function () {
           items: cleanItems,
           total,
           qtyByProduct,
-          ...(window.SF_INVOICE_EMAIL ? { invoiceByEmail: !!invoiceByEmail } : {}),
+          ...(invoicesLive() ? { invoiceByEmail: !!invoiceByEmail, invoiceNo } : {}),
           date: F.serverTimestamp(),
           status: "offen",
         });
+        if (invoiceNo !== null) tx.set(counterRef, { next: invoiceNo + 1, lastOrderId: orderRef.id });
         productIds.forEach((id) => {
           tx.update(F.doc(db, "products", id), {
             sold: products[id].sold + qtyByProduct[id],
@@ -606,8 +614,46 @@ const SFDB = (function () {
     return postToMailService({ collection, orderId });
   }
   // Rechnung per E-Mail: an die Adresse des Kontos, eine Kopie geht an die Schülerfirma
+  function invoicesLive() {
+    return window.SF_INVOICES_LIVE === true;
+  }
+
+  // ---------- Rechnungsnummern & selbst erstellte Rechnungen (nur Admin) ----------
+  async function getNextInvoiceNumber() {
+    const s = await F.getDoc(F.doc(requireDb(), "counters", "invoices"));
+    return s.exists() ? Math.max(1, Math.floor(Number(s.data().next)) || 1) : 1;
+  }
+  async function setNextInvoiceNumber(n) {
+    await F.setDoc(F.doc(requireDb(), "counters", "invoices"), { next: n });
+  }
+  // Nimmt die nächste Nummer und speichert dazu einen Eintrag (reserviert oder fertige Rechnung).
+  async function takeInvoiceNumber(entry) {
+    const db = requireDb();
+    const counterRef = F.doc(db, "counters", "invoices");
+    const ref = F.doc(F.collection(db, "manualInvoices"));
+    let number = null;
+    await F.runTransaction(db, async (tx) => {
+      const c = await tx.get(counterRef);
+      number = c.exists() ? Math.max(1, Math.floor(Number(c.data().next)) || 1) : 1;
+      tx.set(ref, Object.assign({}, entry, { number, createdAt: F.serverTimestamp() }));
+      tx.set(counterRef, { next: number + 1 });
+    });
+    return { id: ref.id, number };
+  }
+  async function getManualInvoices() {
+    const s = await F.getDocs(F.collection(requireDb(), "manualInvoices"));
+    return s.docs.map(withId);
+  }
+  async function getManualInvoice(id) {
+    const s = await F.getDoc(F.doc(requireDb(), "manualInvoices", id));
+    return s.exists() ? withId(s) : null;
+  }
+  async function deleteManualInvoice(id) {
+    await F.deleteDoc(F.doc(requireDb(), "manualInvoices", id));
+  }
+
   function invoiceEmailEnabled() {
-    return window.SF_INVOICE_EMAIL === true && readyEmailEnabled();
+    return invoicesLive() && readyEmailEnabled();
   }
   async function sendInvoiceEmail(orderId) {
     return postToMailService({ action: "invoice", collection: "orders", orderId });
@@ -682,6 +728,13 @@ const SFDB = (function () {
     sendReadyEmail,
     sendInvoiceEmail,
     invoiceEmailEnabled,
+    invoicesLive,
+    getNextInvoiceNumber,
+    setNextInvoiceNumber,
+    takeInvoiceNumber,
+    getManualInvoices,
+    getManualInvoice,
+    deleteManualInvoice,
     MAX_CART_PRODUCTS,
   };
 })();

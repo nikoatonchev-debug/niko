@@ -694,31 +694,230 @@
 
   // ---------- Bestellungen (Shop) ----------
   let orders = [];
-  // Rechnungen: eine pro Shop-Bestellung (werden aus den Bestellungen erzeugt)
-  function renderInvoices() {
+  // ---------- Rechnungen ----------
+  // Shop-Rechnungen kommen aus den Bestellungen, dazu selbst erstellte und
+  // reservierte Nummern (manualInvoices). Alles in einer Liste, neueste Nummer oben.
+  let manualInvoices = [];
+  async function renderInvoices() {
     const el = document.getElementById("invoices-table-body");
-    if (orders.length === 0) {
+    const live = SFDB.invoicesLive();
+    document.getElementById("invoices-not-live").classList.toggle("hidden", live);
+    document.getElementById("invoices-live-cards").classList.toggle("hidden", !live);
+    document.getElementById("inv-builder-card").classList.toggle("hidden", !live);
+    if (live) {
+      try {
+        const [next, manual] = await Promise.all([SFDB.getNextInvoiceNumber(), SFDB.getManualInvoices()]);
+        manualInvoices = manual;
+        document.getElementById("inv-next").textContent = next;
+        document.getElementById("inv-next-input").value = next;
+        document.getElementById("ib-submit").textContent = `Rechnung erstellen (bekommt Nr. ${next})`;
+      } catch (err) {
+        SFUI.showMessage(document.getElementById("invoices-notice"), SFDB.errorMessage(err), "error");
+      }
+    }
+    const rows = orders
+      .map((o) => ({ kind: o.invoiceByEmail ? "shop-mail" : "shop", number: SFInvoice.number(o), sort: o.invoiceNo, date: o.date,
+        who: o.customerName + (o.klasse ? " (" + o.klasse + ")" : ""), total: o.total, link: `rechnung.html?id=${encodeURIComponent(o.id)}&admin=1` }))
+      .concat(
+        manualInvoices.map((m) => ({ kind: m.kind === "manuell" ? "manuell" : "reserviert", number: String(m.number), sort: m.number, date: m.date || m.createdAt,
+          who: m.kind === "manuell" ? m.customerName : m.note || "–", total: m.kind === "manuell" ? SFInvoice.fromManual(m).total : null,
+          link: m.kind === "manuell" ? `rechnung.html?manuell=${encodeURIComponent(m.id)}` : null, id: m.id }))
+      )
+      .sort((a, b) => (Number(b.sort) || 0) - (Number(a.sort) || 0) || String(b.date || "").localeCompare(String(a.date || "")));
+    if (rows.length === 0) {
       el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Rechnungen.</td></tr>`;
       return;
     }
-    el.innerHTML = orders
-      .map((o) => {
-        const nr = esc(SFInvoice.number(o));
-        const link = `rechnung.html?id=${encodeURIComponent(o.id)}&admin=1`;
+    const KIND = {
+      "shop-mail": `<span class="badge badge-accepted">Shop · per E-Mail</span>`,
+      shop: `<span class="badge">Shop · nur Website</span>`,
+      manuell: `<span class="badge badge-ready">Selbst erstellt</span>`,
+      reserviert: `<span class="badge badge-open">Nummer genommen</span>`,
+    };
+    el.innerHTML = rows
+      .map((r) => {
+        const nr = esc(r.number);
         return `
         <tr>
           <td><strong>${nr}</strong></td>
-          <td>${SF.formatDate(o.date, true)}</td>
-          <td>${esc(o.customerName)}${o.klasse ? " (" + esc(o.klasse) + ")" : ""}</td>
-          <td>${SF.formatPrice(o.total)}</td>
-          <td>${o.invoiceByEmail ? `<span class="badge badge-accepted">per E-Mail</span>` : `<span class="badge">nur Website</span>`}</td>
+          <td>${SF.formatDate(r.date, true)}</td>
+          <td>${esc(r.who)}</td>
+          <td>${r.total === null ? "–" : SF.formatPrice(r.total)}</td>
+          <td>${KIND[r.kind]}</td>
           <td class="actions-cell">
-            <a class="btn btn-outline btn-small" href="${link}" aria-label="Rechnung ${nr} ansehen">Ansehen</a>
-            <a class="btn btn-outline btn-small" href="${link}&drucken=1" aria-label="Rechnung ${nr} als PDF speichern">Als PDF speichern</a>
+            ${r.link ? `<a class="btn btn-outline btn-small" href="${r.link}" aria-label="Rechnung ${nr} ansehen">Ansehen</a>
+            <a class="btn btn-outline btn-small" href="${r.link}&drucken=1" aria-label="Rechnung ${nr} als PDF speichern">Als PDF speichern</a>` : ""}
+            ${r.id ? `<button type="button" class="btn btn-danger btn-small" data-delete-manual="${esc(r.id)}" aria-label="Eintrag ${nr} löschen">Löschen</button>` : ""}
           </td>
         </tr>`;
       })
       .join("");
+    el.querySelectorAll("[data-delete-manual]").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        guarded(async () => {
+          if (!confirm("Diesen Eintrag wirklich löschen? Die Nummer wird trotzdem nicht noch einmal vergeben.")) return;
+          await SFDB.deleteManualInvoice(btn.getAttribute("data-delete-manual"));
+          await renderInvoices();
+        })
+      )
+    );
+  }
+
+  // Rechnungs-Assistent: Formular -> Live-Vorschau -> speichern mit nächster Nummer
+  function builderRowHtml(i, item) {
+    item = item || {};
+    return `<div class="ib-row" data-row="${i}">
+      <div class="ib-name"><label for="ib-n-${i}">Bezeichnung</label><input type="text" id="ib-n-${i}" data-f="name" maxlength="120" value="${esc(item.name || "")}"></div>
+      <div class="ib-details"><label for="ib-d-${i}">Details <span class="hint">(z. B. Größe, Farbe)</span></label><input type="text" id="ib-d-${i}" data-f="details" maxlength="120" value="${esc(item.details || "")}"></div>
+      <div><label for="ib-q-${i}">Menge</label><input type="text" inputmode="decimal" id="ib-q-${i}" data-f="qty" maxlength="8" value="${esc(item.qty === undefined ? "1" : String(item.qty))}"></div>
+      <div><label for="ib-u-${i}">Einheit</label><input type="text" id="ib-u-${i}" data-f="unit" maxlength="20" value="${esc(item.unit || "Stück")}"></div>
+      <div><label for="ib-p-${i}">Preis (€)</label><input type="text" inputmode="decimal" id="ib-p-${i}" data-f="price" maxlength="10" placeholder="0,00" value="${esc(item.price === undefined ? "" : String(item.price))}"></div>
+      <button type="button" class="ib-remove" data-remove-row="${i}" aria-label="Posten ${i + 1} entfernen">&times;</button>
+    </div>`;
+  }
+  let builderItems = [{}];
+  function readBuilderItems() {
+    const out = [];
+    document.querySelectorAll("#ib-rows .ib-row").forEach((row) => {
+      const v = (f) => row.querySelector(`[data-f="${f}"]`).value;
+      out.push({
+        name: SF.clampText(v("name"), 120),
+        details: SF.clampText(v("details"), 120),
+        qty: Math.max(0, parseFloat(String(v("qty")).replace(",", ".")) || 0),
+        unit: SF.clampText(v("unit"), 20) || "Stück",
+        price: Math.max(0, Math.round((parseFloat(String(v("price")).replace(",", ".")) || 0) * 100) / 100),
+      });
+    });
+    return out;
+  }
+  function renderBuilderRows() {
+    document.getElementById("ib-rows").innerHTML = builderItems.map((it, i) => builderRowHtml(i, it)).join("");
+  }
+  function builderData() {
+    const v = (id) => document.getElementById(id).value;
+    return {
+      kind: "manuell",
+      customerName: SF.clampText(v("ib-name"), 80),
+      date: v("ib-date") || new Date().toISOString().slice(0, 10),
+      address: SF.clampText(v("ib-address"), 200),
+      phone: SF.clampText(v("ib-phone"), 30),
+      klasse: SF.clampText(v("ib-klasse"), 20),
+      items: readBuilderItems().filter((i) => i.name),
+      pay: SF.clampText(v("ib-pay"), 120),
+      note: SF.clampText(v("ib-note"), 400),
+    };
+  }
+  function updatePreview() {
+    const data = builderData();
+    const r = SFInvoice.fromManual(Object.assign({}, data, { number: document.getElementById("inv-next").textContent + " (Vorschau)" }));
+    if (!r.items.length) r.items = [{ name: "…", details: "", qty: 0, unit: "", price: 0 }];
+    document.getElementById("ib-preview").innerHTML = SFInvoice.render(r);
+  }
+  function resetBuilder() {
+    document.getElementById("inv-builder").reset();
+    document.getElementById("ib-date").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("ib-pay").value = "bar bei der Abholung";
+    builderItems = [{}];
+    renderBuilderRows();
+    updatePreview();
+  }
+  // Von einer Spezialbestellung aus: Assistent vorausfüllen
+  function fillBuilderFromSpecial(s) {
+    resetBuilder();
+    document.getElementById("ib-name").value = s.name || "";
+    document.getElementById("ib-phone").value = s.phone || "";
+    document.getElementById("ib-klasse").value = s.klasse || "";
+    builderItems = [{ name: "Spezialbestellung", details: `${String(s.wunsch || "").slice(0, 90)} (Größe ${s.groesse || ""})`, qty: Number(s.menge) || 1, unit: "Stück", price: "" }];
+    renderBuilderRows();
+    updatePreview();
+    document.getElementById("tab-invoices").click();
+    document.getElementById("inv-builder-card").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("ib-p-0").focus({ preventScroll: true });
+  }
+
+  function setupInvoiceTools() {
+    const notice = document.getElementById("invoices-notice");
+    document.getElementById("inv-take-btn").addEventListener("click", () =>
+      guarded(async () => {
+        SFUI.hideMessage(notice);
+        const note = SF.clampText(document.getElementById("inv-take-note").value, 120);
+        const { number } = await SFDB.takeInvoiceNumber({ kind: "reserviert", note, date: new Date().toISOString().slice(0, 10) });
+        document.getElementById("inv-take-note").value = "";
+        await renderInvoices();
+        SFUI.showMessage(notice, `Die Nummer ${number} gehört jetzt dir – sie wird nicht mehr vergeben.`, "success");
+      })
+    );
+    document.getElementById("inv-next-save").addEventListener("click", () =>
+      guarded(async () => {
+        SFUI.hideMessage(notice);
+        const n = parseInt(document.getElementById("inv-next-input").value, 10);
+        if (!(n >= 1 && n <= 999999)) {
+          SFUI.showMessage(notice, "Bitte eine Zahl ab 1 eintragen.", "error");
+          return;
+        }
+        const current = Number(document.getElementById("inv-next").textContent) || 1;
+        if (n < current && !confirm(`Die nächste Nummer ist gerade ${current}. Wirklich auf ${n} zurücksetzen? Dann kann es doppelte Nummern geben.`)) return;
+        await SFDB.setNextInvoiceNumber(n);
+        await renderInvoices();
+        SFUI.showMessage(notice, `Die nächste Rechnung bekommt jetzt die Nummer ${n}.`, "success");
+      })
+    );
+
+    const form = document.getElementById("inv-builder");
+    const msg = document.getElementById("ib-message");
+    form.addEventListener("input", () => {
+      builderItems = readBuilderItems();
+      updatePreview();
+    });
+    document.getElementById("ib-add-row").addEventListener("click", () => {
+      builderItems = readBuilderItems().concat([{}]);
+      renderBuilderRows();
+      updatePreview();
+      document.getElementById(`ib-n-${builderItems.length - 1}`).focus();
+    });
+    document.getElementById("ib-rows").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-row]");
+      if (!btn) return;
+      builderItems = readBuilderItems();
+      builderItems.splice(Number(btn.getAttribute("data-remove-row")), 1);
+      if (!builderItems.length) builderItems = [{}];
+      renderBuilderRows();
+      updatePreview();
+    });
+    document.getElementById("ib-reset").addEventListener("click", () => {
+      resetBuilder();
+      SFUI.hideMessage(msg);
+    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      guarded(async () => {
+        const data = builderData();
+        let error = null;
+        if (!data.customerName) error = "Bitte den Namen der Kundin / des Kunden eintragen.";
+        else if (!data.items.length) error = "Bitte mindestens einen Posten mit Bezeichnung eintragen.";
+        else if (data.items.some((i) => !(i.qty > 0))) error = "Bitte bei jedem Posten eine Menge über 0 eintragen.";
+        else if (data.items.length > 30) error = "Höchstens 30 Posten pro Rechnung.";
+        if (error) {
+          SFUI.showMessage(msg, error, "error");
+          return;
+        }
+        const submit = document.getElementById("ib-submit");
+        submit.disabled = true;
+        try {
+          const { id, number } = await SFDB.takeInvoiceNumber(data);
+          resetBuilder();
+          await renderInvoices();
+          msg.innerHTML = "";
+          SFUI.showMessage(msg, `Rechnung Nr. ${number} wurde erstellt und gespeichert.`, "success");
+          const links = document.createElement("span");
+          links.innerHTML = ` <a href="rechnung.html?manuell=${encodeURIComponent(id)}">Ansehen</a> · <a href="rechnung.html?manuell=${encodeURIComponent(id)}&drucken=1">Als PDF speichern</a>`;
+          msg.appendChild(links);
+        } finally {
+          submit.disabled = false;
+        }
+      });
+    });
+    resetBuilder();
   }
 
   async function renderOrders() {
@@ -853,6 +1052,7 @@
           ${s.status === "offen" || s.status === "abgelehnt" ? `<button class="btn btn-secondary btn-small" data-set-status="akzeptiert" data-id="${id}">Annehmen</button>` : ""}
           ${s.status === "offen" || s.status === "akzeptiert" ? `<button class="btn btn-outline btn-small" data-set-status="abgelehnt" data-id="${id}">Ablehnen</button>` : ""}
           ${s.status === "offen" || s.status === "abgelehnt" ? "" : pickupButtons(s.status, id, "akzeptiert")}
+          ${SFDB.invoicesLive() ? `<button class="btn btn-outline btn-small" data-invoice-special="${id}">Rechnung erstellen</button>` : ""}
           <button class="btn btn-danger btn-small" data-delete-special="${id}">Löschen</button>
         </td>
       </tr>`;
@@ -874,6 +1074,12 @@
           }
         })
       )
+    );
+    el.querySelectorAll("[data-invoice-special]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const s = specials.find((x) => x.id === btn.getAttribute("data-invoice-special"));
+        if (s) fillBuilderFromSpecial(s);
+      })
     );
     el.querySelectorAll("[data-delete-special]").forEach((btn) =>
       btn.addEventListener("click", () =>
@@ -991,6 +1197,7 @@
     setupLogin();
     setupTabs();
     setupProductForm();
+    setupInvoiceTools();
     setupSettings();
     watchIdle();
     await SFDB.ready;

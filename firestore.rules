@@ -86,13 +86,14 @@ service cloud.firestore {
 
       function validOrder() {
         let d = request.resource.data;
-        return d.keys().hasOnly(['userId', 'username', 'customerName', 'klasse', 'phone', 'items', 'total', 'qtyByProduct', 'date', 'status', 'invoiceByEmail'])
+        return d.keys().hasOnly(['userId', 'username', 'customerName', 'klasse', 'phone', 'items', 'total', 'qtyByProduct', 'date', 'status', 'invoiceByEmail', 'invoiceNo'])
           && d.keys().hasAll(['userId', 'customerName', 'klasse', 'phone', 'items', 'total', 'qtyByProduct', 'date', 'status'])
           && d.userId == request.auth.uid
           && d.status == 'offen'
           && d.date == request.time
           && optText(d.get('username', ''), 60)
           && d.get('invoiceByEmail', false) is bool
+          && (!('invoiceNo' in d) || invoiceNoTaken(orderId, d.invoiceNo))
           && text(d.customerName, 60)
           && text(d.klasse, 20)
           && phoneOk(d.phone)
@@ -100,6 +101,41 @@ service cloud.firestore {
           && d.total is number && d.total > 0 && d.total <= 2000
           && d.qtyByProduct is map && d.qtyByProduct.size() >= 1 && d.qtyByProduct.size() <= 8;
       }
+    }
+
+    // Rechnungsnummer einer neuen Bestellung: Der Zaehler counters/invoices muss in
+    // derselben Transaktion genau fuer diese Bestellung weitergezaehlt werden.
+    function invoiceNoTaken(orderId, n) {
+      let c = getAfter(/databases/$(database)/documents/counters/invoices).data;
+      return n is int && n >= 1 && c.lastOrderId == orderId && c.next == n + 1;
+    }
+
+    // ---------- Rechnungsnummern ----------
+    // next = naechste freie Nummer. Der Admin darf ihn frei setzen bzw. Nummern
+    // "nehmen". Beim Bestellen darf ein bestaetigtes Konto ihn genau um 1
+    // erhoehen - nur zusammen mit seiner neuen Bestellung, die diese Nummer bekommt.
+    match /counters/{name} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+      allow create, update: if name == 'invoices' && verified() && invoiceCounterStep();
+
+      function invoiceCounterStep() {
+        let after = request.resource.data;
+        let before = resource == null ? 1 : resource.data.get('next', 1);
+        let orderPath = /databases/$(database)/documents/orders/$(after.lastOrderId);
+        return after.keys().hasOnly(['next', 'lastOrderId'])
+          && after.lastOrderId is string
+          && after.lastOrderId.matches('^[A-Za-z0-9]{20}$')
+          && after.next == before + 1
+          && !exists(orderPath)
+          && getAfter(orderPath).data.userId == request.auth.uid
+          && getAfter(orderPath).data.invoiceNo == before;
+      }
+    }
+
+    // ---------- Selbst erstellte und reservierte Rechnungen: nur Admin ----------
+    match /manualInvoices/{id} {
+      allow read, write: if isAdmin();
     }
 
     // ---------- Spezialbestellungen ----------

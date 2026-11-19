@@ -37,19 +37,15 @@ def kurs_holen(name: str) -> dict:
     return safe(yahoo, YAHOO[name])
 
 
-def zahl(x: float) -> str:
-    return f"{x:,.4f}" if abs(x) < 10 else f"{x:,.2f}"
-
-
 def zeile(name: str, d: dict) -> str:
     if "error" in d:
         return f"{name}: Fehler ({d['error'][:60]})"
-    text = f"{name}: {zahl(d['price'])}"
+    text = f"{name}: {d['price']:,.2f}"
     if "change_24h_pct" in d:
         text += f" ({d['change_24h_pct']:+.2f}% 24h)"
     elif d.get("sma200"):
         trend = "über" if d["price"] > d["sma200"] else "unter"
-        text += f" ({trend} SMA200 {zahl(d['sma200'])})"
+        text += f" ({trend} SMA200 {d['sma200']:,.2f})"
     return text
 
 

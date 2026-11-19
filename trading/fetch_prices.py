@@ -65,18 +65,13 @@ def safe(fn, *args):
         return {"error": str(exc)}
 
 
-def main():
-    out = {"fetched_at": datetime.now(timezone.utc).isoformat()}
-    c = safe(crypto)
-    for name in CRYPTO:
-        out[name] = c.get(name, c)
-    for name, symbol in YAHOO.items():
-        out[name] = safe(yahoo, symbol)
+out = {"fetched_at": datetime.now(timezone.utc).isoformat()}
+c = safe(crypto)
+for name in CRYPTO:
+    out[name] = c.get(name, c)
+for name, symbol in YAHOO.items():
+    out[name] = safe(yahoo, symbol)
 
-    with open("kurse.json", "w") as f:
-        json.dump(out, f, indent=1)
-    print(json.dumps(out, indent=1))
-
-
-if __name__ == "__main__":
-    main()
+with open("kurse.json", "w") as f:
+    json.dump(out, f, indent=1)
+print(json.dumps(out, indent=1))

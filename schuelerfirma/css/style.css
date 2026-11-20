@@ -93,10 +93,13 @@ main:focus {
   border: 0;
 }
 
+/* „Zum Inhalt springen“ (für Tastatur/Screenreader): komplett unsichtbar, bis er
+   per Tab-Taste fokussiert wird. Nicht über top:-60px versteckt – sonst taucht er am
+   iPad beim Herunterziehen der Seite (Gummiband-Effekt) oben auf. */
 .skip-link {
   position: absolute;
   left: 12px;
-  top: -60px;
+  top: 12px;
   z-index: 200;
   background: var(--color-secondary-dark);
   color: #fff;
@@ -106,8 +109,14 @@ main:focus {
   text-decoration: none;
 }
 
-.skip-link:focus {
-  top: 12px;
+.skip-link:not(:focus) {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .link-btn {

@@ -234,6 +234,7 @@
         guarded(async () => {
           const p = products.find((x) => x.id === btn.getAttribute("data-toggle"));
           if (!p) return;
+          if (!confirm(p.active ? `„${p.name}“ wirklich DEAKTIVIEREN? Dann ist es im Shop nicht mehr zu sehen.` : `„${p.name}“ wirklich AKTIVIEREN? Dann ist es im Shop zu sehen.`)) return;
           await SFDB.setProductActive(p.id, !p.active);
           await renderProducts();
           renderStats();
@@ -244,7 +245,7 @@
       btn.addEventListener("click", () =>
         guarded(async () => {
           const id = btn.getAttribute("data-delete-product");
-          if (!confirm("Dieses Produkt wirklich löschen?")) return;
+          if (!confirm("Dieses Produkt wirklich LÖSCHEN?\n\nDas kann man nicht rückgängig machen. (Bestellungen und Rechnungen bleiben erhalten.)")) return;
           await SFDB.deleteProduct(id);
           if (editingProductId === id) exitEditMode();
           await renderProducts();
@@ -755,7 +756,7 @@
     el.querySelectorAll("[data-delete-manual]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          if (!confirm("Diesen Eintrag wirklich löschen? Die Nummer wird trotzdem nicht noch einmal vergeben.")) return;
+          if (!confirm("Diesen Eintrag wirklich LÖSCHEN?\n\nDas kann man nicht rückgängig machen. Die Nummer wird trotzdem nicht noch einmal vergeben.")) return;
           await SFDB.deleteManualInvoice(btn.getAttribute("data-delete-manual"));
           await renderInvoices();
         })
@@ -841,6 +842,8 @@
       guarded(async () => {
         SFUI.hideMessage(notice);
         const note = SF.clampText(document.getElementById("inv-take-note").value, 120);
+        const next = document.getElementById("inv-next").textContent;
+        if (!confirm(`Wirklich die Nummer ${next} nehmen? Sie wird danach nicht mehr vergeben.`)) return;
         const { number } = await SFDB.takeInvoiceNumber({ kind: "reserviert", note, date: new Date().toISOString().slice(0, 10) });
         document.getElementById("inv-take-note").value = "";
         await renderInvoices();
@@ -901,6 +904,7 @@
           SFUI.showMessage(msg, error, "error");
           return;
         }
+        if (!confirm(`Rechnung für ${data.customerName} jetzt wirklich erstellen? Sie bekommt die Nummer ${document.getElementById("inv-next").textContent}.`)) return;
         const submit = document.getElementById("ib-submit");
         submit.disabled = true;
         try {
@@ -961,6 +965,7 @@
           const id = btn.getAttribute("data-id");
           const status = btn.getAttribute("data-set-status");
           const o = orders.find((x) => x.id === id);
+          if (!o || !confirmStatus(status, o.status, `Bestellung #${String(o.id).slice(-6).toUpperCase()} von ${o.customerName}`)) return;
           SFUI.hideMessage(document.getElementById("orders-notice"));
           await SFDB.updateOrderStatus(id, status);
           await renderOrders();
@@ -974,7 +979,9 @@
     el.querySelectorAll("[data-delete-order]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          if (!confirm("Diese Bestellung wirklich löschen?")) return;
+          const o = orders.find((x) => x.id === btn.getAttribute("data-delete-order"));
+          const label = o ? `Bestellung #${String(o.id).slice(-6).toUpperCase()} von ${o.customerName}` : "Diese Bestellung";
+          if (!confirm(`${label} wirklich LÖSCHEN?\n\nDas kann man nicht rückgängig machen – auch die Rechnung dazu ist dann weg.`)) return;
           await SFDB.deleteOrder(btn.getAttribute("data-delete-order"));
           await renderOrders();
           renderStats();
@@ -1011,6 +1018,24 @@
 
   // Knöpfe für den Abhol-Status. notReady = Status, zu dem „Nicht abholbereit“
   // zurückkehrt („offen“ bei Shop-, „akzeptiert“ bei Spezialbestellungen).
+  // Zweite Bestätigung vor jeder Status-Änderung (damit nichts aus Versehen passiert)
+  function confirmStatus(newStatus, oldStatus, what) {
+    const q = {
+      abholbereit:
+        oldStatus === "abgeholt"
+          ? `${what} wirklich auf „noch nicht abgeholt“ (abholbereit) zurücksetzen?`
+          : `${what} wirklich als ABHOLBEREIT markieren?` + (SFDB.readyEmailEnabled() ? "\n\nDie Kundin / der Kunde bekommt dann eine E-Mail." : ""),
+      abgeholt: `${what} wirklich als ABGEHOLT markieren?`,
+      offen: `${what} wirklich auf NICHT abholbereit zurücksetzen?`,
+      akzeptiert:
+        oldStatus === "abholbereit"
+          ? `${what} wirklich auf NICHT abholbereit zurücksetzen?`
+          : `${what} wirklich ANNEHMEN?`,
+      abgelehnt: `${what} wirklich ABLEHNEN?`,
+    }[newStatus];
+    return confirm(q || `${what} wirklich ändern?`);
+  }
+
   function pickupButtons(status, id, notReady) {
     if (status === "abholbereit") {
       return `<button class="btn btn-secondary btn-small" data-set-status="abgeholt" data-id="${id}">Als abgeholt markieren</button>
@@ -1065,6 +1090,7 @@
           const id = btn.getAttribute("data-id");
           const status = btn.getAttribute("data-set-status");
           const o = specials.find((x) => x.id === id);
+          if (!o || !confirmStatus(status, o.status, `Spezialbestellung von ${o.name}`)) return;
           SFUI.hideMessage(document.getElementById("special-notice"));
           await SFDB.updateSpecialOrderStatus(id, status);
           await renderSpecial();
@@ -1084,7 +1110,7 @@
     el.querySelectorAll("[data-delete-special]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          if (!confirm("Diese Spezialbestellung wirklich löschen?")) return;
+          if (!confirm("Diese Spezialbestellung wirklich LÖSCHEN?\n\nDas kann man nicht rückgängig machen.")) return;
           await SFDB.deleteSpecialOrder(btn.getAttribute("data-delete-special"));
           await renderSpecial();
           renderStats();
@@ -1124,7 +1150,7 @@
     el.querySelectorAll("[data-delete-review]").forEach((btn) =>
       btn.addEventListener("click", () =>
         guarded(async () => {
-          if (!confirm("Diese Bewertung wirklich löschen?")) return;
+          if (!confirm("Diese Bewertung wirklich LÖSCHEN?\n\nDas kann man nicht rückgängig machen.")) return;
           await SFDB.deleteReview(btn.getAttribute("data-delete-review"));
           await renderReviewsAdmin();
           renderStats();

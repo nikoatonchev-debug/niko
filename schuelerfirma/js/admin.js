@@ -799,7 +799,7 @@
     return {
       kind: "manuell",
       customerName: SF.clampText(v("ib-name"), 80),
-      date: v("ib-date") || new Date().toISOString().slice(0, 10),
+      date: v("ib-date") || SF.berlinDateISO(),
       address: SF.clampText(v("ib-address"), 200),
       phone: SF.clampText(v("ib-phone"), 30),
       klasse: SF.clampText(v("ib-klasse"), 20),
@@ -816,7 +816,7 @@
   }
   function resetBuilder() {
     document.getElementById("inv-builder").reset();
-    document.getElementById("ib-date").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("ib-date").value = SF.berlinDateISO();
     document.getElementById("ib-pay").value = "bar bei der Abholung";
     builderItems = [{}];
     renderBuilderRows();
@@ -844,7 +844,7 @@
         const note = SF.clampText(document.getElementById("inv-take-note").value, 120);
         const next = document.getElementById("inv-next").textContent;
         if (!confirm(`Wirklich die Nummer ${next} nehmen? Sie wird danach nicht mehr vergeben.`)) return;
-        const { number } = await SFDB.takeInvoiceNumber({ kind: "reserviert", note, date: new Date().toISOString().slice(0, 10) });
+        const { number } = await SFDB.takeInvoiceNumber({ kind: "reserviert", note, date: SF.berlinDateISO() });
         document.getElementById("inv-take-note").value = "";
         await renderInvoices();
         SFUI.showMessage(notice, `Die Nummer ${number} gehört jetzt dir – sie wird nicht mehr vergeben.`, "success");
@@ -922,6 +922,15 @@
       });
     });
     resetBuilder();
+    // Sobald die Internet-Zeit da ist, das Datum (falls noch nicht geändert) danach richten
+    const firstDate = document.getElementById("ib-date").value;
+    SF.timeReady.then(() => {
+      const el = document.getElementById("ib-date");
+      if (el.value === firstDate) {
+        el.value = SF.berlinDateISO();
+        updatePreview();
+      }
+    });
   }
 
   async function renderOrders() {

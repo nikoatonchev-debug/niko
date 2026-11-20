@@ -49,7 +49,7 @@
           out.innerHTML = `<p class="hint">Es gibt noch keine Rechnungen.</p>`;
           return;
         }
-        document.title = `Rechnungen ${new Date().toLocaleDateString("de-DE")} – Erdkinderkollektiv`;
+        document.title = `Rechnungen ${SF.formatDate(SF.now().toISOString(), true)} – Erdkinderkollektiv`;
       } else if (manualId) {
         if (!/^[A-Za-z0-9]{1,64}$/.test(manualId)) throw new Error("Diese Rechnung gibt es nicht.");
         const m = await SFDB.getManualInvoice(manualId);

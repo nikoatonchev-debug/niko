@@ -14,8 +14,8 @@ const SFInvoice = (function () {
   // Jahr + Bestellnummer, z. B. R-2026-AB12CD
   function number(o) {
     if (o.invoiceNo) return String(o.invoiceNo);
-    const d = o.date ? new Date(o.date) : new Date();
-    return `R-${d.getFullYear()}-${String(o.id || "").slice(-6).toUpperCase()}`;
+    const d = o.date ? new Date(o.date) : SF.now();
+    return `R-${d.toLocaleDateString("de-DE", { year: "numeric", timeZone: "Europe/Berlin" })}-${String(o.id || "").slice(-6).toUpperCase()}`;
   }
 
   // Einheitliches Rechnungs-Modell aus einer Shop-Bestellung …

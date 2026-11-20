@@ -581,6 +581,8 @@ const SFDB = (function () {
     );
     return s.docs.map(withId);
   }
+  // Neue Bewertung anlegen. Ändern (updateMyReview) geht nur in den ersten
+  // 5 Minuten – das prüfen auch die Datenbank-Regeln mit der Server-Zeit.
   async function saveMyReview({ name, rating, comment }) {
     requireDb();
     const u = auth.currentUser;
@@ -592,6 +594,19 @@ const SFDB = (function () {
       comment,
       date: F.serverTimestamp(),
     });
+  }
+  async function updateMyReview({ name, rating, comment }) {
+    requireDb();
+    const u = auth.currentUser;
+    if (!u) throw withMessage("Bitte melde dich zuerst an.");
+    try {
+      await F.updateDoc(F.doc(db, "reviews", u.uid), { name, rating, comment });
+    } catch (e) {
+      if (e && e.code === "permission-denied") {
+        throw withMessage("Die 5 Minuten zum Bearbeiten sind leider vorbei.", "sf/review-locked");
+      }
+      throw e;
+    }
   }
   async function deleteReview(id) {
     await F.deleteDoc(F.doc(requireDb(), "reviews", id));
@@ -722,6 +737,7 @@ const SFDB = (function () {
     deleteSpecialOrder,
     getReviews,
     saveMyReview,
+    updateMyReview,
     deleteReview,
     getUsers,
     readyEmailEnabled,

@@ -38,6 +38,8 @@ const SF = (() => {
     }) + " €";
   }
 
+  // Alle Zeiten in deutscher Zeit (Berlin) – egal, welche Zeitzone das Gerät eingestellt hat.
+  const TZ = "Europe/Berlin";
   function formatDate(iso, dateOnly) {
     if (!iso) return "";
     try {
@@ -47,12 +49,35 @@ const SF = (() => {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: TZ,
       });
       if (dateOnly) return datePart;
-      return datePart + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      return datePart + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
     } catch (e) {
       return escapeHtml(iso);
     }
+  }
+
+  // "Jetzt" aus dem Internet: Die Uhrzeit des Servers (HTTP-Kopfzeile "Date")
+  // statt der Geräte-Uhr. Bis die Antwort da ist, wird die Geräte-Uhr benutzt.
+  let serverOffset = 0;
+  const timeReady = (async () => {
+    try {
+      const t0 = Date.now();
+      const res = await fetch(location.origin + "/index.html?zeit=" + t0, { method: "HEAD", cache: "no-store" });
+      const t1 = Date.now();
+      const server = Date.parse(res.headers.get("date") || "");
+      if (!isNaN(server)) serverOffset = server + 500 - (t0 + t1) / 2; // Kopfzeile hat nur ganze Sekunden
+    } catch (e) {
+      /* offline: Geräte-Uhr */
+    }
+  })();
+  function now() {
+    return new Date(Date.now() + serverOffset);
+  }
+  // Heutiges Datum in Berlin als JJJJ-MM-TT
+  function berlinDateISO(d) {
+    return (d || now()).toLocaleDateString("sv-SE", { timeZone: TZ });
   }
 
   function safeColor(c, fallback) {
@@ -233,6 +258,9 @@ const SF = (() => {
     escapeHtml,
     formatPrice,
     formatDate,
+    now,
+    timeReady,
+    berlinDateISO,
     safeColor,
     clampText,
     qtyStepperHtml,

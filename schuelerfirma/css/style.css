@@ -439,6 +439,18 @@ img, svg {
   padding: 24px;
 }
 
+/* Echtes Foto statt Zeichnung */
+.hero-art-photo {
+  padding: 10px;
+}
+
+.hero-art-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
 /* ---------- Sections ---------- */
 
 section {

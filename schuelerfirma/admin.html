@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://script.google.com https://script.googleusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <title>Admin-Bereich &ndash; Siebdruck-Schülerfirma</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin" data-auth-persistence="session">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main">
+    <section>
+      <div class="container">
+
+        <!-- LOGIN -->
+        <div id="admin-login" class="login-wrap">
+          <div class="card login-card">
+            <div class="icon" data-icon="lock"></div>
+            <h1 class="h2">Admin-Bereich</h1>
+            <p class="section-subtitle mb-20">Bitte Passwort eingeben, um fortzufahren.</p>
+            <form id="login-form" novalidate>
+              <div class="field text-left">
+                <label for="login-email">E-Mail-Adresse</label>
+                <input type="email" id="login-email" autocomplete="username" maxlength="100" required>
+              </div>
+              <div class="field text-left">
+                <label for="login-password">Passwort</label>
+                <input type="password" id="login-password" autocomplete="current-password" maxlength="128" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="login-submit">Anmelden</button>
+              <div id="login-message" class="form-message hidden"></div>
+            </form>
+            <p class="hint text-center mt-14"><a href="#" id="admin-reset-link">Passwort vergessen?</a></p>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="admin-dashboard" class="hidden">
+          <h1 class="section-title text-left">Admin-Bereich</h1>
+
+          <div class="stat-row">
+            <div class="stat-box"><div class="num" id="stat-products">0</div><div class="label">Produkte</div></div>
+            <div class="stat-box"><div class="num" id="stat-orders">0</div><div class="label">Noch nicht abholbereit</div></div>
+            <div class="stat-box"><div class="num" id="stat-special">0</div><div class="label">Neue Spezialbestellungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-reviews">0</div><div class="label">Bewertungen</div></div>
+            <div class="stat-box"><div class="num" id="stat-users">0</div><div class="label">Registrierte Kund:innen</div></div>
+          </div>
+
+          <div class="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="products">Produkte</button>
+            <button class="admin-tab-btn" data-tab="orders">Bestellungen</button>
+            <button class="admin-tab-btn" data-tab="invoices">Rechnungen</button>
+            <button class="admin-tab-btn" data-tab="special">Spezialbestellungen</button>
+            <button class="admin-tab-btn" data-tab="reviews">Bewertungen</button>
+            <button class="admin-tab-btn" data-tab="users">Kund:innen</button>
+            <button class="admin-tab-btn" data-tab="settings">Einstellungen</button>
+          </div>
+
+          <!-- Produkte -->
+          <div class="admin-panel active" id="panel-products">
+            <div class="card mb-24">
+              <h3 id="product-form-title">Produkt hinzufügen</h3>
+              <form id="product-form" novalidate>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-name">Name</label>
+                    <input type="text" id="pf-name" maxlength="60" required>
+                  </div>
+                  <div class="field">
+                    <label for="pf-price">Preis (€)</label>
+                    <input type="number" id="pf-price" step="0.5" min="0.5" max="1000" required>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="pf-description">Beschreibung</label>
+                  <textarea id="pf-description" maxlength="500"></textarea>
+                </div>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-sizes">Größen <span class="hint">(mit Komma getrennt, z. B. 140, 152, S, M)</span></label>
+                    <input type="text" id="pf-sizes" placeholder="140, 152, S, M, L" maxlength="120" required>
+                  </div>
+                  <div class="field" id="pf-color-field">
+                    <label for="pf-color">Farbe <span class="hint">(nur falls kein Bild hochgeladen wird)</span></label>
+                    <input type="color" id="pf-color" class="color-input">
+                  </div>
+                </div>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="pf-stock">Noch verfügbar (Stück) <span class="hint">(leer lassen = unbegrenzt)</span></label>
+                    <input type="number" id="pf-stock" min="0" placeholder="z. B. 5" aria-describedby="pf-stock-info">
+                    <p class="hint hidden" id="pf-stock-info"></p>
+                  </div>
+                  <div class="field">
+                    <label for="pf-images">Bilder <span class="hint">(bis zu 40, mehrere auf einmal möglich &ndash; nur eigene Fotos oder solche, die ihr verwenden dürft)</span></label>
+                    <input type="file" id="pf-images" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+                  </div>
+                </div>
+                <p class="hint hidden" id="pf-images-hint">Gehören mehrere Fotos zur selben Farbe (z. B. vorne und hinten vom blauen Pulli)? Dann <strong>zieh ein Foto auf das andere</strong> – so werden sie eine Gruppe und du trägst nur einmal die Farbe ein. Wieder trennen: das Foto auf „Hier ablegen = eigene Farbe“ ziehen oder unter dem Foto „Verschieben …“ wählen. Im Shop erscheint jede Farbe als Kreis; wer ihn anklickt, sieht sofort das passende Foto.</p>
+                <p class="hint hidden" id="pf-photos-loading" role="status"></p>
+                <div id="pf-image-preview" class="img-preview-row"></div>
+                <p id="pf-photo-live" class="sr-only" aria-live="polite"></p>
+                <datalist id="pf-color-names"></datalist>
+                <div class="button-row">
+                  <button type="submit" class="btn btn-primary" id="product-form-submit">Produkt hinzufügen</button>
+                  <button type="button" class="btn btn-outline hidden" id="product-form-cancel">Abbrechen</button>
+                </div>
+                <div id="product-message" class="form-message hidden"></div>
+              </form>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Bild</th><th>Name</th><th>Beschreibung</th><th>Preis</th><th>Größen / Farben</th><th>Bestand</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="product-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bestellungen -->
+          <div class="admin-panel" id="panel-orders">
+            <p class="form-message hidden" id="orders-notice"></p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Kunde</th><th>Artikel</th><th>Summe</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="orders-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Rechnungen -->
+          <div class="admin-panel" id="panel-invoices">
+            <p class="info-box mb-16 hidden" id="invoices-not-live">
+              Rechnungsnummern, &bdquo;Nummer nehmen&ldquo; und selbst erstellte Rechnungen sind noch nicht freigeschaltet:
+              Dafür müssen zuerst die neuen Datenbank-Regeln veröffentlicht werden. Bis dahin bekommen Shop-Bestellungen
+              eine Nummer wie R-2026-AB12CD.
+            </p>
+            <p class="form-message hidden" id="invoices-notice"></p>
+
+            <div class="grid grid-2 mb-24 invoice-admin-cards" id="invoices-live-cards">
+              <div class="card">
+                <h3>Rechnungsnummern</h3>
+                <p class="mb-8">Nächste freie Nummer: <strong class="inv-next" id="inv-next">…</strong></p>
+                <p class="hint">Jede Shop-Bestellung bekommt automatisch die nächste Nummer. Für private Rechnungen kannst du dir hier eine Nummer nehmen &ndash; die wird dann nicht mehr vergeben.</p>
+                <div class="field mt-14">
+                  <label for="inv-take-note">Wofür? <span class="hint">(freiwillig, nur für dich)</span></label>
+                  <input type="text" id="inv-take-note" maxlength="120" placeholder="z. B. Tassen für Oma Müller">
+                </div>
+                <button type="button" class="btn btn-secondary btn-small" id="inv-take-btn">Nächste Nummer nehmen</button>
+                <details class="mt-14">
+                  <summary>Nächste Nummer selbst einstellen</summary>
+                  <p class="hint mt-6">Zum Beispiel, wenn ihr schon Rechnungen von Hand geschrieben habt. Achtung: Eine kleinere Nummer als jetzt kann doppelte Nummern ergeben.</p>
+                  <div class="inline-form">
+                    <label for="inv-next-input" class="sr-only">Nächste Nummer</label>
+                    <input type="number" id="inv-next-input" min="1" max="999999" step="1">
+                    <button type="button" class="btn btn-outline btn-small" id="inv-next-save">Speichern</button>
+                  </div>
+                </details>
+              </div>
+              <div class="card">
+                <h3>Alle Rechnungen speichern</h3>
+                <p class="hint">Speichert alle Rechnungen (Shop und selbst erstellte) zusammen als eine PDF-Datei. Im Druckfenster &bdquo;Als PDF speichern&ldquo; wählen.</p>
+                <a class="btn btn-secondary btn-small" href="rechnung.html?alle=1&amp;drucken=1">Alle Rechnungen als eine PDF speichern</a>
+              </div>
+            </div>
+
+            <div class="card mb-24" id="inv-builder-card">
+              <h3 id="inv-builder-title">Rechnungs-Assistent: Rechnung selbst erstellen</h3>
+              <p class="hint mb-16">Alles eintragen &ndash; unten siehst du sofort, wie die Rechnung aussieht. Beim Erstellen bekommt sie automatisch die nächste Nummer.</p>
+              <form id="inv-builder" novalidate>
+                <div class="grid grid-2">
+                  <div class="field">
+                    <label for="ib-name">Name der Kundin / des Kunden</label>
+                    <input type="text" id="ib-name" maxlength="80" required>
+                  </div>
+                  <div class="field">
+                    <label for="ib-date">Rechnungsdatum</label>
+                    <input type="date" id="ib-date" required>
+                  </div>
+                  <div class="field">
+                    <label for="ib-address">Adresse <span class="hint">(freiwillig, z. B. Straße + PLZ Ort)</span></label>
+                    <textarea id="ib-address" maxlength="200" rows="2"></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="ib-phone">Telefon <span class="hint">(freiwillig)</span></label>
+                    <input type="tel" id="ib-phone" maxlength="30">
+                    <label for="ib-klasse" class="mt-10">Klasse <span class="hint">(freiwillig)</span></label>
+                    <input type="text" id="ib-klasse" maxlength="20">
+                  </div>
+                </div>
+                <fieldset class="ib-items">
+                  <legend>Posten</legend>
+                  <div id="ib-rows"></div>
+                  <button type="button" class="btn btn-outline btn-small" id="ib-add-row">+ Posten hinzufügen</button>
+                </fieldset>
+                <div class="grid grid-2 mt-14">
+                  <div class="field">
+                    <label for="ib-pay">Zahlung</label>
+                    <input type="text" id="ib-pay" maxlength="120" value="bar bei der Abholung" list="ib-pay-list">
+                    <datalist id="ib-pay-list">
+                      <option value="bar bei der Abholung"></option>
+                      <option value="bar bezahlt"></option>
+                      <option value="per Überweisung"></option>
+                    </datalist>
+                  </div>
+                  <div class="field">
+                    <label for="ib-note">Bemerkung <span class="hint">(freiwillig, steht unter der Tabelle)</span></label>
+                    <textarea id="ib-note" maxlength="400" rows="2"></textarea>
+                  </div>
+                </div>
+                <div class="button-row">
+                  <button type="submit" class="btn btn-primary" id="ib-submit">Rechnung erstellen</button>
+                  <button type="button" class="btn btn-outline" id="ib-reset">Leeren</button>
+                </div>
+                <div id="ib-message" class="form-message hidden"></div>
+              </form>
+              <h4 class="mt-20">Vorschau</h4>
+              <div id="ib-preview" class="ib-preview"></div>
+            </div>
+
+            <h3>Alle Rechnungen</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Betrag</th><th>Art</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="invoices-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Spezialbestellungen -->
+          <div class="admin-panel" id="panel-special">
+            <p class="form-message hidden" id="special-notice"></p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Telefon</th><th>Größe/Menge</th><th>Wunsch</th><th>Status</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="special-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bewertungen -->
+          <div class="admin-panel" id="panel-reviews">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Datum</th><th>Name</th><th>Bewertung</th><th>Kommentar</th><th>Aktionen</th></tr>
+                </thead>
+                <tbody id="reviews-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Kund:innen -->
+          <div class="admin-panel" id="panel-users">
+            <p class="hint mb-14">Alle Kund:innen, die ein Konto angelegt haben. Ein Konto selbst lässt sich in der
+              <strong>Firebase-Konsole</strong> unter „Authentication“ löschen (Kund:innen können es auch selbst unter „Meine Bestellungen“ löschen).</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Registriert am</th><th>Benutzername</th><th>E-Mail</th></tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Einstellungen -->
+          <div class="admin-panel" id="panel-settings">
+            <div class="card narrow-card-left">
+              <h3>Konto &amp; Passwort</h3>
+              <p class="hint">Angemeldet als <strong id="admin-email-label"></strong>.</p>
+              <p class="hint">Dein Passwort änderst du über einen Link, den wir dir per E-Mail schicken.</p>
+              <button type="button" class="btn btn-primary" id="admin-reset-btn">Link zum Passwort-Ändern senden</button>
+              <div id="password-message" class="form-message hidden"></div>
+            </div>
+            <div class="mt-20">
+              <button type="button" class="btn btn-outline" id="logout-btn">Abmelden</button>
+              <button type="button" class="btn btn-outline" id="refresh-btn">Daten neu laden</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/invoice.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

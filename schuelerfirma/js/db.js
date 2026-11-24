@@ -96,6 +96,9 @@ const SFDB = (function () {
       "auth/user-not-found": "E-Mail-Adresse oder Passwort ist falsch.",
       "auth/user-disabled": "Dieses Konto wurde gesperrt. Bitte melde dich bei uns.",
       "auth/too-many-requests": "Zu viele Versuche. Bitte warte ein paar Minuten und versuche es dann erneut.",
+      "auth/quota-exceeded": "Gerade wurden zu viele E-Mails verschickt. Bitte versuche es in ein paar Minuten noch einmal.",
+      "sf/link-old": "Dieser Bestätigungslink ist abgelaufen oder wurde schon benutzt.",
+      "sf/link-failed": "Der Bestätigungslink hat leider nicht geklappt. Bitte versuche es noch einmal.",
       "auth/network-request-failed": "Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.",
       "auth/requires-recent-login": "Bitte melde dich zur Sicherheit noch einmal neu an.",
       "auth/operation-not-allowed": "Die Anmeldung mit E-Mail und Passwort ist noch nicht freigeschaltet.",
@@ -121,9 +124,10 @@ const SFDB = (function () {
   }
 
   // ---------- Konten ----------
-  function actionSettings() {
+  function actionSettings(page) {
     const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, "");
-    return { url: base + "index.html" };
+    // Nach dem Bestätigen zurück in den Shop (dort geht es direkt zur Kasse weiter)
+    return { url: base + (page || "shop.html?bestaetigt=1") };
   }
 
   async function sendVerification() {
@@ -152,10 +156,49 @@ const SFDB = (function () {
     } catch (e) {
       console.warn("SFDB: Profil konnte nicht gespeichert werden", e);
     }
-    await sendVerification();
+    // Das Konto ist jetzt angelegt. Klappt nur das Verschicken der E-Mail
+    // nicht (z. B. kurz zu viele Anfragen), darf die Registrierung trotzdem
+    // nicht als "fehlgeschlagen" enden – sonst steckt man fest ("schon
+    // registriert"). Dann einfach später "E-Mail erneut senden".
+    let mailError = null;
+    try {
+      await sendVerification();
+    } catch (e) {
+      console.warn("SFDB: Bestätigungs-E-Mail konnte nicht verschickt werden", e);
+      mailError = e;
+    }
     user = auth.currentUser;
     notify();
-    return snap(user);
+    const s = snap(user);
+    s.mailError = mailError;
+    return s;
+  }
+
+  // Bestätigungslink aus der E-Mail direkt auf unserer Seite einlösen
+  // (gleiche Anfrage wie applyActionCode im Firebase-SDK).
+  async function applyVerifyCode(oobCode) {
+    const cfg = window.SF_FIREBASE_CONFIG || {};
+    const host = window.__SF_EMULATOR ? "http://127.0.0.1:9099/identitytoolkit.googleapis.com" : "https://identitytoolkit.googleapis.com";
+    const res = await fetch(host + "/v1/accounts:update?key=" + encodeURIComponent(cfg.apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oobCode }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const m = ((data.error && data.error.message) || "").toUpperCase();
+      const e = new Error(m || "verify failed");
+      e.code = /EXPIRED|INVALID_OOB/.test(m) ? "sf/link-old" : "sf/link-failed";
+      throw e;
+    }
+    if (auth && auth.currentUser) {
+      try {
+        await refreshUser();
+      } catch (e) {
+        /* Anmeldung wird beim nächsten Schritt neu geprüft */
+      }
+    }
+    return data;
   }
 
   async function login(email, password) {
@@ -180,7 +223,8 @@ const SFDB = (function () {
   async function refreshUser() {
     if (!auth || !auth.currentUser) return null;
     await F.reload(auth.currentUser);
-    await auth.currentUser.getIdToken(true);
+    // Neues Token nur, wenn jetzt bestätigt (damit die Datenbank es sieht)
+    if (auth.currentUser.emailVerified) await auth.currentUser.getIdToken(true);
     user = auth.currentUser;
     notify();
     return snap(user);
@@ -189,7 +233,7 @@ const SFDB = (function () {
   async function resetPassword(email) {
     requireDb();
     try {
-      await F.sendPasswordResetEmail(auth, email, actionSettings());
+      await F.sendPasswordResetEmail(auth, email, actionSettings("index.html"));
     } catch (e) {
       if (e.code === "auth/unauthorized-continue-uri" || e.code === "auth/invalid-continue-uri") {
         await F.sendPasswordResetEmail(auth, email);
@@ -713,6 +757,7 @@ const SFDB = (function () {
     logout,
     resendVerification,
     refreshUser,
+    applyVerifyCode,
     resetPassword,
     deleteAccount,
     getProducts,

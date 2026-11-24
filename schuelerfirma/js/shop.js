@@ -7,6 +7,38 @@
 
   const esc = (s) => SF.escapeHtml(s);
 
+  // Warenkorb im Browser merken: So ist er nicht weg, wenn man zwischendurch
+  // die Seite verlässt (z. B. um den Bestätigungslink in der E-Mail anzuklicken).
+  const CART_KEY = "sf_shop_cart_v1";
+  function saveCart() {
+    try {
+      if (cart.length) localStorage.setItem(CART_KEY, JSON.stringify({ t: Date.now(), cart }));
+      else localStorage.removeItem(CART_KEY);
+    } catch (e) {
+      /* Speicher gesperrt (privates Fenster) – dann eben ohne */
+    }
+  }
+  function loadSavedCart() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CART_KEY) || "null");
+      if (!raw || !Array.isArray(raw.cart) || Date.now() - raw.t > 14 * 864e5) return [];
+      return raw.cart
+        .filter((c) => c && typeof c.productId === "string" && typeof c.size === "string")
+        .slice(0, 30)
+        .map((c) => ({
+          productId: c.productId,
+          name: String(c.name || ""),
+          size: c.size,
+          color: typeof c.color === "string" ? c.color : "",
+          hex: typeof c.hex === "string" ? c.hex : "",
+          qty: Math.max(1, Math.min(50, parseInt(c.qty, 10) || 1)),
+          price: Number(c.price) || 0,
+        }));
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Gewählte Farbe eines Produkts (oder die erste), null wenn es keine Farben hat
   function currentColor(p) {
     const colors = SF.productColors(p);
@@ -191,7 +223,10 @@
     // Waren, die inzwischen weniger werden/verschwinden, aus dem Warenkorb nehmen
     cart = cart.filter((c) => {
       const p = products.find((x) => x.id === c.productId);
-      return p && colorStillValid(p, c.color);
+      if (!p || !colorStillValid(p, c.color)) return false;
+      c.name = p.name; // aktuelle Angaben aus der Datenbank
+      c.price = p.price;
+      return true;
     });
     renderCart();
     renderProducts();
@@ -295,6 +330,7 @@
     }
     document.getElementById("cart-total").textContent = SF.formatPrice(cartTotal());
     document.getElementById("checkout-btn").disabled = cart.length === 0;
+    saveCart();
   }
 
   function renderCheckoutSummary() {
@@ -435,11 +471,74 @@
     SFUI.closeDialog(document.getElementById(id));
   }
 
+  function startCheckout() {
+    if (cart.length === 0) return;
+    SFAuth.requireLogin(() => {
+      if (cart.length === 0) return;
+      const user = SFAuth.getCurrentUser();
+      const nameField = document.getElementById("co-name");
+      if (user && !nameField.value) nameField.value = user.username;
+      renderCheckoutSummary();
+      openModal("checkout-modal", "#co-name");
+    });
+  }
+
+  function shopNotice(text, type) {
+    let el = document.getElementById("shop-notice");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "shop-notice";
+      el.className = "form-message mb-32";
+      el.setAttribute("role", "status");
+      const grid = document.getElementById("product-grid");
+      grid.parentNode.insertBefore(el, grid.previousElementSibling || grid);
+    }
+    SFUI.showMessage(el, text, type);
+  }
+
+  // Zurück vom Bestätigungslink: Bestätigung abschließen und direkt weiter zur Kasse.
+  async function handleReturnFromEmail() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("oobCode");
+    const mode = params.get("mode");
+    if (!params.has("bestaetigt") && !(mode === "verifyEmail" && code)) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    await SFDB.ready;
+    let ok = true;
+    if (mode === "verifyEmail" && code) {
+      try {
+        await SFDB.applyVerifyCode(code);
+      } catch (e) {
+        ok = false;
+        const u = await SFDB.refreshUser().catch(() => null);
+        if (u && u.emailVerified) ok = true; // Link war schon benutzt – passt trotzdem
+        else if (!SFDB.currentUser() && e.code === "sf/link-old") ok = true; // evtl. schon bestätigt: Anmelden zeigt es
+        else shopNotice(SFDB.errorMessage(e) + " Melde dich an und tippe auf „E-Mail erneut senden“.", "error");
+      }
+    } else if (SFDB.currentUser()) {
+      await SFDB.refreshUser().catch(() => null);
+    }
+    if (!ok) return;
+    const u = SFDB.currentUser();
+    shopNotice(
+      u && u.emailVerified
+        ? "Deine E-Mail-Adresse ist bestätigt. Du kannst jetzt bestellen!"
+        : "Danke! Melde dich jetzt an, dann kannst du bestellen.",
+      "success"
+    );
+    if (cart.length) startCheckout();
+    else if (!u || !u.emailVerified) SFAuth.requireLogin(() => {});
+  }
+
   function setup() {
     const grid = document.getElementById("product-grid");
     grid.setAttribute("aria-busy", "true");
     grid.innerHTML = `<p class="hint">Produkte werden geladen …</p>`;
-    loadProducts().then(() => grid.removeAttribute("aria-busy"));
+    cart = loadSavedCart();
+    loadProducts().then(() => {
+      grid.removeAttribute("aria-busy");
+      handleReturnFromEmail();
+    });
     renderCart();
 
     document.getElementById("cart-open-btn").addEventListener("click", () => openModal("cart-modal"));
@@ -464,13 +563,7 @@
 
     document.getElementById("checkout-btn").addEventListener("click", () => {
       closeModal("cart-modal");
-      SFAuth.requireLogin(() => {
-        const user = SFAuth.getCurrentUser();
-        const nameField = document.getElementById("co-name");
-        if (user && !nameField.value) nameField.value = user.username;
-        renderCheckoutSummary();
-        openModal("checkout-modal", "#co-name");
-      });
+      startCheckout();
     });
 
     document.getElementById("checkout-form").addEventListener("submit", async (e) => {

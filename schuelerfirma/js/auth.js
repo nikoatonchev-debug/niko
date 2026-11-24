@@ -90,14 +90,15 @@ const SFAuth = (function () {
             <h2 id="auth-title-verify">E-Mail-Adresse bestätigen</h2>
             <p class="hint" id="auth-verify-info"></p>
             <p class="hint">
-              Klicke in der E-Mail auf den Bestätigungslink und tippe danach hier auf
-              „Ich habe bestätigt“. Keine E-Mail angekommen? Schau bitte auch im Spam-Ordner nach.
+              Klicke in der E-Mail auf den Bestätigungslink. Danach geht es hier automatisch
+              weiter (oder tippe auf „Ich habe bestätigt“). Dein Warenkorb bleibt gespeichert.
+              Keine E-Mail angekommen? Schau bitte auch im Spam-Ordner nach.
             </p>
             <div id="auth-verify-message" class="form-message hidden"></div>
             <button type="button" class="btn btn-primary btn-block mt-10" id="auth-verify-check">Ich habe bestätigt</button>
             <button type="button" class="btn btn-outline btn-small mt-10" id="auth-resend-code">E-Mail erneut senden</button>
             <p class="text-center mt-14">
-              <a href="#" id="auth-verify-cancel" class="hint underline">Abbrechen</a>
+              <a href="#" id="auth-verify-cancel" class="hint underline">Später bestätigen</a>
             </p>
           </div>
 
@@ -140,8 +141,10 @@ const SFAuth = (function () {
         ? "Wir haben eine E-Mail an " + u.email + " geschickt."
         : "";
       startResendTimer();
+      startVerifyPoll();
     } else {
       stopResendTimer();
+      stopVerifyPoll();
     }
     const firstField = document.querySelector("#auth-view-" + name + " input");
     if (firstField && !document.getElementById("auth-modal").classList.contains("hidden")) {
@@ -171,6 +174,7 @@ const SFAuth = (function () {
     onSuccessCallback = null;
     currentView = null;
     stopResendTimer();
+    stopVerifyPoll();
   }
 
   async function requireLogin(onSuccess) {
@@ -190,6 +194,36 @@ const SFAuth = (function () {
     forceCloseModal();
     if (cb) cb();
   }
+
+  // Solange "E-Mail bestätigen" offen ist, regelmäßig nachsehen, ob der Link
+  // schon angeklickt wurde (auch in einem anderen Tab/Mail-Programm) und dann
+  // von selbst weitermachen – niemand muss etwas neu eingeben.
+  let verifyPoll = null;
+  let verifyChecking = false;
+  async function checkVerifiedQuietly() {
+    if (currentView !== "verify" || verifyChecking) return;
+    verifyChecking = true;
+    try {
+      const u = await SFDB.refreshUser();
+      if (currentView === "verify" && u && u.emailVerified) finishLogin();
+    } catch (e) {
+      /* still weiter warten */
+    } finally {
+      verifyChecking = false;
+    }
+  }
+  function startVerifyPoll() {
+    stopVerifyPoll();
+    verifyPoll = setInterval(checkVerifiedQuietly, 5000);
+  }
+  function stopVerifyPoll() {
+    if (verifyPoll) clearInterval(verifyPoll);
+    verifyPoll = null;
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkVerifiedQuietly();
+  });
+  window.addEventListener("focus", checkVerifiedQuietly);
 
   function startResendTimer() {
     stopResendTimer();
@@ -283,10 +317,19 @@ const SFAuth = (function () {
       }
       setBusy(btn, true, "Konto wird angelegt …", "Registrieren");
       try {
-        await SFDB.register({ username, email, password: pw });
-        SF.startCooldown("verify-mail");
+        const res = await SFDB.register({ username, email, password: pw });
         document.getElementById("auth-register-form").reset();
-        showView("verify");
+        if (res && res.mailError) {
+          showView("verify");
+          SFUI.showMessage(
+            msgEl("auth-verify-message"),
+            "Dein Konto ist angelegt, aber die Bestätigungs-E-Mail konnte gerade nicht verschickt werden. Bitte tippe gleich auf „E-Mail erneut senden“.",
+            "error"
+          );
+        } else {
+          SF.startCooldown("verify-mail");
+          showView("verify");
+        }
       } catch (err) {
         SFUI.showMessage(msg, SFDB.errorMessage(err), "error");
       } finally {
@@ -329,14 +372,11 @@ const SFAuth = (function () {
       }
     });
 
-    document.getElementById("auth-verify-cancel").addEventListener("click", async (e) => {
+    // "Später bestätigen": Fenster zu, aber angemeldet bleiben. Oben steht dann
+    // "E-Mail bestätigen", und der Warenkorb bleibt erhalten.
+    document.getElementById("auth-verify-cancel").addEventListener("click", (e) => {
       e.preventDefault();
       forceCloseModal();
-      try {
-        await SFDB.logout();
-      } catch (err) {
-        console.warn(err);
-      }
     });
 
     document.getElementById("auth-reset-form").addEventListener("submit", async (e) => {

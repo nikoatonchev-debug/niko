@@ -82,7 +82,10 @@
     document.getElementById("orders-content").classList.remove("hidden");
     const shopEl = document.getElementById("shop-orders-list");
     const specialEl = document.getElementById("special-orders-list");
-    shopEl.innerHTML = specialEl.innerHTML = `<p class="hint">Wird geladen …</p>`;
+    // Beim Aktualisieren die alte Liste stehen lassen (kein Flackern)
+    if (!shopEl.querySelector("article") && !specialEl.querySelector("article")) {
+      shopEl.innerHTML = specialEl.innerHTML = `<p class="hint">Wird geladen …</p>`;
+    }
     try {
       const [orders, special] = await Promise.all([SFDB.getMyOrders(), SFDB.getMySpecialOrders()]);
       renderShopOrders(orders);
@@ -136,6 +139,21 @@
     await SFDB.ready;
     showOrders();
     SFDB.onAuthChange(() => showOrders());
+
+    // Bestellungen liegen in der Datenbank, nicht auf dem Gerät. Damit eine
+    // Bestellung von einem anderen Gerät (z. B. Handy) auch auf einer schon
+    // offenen Seite (z. B. iPad) erscheint: beim Zurückkehren zur Seite und
+    // jede Minute neu laden.
+    let last = Date.now();
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 3000) return;
+      last = Date.now();
+      showOrders();
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("pageshow", (e) => { if (e.persisted) { last = 0; refresh(); } });
+    setInterval(() => { last = 0; refresh(); }, 60000);
   }
 
   document.addEventListener("DOMContentLoaded", setup);

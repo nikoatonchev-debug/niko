@@ -363,6 +363,43 @@
     renderGallery();
   }
 
+  // Zoom wie bei großen Online-Shops: Mit der Maus über das Foto fahren
+  // vergrößert die Stelle unter dem Mauszeiger. Am Handy: antippen =
+  // vergrößern, mit dem Finger verschieben, nochmal tippen = zurück.
+  function setupZoom(box) {
+    if (!box) return;
+    const img = () => box.querySelector("img");
+    let touchZoom = false;
+    let moved = false;
+    const setOrigin = (e) => {
+      const r = box.getBoundingClientRect();
+      const x = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100));
+      const y = Math.min(100, Math.max(0, ((e.clientY - r.top) / r.height) * 100));
+      const i = img();
+      if (i) i.style.transformOrigin = `${x}% ${y}%`;
+    };
+    const zoomIn = (e) => {
+      setOrigin(e);
+      box.classList.add("zoomed");
+    };
+    const zoomOut = () => {
+      box.classList.remove("zoomed");
+      touchZoom = false;
+    };
+    box.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") zoomIn(e); });
+    box.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "mouse") zoomIn(e);
+      else if (touchZoom) { moved = true; setOrigin(e); }
+    });
+    box.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") zoomOut(); });
+    box.addEventListener("pointerdown", (e) => { moved = false; if (e.pointerType !== "mouse" && touchZoom) box.setPointerCapture(e.pointerId); });
+    box.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "mouse" || moved) return;
+      if (touchZoom) zoomOut();
+      else { touchZoom = true; zoomIn(e); }
+    });
+  }
+
   function renderGallery() {
     const p = detailProduct;
     const count = SF.photoCount(p);
@@ -379,10 +416,11 @@
       const before = galleryEl.querySelector("img");
       const placeholder = before ? before.getAttribute("src") : null;
       galleryEl.innerHTML = `
-        <div class="product-image product-image-detail">
+        <div class="product-image product-image-detail zoomable">
           ${photoImgHtml(p, detailImageIndex, `${p.name + colorName} – Bild ${n} von ${count}`, placeholder)}
           ${overlay}
         </div>
+        <p class="hint zoom-hint" aria-hidden="true">🔍 ${matchMedia("(hover: hover)").matches ? "Maus aufs Bild = Vergrößern" : "Aufs Bild tippen = Vergrößern"}</p>
         ${
           count > 1
             ? `<div class="gallery-nav">
@@ -394,6 +432,7 @@
         }
       `;
       showPhoto(galleryEl.querySelector("img"), p, detailImageIndex);
+      setupZoom(galleryEl.querySelector(".product-image-detail"));
       if (count > 1) {
         // Nachbarfotos schon laden, damit Blättern ohne Warten geht
         [1, count - 1].forEach((d) => SFDB.getProductImage(p, (detailImageIndex + d) % count).catch(() => {}));

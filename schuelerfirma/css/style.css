@@ -2221,3 +2221,11 @@ img.img-loading {
   width: 1%;
 }
 .sum-table td { background: none; }
+
+/* Zoom im Produktfenster */
+.zoomable { cursor: zoom-in; }
+.zoomable img { transition: transform 0.15s ease-out; will-change: transform; }
+.zoomable.zoomed { cursor: zoom-out; touch-action: none; }
+.zoomable.zoomed img { transform: scale(2.6); }
+.zoom-hint { text-align: center; font-size: 0.85rem; margin: 6px 0 0; }
+@media (prefers-reduced-motion: reduce) { .zoomable img { transition: none; } }

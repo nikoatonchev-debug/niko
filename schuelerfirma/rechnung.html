@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="robots" content="noindex">
+  <title>Rechnung &ndash; Siebdruck-Schülerfirma</title>
+  <link rel="icon" type="image/png" href="images/logo-erdkinderplan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="invoice">
+
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main">
+    <section>
+      <div class="container">
+        <div class="invoice-toolbar no-print">
+          <a href="meine-bestellungen.html" class="btn btn-outline btn-small" id="invoice-back">&larr; Zurück</a>
+          <button type="button" class="btn btn-primary btn-small hidden" id="invoice-print">Drucken / Als PDF speichern</button>
+        </div>
+        <p class="hint no-print hidden" id="invoice-print-hint">Tipp: Im Druckfenster bei &bdquo;Drucker&ldquo; bzw. &bdquo;Ziel&ldquo; <strong>&bdquo;Als PDF speichern&ldquo;</strong> wählen, dann wird die Rechnung als PDF-Datei gespeichert.</p>
+        <div id="invoice-login-hint" class="card hidden narrow-card text-center no-print">
+          <p>Bitte melde dich an, um die Rechnung zu sehen.</p>
+          <button type="button" class="btn btn-primary" id="invoice-login-btn">Anmelden</button>
+        </div>
+        <p class="form-message hidden no-print" id="invoice-message"></p>
+        <div id="invoice-out" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="js/icons.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/invoice-mode.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/vendor/firebase.bundle.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/invoice.js"></script>
+  <script src="js/invoice-page.js"></script>
+</body>
+</html>

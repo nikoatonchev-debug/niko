@@ -112,5 +112,15 @@
     const page = document.body.getAttribute("data-page") || "";
     renderHeader(page);
     renderFooter();
+    // Kleine Info-Knöpfe (i): Erklärung ein-/ausklappen
+    document.querySelectorAll("[data-info-toggle]").forEach((btn) => {
+      const box = document.getElementById(btn.getAttribute("data-info-toggle"));
+      if (!box) return;
+      btn.addEventListener("click", () => {
+        const open = box.hidden;
+        box.hidden = !open;
+        btn.setAttribute("aria-expanded", String(open));
+      });
+    });
   });
 })();

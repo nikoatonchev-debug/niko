@@ -2135,3 +2135,42 @@ img.img-loading {
     grid-column: 1 / -1;
   }
 }
+
+/* Bestellschluss-Hinweis mit Info-Knopf */
+.deadline-box {
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.hero .deadline-box { margin: 18px 0 22px; max-width: 560px; }
+.deadline-main { display: flex; align-items: center; gap: 12px; }
+.deadline-icon { width: 28px; height: 28px; flex-shrink: 0; color: var(--color-primary); display: flex; }
+.deadline-text { margin: 0; flex: 1; line-height: 1.4; }
+.deadline-text strong { color: var(--color-primary-dark); }
+.info-btn {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: var(--color-card);
+  color: var(--color-primary);
+  font: italic 700 15px/1 Georgia, serif;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.info-btn:hover, .info-btn[aria-expanded="true"] { background: var(--color-primary); color: #fff; }
+.info-btn:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+.deadline-why {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text);
+}

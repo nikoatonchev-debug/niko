@@ -933,15 +933,103 @@
     });
   }
 
+  // ---------- Logo-Farbe & Übersicht „Was müssen wir einkaufen?“ ----------
+  // Aus den Produktfotos: auf dunklen Pullis/Shirts (Dunkelblau, Dunkelgrau,
+  // Schwarz) ist das Logo weiß, auf hellen (Grau, Weiß) dunkelblau.
+  const FALLBACK_HEX = { dunkelblau: "#1c2a4d", dunkelgrau: "#4a4a4a", grau: "#8c8c8c", hellgrau: "#c8c8c8", schwarz: "#1b1b1b", "weiß": "#ffffff", weiss: "#ffffff" };
+  function garmentHex(productId, colorName) {
+    const p = products.find((x) => x.id === productId);
+    const c = p && SF.findColor(p, colorName);
+    return (c && c.hex) || FALLBACK_HEX[SF.colorKey(colorName)] || "";
+  }
+  function logoColor(productId, colorName) {
+    const hex = garmentHex(productId, colorName);
+    if (!hex) return "";
+    const n = parseInt(hex.slice(1), 16);
+    const light = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.45;
+    return light ? "dunkelblau" : "weiß";
+  }
+  function logoBadge(productId, colorName) {
+    const l = logoColor(productId, colorName);
+    return l ? ` <span class="logo-badge logo-${l === "weiß" ? "weiss" : "blau"}">Logo ${l}</span>` : "";
+  }
+
+  function renderOrderSummary() {
+    const box = document.getElementById("orders-summary");
+    if (!box) return;
+    const counted = orders;
+    if (!counted.length) {
+      box.innerHTML = "";
+      return;
+    }
+    // Produkt -> Farbe -> Größe -> Anzahl
+    const byProduct = new Map();
+    const ink = { "weiß": 0, dunkelblau: 0 };
+    counted.forEach((o) =>
+      (o.items || []).forEach((i) => {
+        const qty = Number(i.qty) || 0;
+        const key = i.productId || i.name;
+        if (!byProduct.has(key)) byProduct.set(key, { id: i.productId, name: i.name, colors: new Map(), total: 0 });
+        const prod = byProduct.get(key);
+        const cname = i.color || "–";
+        if (!prod.colors.has(cname)) prod.colors.set(cname, new Map());
+        const sizes = prod.colors.get(cname);
+        sizes.set(i.size, (sizes.get(i.size) || 0) + qty);
+        prod.total += qty;
+        const l = logoColor(i.productId, i.color);
+        if (l) ink[l] += qty;
+      })
+    );
+    const all = [...byProduct.values()].reduce((n, p) => n + p.total, 0);
+    const cards = [...byProduct.values()]
+      .map((prod) => {
+        const p = products.find((x) => x.id === prod.id);
+        const used = new Set();
+        prod.colors.forEach((sizes) => sizes.forEach((_, sz) => used.add(sz)));
+        const order = ((p && p.sizes) || []).filter((sz) => used.has(sz));
+        used.forEach((sz) => { if (!order.includes(sz)) order.push(sz); });
+        const colTotals = order.map((sz) => [...prod.colors.values()].reduce((n, m) => n + (m.get(sz) || 0), 0));
+        const rows = [...prod.colors.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0], "de"))
+          .map(([cname, sizes]) => {
+            const hex = garmentHex(prod.id, cname);
+            const sum = [...sizes.values()].reduce((a, b) => a + b, 0);
+            return `<tr>
+              <th scope="row"><span class="sum-swatch" style="background:${esc(SF.safeColor(hex, "#9e9e9e"))}"></span>${esc(cname)}${logoBadge(prod.id, cname)}</th>
+              ${order.map((sz) => `<td>${sizes.get(sz) ? `<strong>${sizes.get(sz)}</strong>` : '<span class="hint">–</span>'}</td>`).join("")}
+              <td class="sum-total">${sum}</td>
+            </tr>`;
+          })
+          .join("");
+        return `<div class="sum-card">
+          <h3>${esc(prod.name)} <span class="sum-count">${prod.total} Stück</span></h3>
+          <div class="table-wrap"><table class="sum-table">
+            <thead><tr><th>Farbe</th>${order.map((sz) => `<th>${esc(sz)}</th>`).join("")}<th>Gesamt</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr><th>Alle Farben</th>${colTotals.map((n) => `<td>${n}</td>`).join("")}<td class="sum-total">${prod.total}</td></tr></tfoot>
+          </table></div>
+        </div>`;
+      })
+      .join("");
+    box.innerHTML = `
+      <h2 class="sum-title">Übersicht: Was müssen wir einkaufen?</h2>
+      <p class="hint">Alle ${counted.length} Bestellungen zusammengezählt (auch schon abgeholte): <strong>${all} Teile</strong>.
+      Druckfarbe: <strong>${ink["weiß"]}×</strong> Logo weiß, <strong>${ink.dunkelblau}×</strong> Logo dunkelblau.</p>
+      ${cards}
+      <h2 class="sum-title">Alle Bestellungen</h2>`;
+  }
+
   async function renderOrders() {
     const el = document.getElementById("orders-table-body");
     try {
       orders = await SFDB.getAllOrders();
+      if (!products.length) products = await SFDB.getProducts().catch(() => []);
     } catch (err) {
       loadError("orders-table-body", 6, err);
       return;
     }
     renderInvoices();
+    renderOrderSummary();
     if (orders.length === 0) {
       el.innerHTML = `<tr><td colspan="6" class="table-empty">Noch keine Bestellungen.</td></tr>`;
       return;
@@ -950,7 +1038,7 @@
       .map((o) => {
         const id = esc(o.id);
         const items = (o.items || [])
-          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)}${i.color ? ", " + esc(i.color) : ""})`)
+          .map((i) => `${Number(i.qty)}x ${esc(i.name)} (${esc(i.size)}${i.color ? ", " + esc(i.color) : ""})${logoBadge(i.productId, i.color)}`)
           .join("<br>");
         return `
         <tr>
